@@ -29,12 +29,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const file = await objectStorageService.searchPublicObject(filePath);
       if (!file) {
-        return res.status(404).json({ error: "File not found" });
+        return res.status(404).json({ error: "Archivo no encontrado" });
       }
       objectStorageService.downloadObject(file, res);
     } catch (error: any) {
       console.error("Error searching for public object:", error);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tours/images", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       if (!req.body.imageURL) {
-        return res.status(400).json({ error: "imageURL is required" });
+        return res.status(400).json({ error: "imageURL es requerido" });
       }
       const objectStorageService = new ObjectStorageService();
       const objectPath = objectStorageService.normalizeObjectEntityPath(
@@ -77,14 +77,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ objectPath });
     } catch (error: any) {
       console.error("Error normalizing image path:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
   app.post("/api/objects/normalize", authenticateToken, async (req: AuthRequest, res) => {
     try {
       if (!req.body.imageURL) {
-        return res.status(400).json({ error: "imageURL is required" });
+        return res.status(400).json({ error: "imageURL es requerido" });
       }
       const objectStorageService = new ObjectStorageService();
       const objectPath = objectStorageService.normalizeObjectEntityPath(
@@ -93,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ objectPath });
     } catch (error: any) {
       console.error("Error normalizing object path:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
-        return res.status(400).json({ error: "User with this email already exists" });
+        return res.status(400).json({ error: "Ya existe un usuario con este correo electrónico" });
       }
 
       // Hash password
@@ -139,19 +139,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
+        return res.status(400).json({ error: "El correo electrónico y la contraseña son requeridos" });
       }
 
       // Find user
       const user = await storage.getUserByEmail(email);
       if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Credenciales inválidas" });
       }
 
       // Verify password
       const isValid = await comparePasswords(password, user.password);
       if (!isValid) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Credenciales inválidas" });
       }
 
       // Generate token
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(req.user!.userId);
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "Usuario no encontrado" });
       }
 
       res.json({
@@ -204,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tour = await storage.getTour(req.params.id);
       if (!tour) {
-        return res.status(404).json({ error: "Tour not found" });
+        return res.status(404).json({ error: "Tour no encontrado" });
       }
       res.json(tour);
     } catch (error: any) {
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertTourSchema.partial().parse(req.body);
       const tour = await storage.updateTour(req.params.id, validatedData);
       if (!tour) {
-        return res.status(404).json({ error: "Tour not found" });
+        return res.status(404).json({ error: "Tour no encontrado" });
       }
       res.json(tour);
     } catch (error: any) {
@@ -260,12 +260,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const reservation = await storage.getReservation(req.params.id);
       if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
+        return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
       // Check if user has access to this reservation
       if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
-        return res.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Acceso denegado" });
       }
 
       res.json(reservation);
@@ -296,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus
       );
       if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
+        return res.status(404).json({ error: "Reserva no encontrada" });
       }
       res.json(reservation);
     } catch (error: any) {
@@ -310,11 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify the user has access to this reservation
       const reservation = await storage.getReservation(req.params.reservationId);
       if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
+        return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
       if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
-        return res.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Acceso denegado" });
       }
 
       const passengers = await storage.getPassengersByReservation(req.params.reservationId);
@@ -331,11 +331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify the user has access to this reservation
       const reservation = await storage.getReservation(validatedData.reservationId);
       if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
+        return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
       if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
-        return res.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Acceso denegado" });
       }
 
       const passenger = await storage.createPassenger(validatedData);
@@ -353,11 +353,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify the user has access to this reservation
       const reservation = await storage.getReservation(validatedData.reservationId);
       if (!reservation) {
-        return res.status(404).json({ error: "Reservation not found" });
+        return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
       if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
-        return res.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Acceso denegado" });
       }
 
       const payment = await storage.createPayment(validatedData);
@@ -375,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user!.userId
       );
       if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
+        return res.status(404).json({ error: "Pago no encontrado" });
       }
       res.json(payment);
     } catch (error: any) {
