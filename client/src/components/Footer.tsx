@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Globe, Mail } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { useState } from "react";
+import logo from "@assets/logo tu destino tours_1761750190712.png";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -19,10 +20,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl font-bold">
-                <span className="text-foreground">Tu Destino</span>{" "}
-                <span className="text-primary">Tours</span>
-              </span>
+              <img src={logo} alt="Tu Destino Tours" className="h-12" />
             </div>
             <p className="text-sm text-muted-foreground mb-6">
               Your ultimate go on travel and tour solution

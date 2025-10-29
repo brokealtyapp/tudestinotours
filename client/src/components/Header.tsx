@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import logo from "@assets/logo tu destino tours_1761750190712.png";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -11,12 +12,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2" data-testid="link-home">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold">
-                <span className="text-foreground">Tu Destino</span>{" "}
-                <span className="text-primary">Tours</span>
-              </span>
-            </div>
+            <img src={logo} alt="Tu Destino Tours" className="h-10" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
