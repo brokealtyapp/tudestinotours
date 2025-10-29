@@ -32,26 +32,6 @@ export default function Hero() {
         </h1>
 
         <Card className="mt-12 p-6 max-w-4xl mx-auto bg-white/95 backdrop-blur">
-          <div className="flex items-center gap-4 mb-6 border-b pb-4">
-            <Button 
-              variant="ghost" 
-              className="gap-2 border-b-2 border-primary text-primary pb-2"
-              data-testid="button-filter-hotel"
-            >
-              <MapPin className="h-4 w-4" />
-              Hotel
-            </Button>
-            <Button variant="ghost" className="gap-2" data-testid="button-filter-flight">
-              Flight
-            </Button>
-            <Button variant="ghost" className="gap-2" data-testid="button-filter-bus">
-              Bus & Train
-            </Button>
-            <Button variant="ghost" className="gap-2" data-testid="button-filter-holiday">
-              Holiday
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-2 p-3 border rounded-lg">
               <MapPin className="h-5 w-5 text-primary" />
