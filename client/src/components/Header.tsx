@@ -1,11 +1,27 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import logo from "@assets/logo tu destino tours_1761750190712.png";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout, isAdmin } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
@@ -31,12 +47,39 @@ export default function Header() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" asChild data-testid="button-signin">
-              <Link href="/signin">Sign In</Link>
-            </Button>
-            <Button className="bg-primary text-primary-foreground hover-elevate active-elevate-2" asChild data-testid="button-signup">
-              <Link href="/signup">Sign Up</Link>
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2" data-testid="button-user-menu">
+                    <User className="h-4 w-4" />
+                    {user.name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href={isAdmin ? "/admin" : "/dashboard"} data-testid="link-dashboard">
+                      {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" asChild data-testid="button-signin">
+                  <Link href="/signin">Sign In</Link>
+                </Button>
+                <Button className="bg-primary text-primary-foreground hover-elevate active-elevate-2" asChild data-testid="button-signup">
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           <Button
@@ -67,12 +110,26 @@ export default function Header() {
               Activity
             </Link>
             <div className="flex flex-col gap-2 mt-4">
-              <Button variant="ghost" asChild data-testid="button-mobile-signin">
-                <Link href="/signin">Sign In</Link>
-              </Button>
-              <Button className="bg-primary text-primary-foreground" asChild data-testid="button-mobile-signup">
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+              {user ? (
+                <>
+                  <Link href={isAdmin ? "/admin" : "/dashboard"} className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-dashboard">
+                    {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+                  </Link>
+                  <Button variant="ghost" onClick={handleLogout} data-testid="button-mobile-logout">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild data-testid="button-mobile-signin">
+                    <Link href="/signin">Sign In</Link>
+                  </Button>
+                  <Button className="bg-primary text-primary-foreground" asChild data-testid="button-mobile-signup">
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
