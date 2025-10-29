@@ -55,7 +55,7 @@ export default function TourCard({
           <div className="text-right">
             <div className="text-xl font-bold text-foreground">
               ${price}
-              <span className="text-sm font-normal text-muted-foreground">/Pers</span>
+              <span className="text-sm font-normal text-muted-foreground">/Persona</span>
             </div>
           </div>
         </div>

@@ -33,7 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       objectStorageService.downloadObject(file, res);
     } catch (error: any) {
-      console.error("Error searching for public object:", error);
+      console.error("Error buscando objeto público:", error);
       return res.status(500).json({ error: "Error interno del servidor" });
     }
   });
@@ -46,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       objectStorageService.downloadObject(objectFile, res);
     } catch (error: any) {
-      console.error("Error checking object access:", error);
+      console.error("Error verificando acceso al objeto:", error);
       if (error instanceof ObjectNotFoundError) {
         return res.sendStatus(404);
       }
@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
       res.json({ uploadURL });
     } catch (error: any) {
-      console.error("Error getting upload URL:", error);
+      console.error("Error obteniendo URL de carga:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.status(200).json({ objectPath });
     } catch (error: any) {
-      console.error("Error normalizing image path:", error);
+      console.error("Error normalizando ruta de imagen:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     }
   });
@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.status(200).json({ objectPath });
     } catch (error: any) {
-      console.error("Error normalizing object path:", error);
+      console.error("Error normalizando ruta de objeto:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     }
   });

@@ -98,10 +98,7 @@ export default function ExploreDestinations() {
                 key={category}
                 variant={activeCategory === category ? "default" : "outline"}
                 className={activeCategory === category ? "bg-foreground text-background" : ""}
-                onClick={() => {
-                  setActiveCategory(category);
-                  console.log("Category selected:", category);
-                }}
+                onClick={() => setActiveCategory(category)}
                 data-testid={`button-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {category}
@@ -124,7 +121,6 @@ export default function ExploreDestinations() {
           <Button 
             variant="outline" 
             className="hover-elevate"
-            onClick={() => console.log("Show more clicked")}
             data-testid="button-show-more"
           >
             Mostrar Más
