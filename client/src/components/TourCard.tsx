@@ -31,7 +31,7 @@ export default function TourCard({
         />
         {discount && (
           <Badge className="absolute top-3 right-3 bg-white/90 text-foreground border-0">
-            {discount}% OFF
+            {discount}% DESC
           </Badge>
         )}
         <Badge className="absolute top-3 left-3 bg-white/90 text-foreground border-0 gap-1">
@@ -55,7 +55,7 @@ export default function TourCard({
           <div className="text-right">
             <div className="text-xl font-bold text-foreground">
               ${price}
-              <span className="text-sm font-normal text-muted-foreground">/Pax</span>
+              <span className="text-sm font-normal text-muted-foreground">/Pers</span>
             </div>
           </div>
         </div>

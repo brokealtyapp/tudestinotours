@@ -10,23 +10,22 @@ import tour4 from "@assets/generated_images/Aerial_tropical_island_view_e3f7dcd3
 import tour5 from "@assets/generated_images/Sandbar_between_tropical_islands_9f61d263.png";
 import tour6 from "@assets/generated_images/Thailand_beach_with_boat_0d72543f.png";
 
-//todo: remove mock functionality
 const categories = [
-  "Popular Destination",
-  "Islands",
-  "Surfing",
-  "Nation Parks",
-  "Lake",
-  "Beach",
-  "Camp",
+  "Destino Popular",
+  "Islas",
+  "Surf",
+  "Parques Nacionales",
+  "Lago",
+  "Playa",
+  "Camping",
 ];
 
 const destinations = [
   {
     id: 1,
     image: tour1,
-    title: "Sorrento Castle",
-    location: "Amalfi, Italy",
+    title: "Castillo de Sorrento",
+    location: "Amalfi, Italia",
     rating: 4.8,
     reviews: "1.4k",
     price: 187,
@@ -34,8 +33,8 @@ const destinations = [
   {
     id: 2,
     image: tour2,
-    title: "Cape Reinga",
-    location: "Northland, New Zealand",
+    title: "Cabo Reinga",
+    location: "Northland, Nueva Zelanda",
     rating: 4.7,
     reviews: "1.2k",
     price: 154,
@@ -43,8 +42,8 @@ const destinations = [
   {
     id: 3,
     image: tour3,
-    title: "Osaka Castle",
-    location: "Osaka, Japan",
+    title: "Castillo de Osaka",
+    location: "Osaka, Japón",
     rating: 4.9,
     reviews: "2.1k",
     price: 169,
@@ -52,8 +51,8 @@ const destinations = [
   {
     id: 4,
     image: tour4,
-    title: "Amalfi Coast",
-    location: "Amalfi, Italy",
+    title: "Costa de Amalfi",
+    location: "Amalfi, Italia",
     rating: 4.9,
     reviews: "1.8k",
     price: 149,
@@ -79,16 +78,16 @@ const destinations = [
 ];
 
 export default function ExploreDestinations() {
-  const [activeCategory, setActiveCategory] = useState("Popular Destination");
+  const [activeCategory, setActiveCategory] = useState("Destino Popular");
 
   return (
     <section className="py-16 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Explore More</h2>
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Explora Más</h2>
           <p className="text-muted-foreground max-w-3xl mx-auto">
-            Find your travel destination, because we have covered all regions in the wold.
-            After you find the trip you want to go to, you can directly order the ticket.
+            Encuentra tu destino de viaje, porque hemos cubierto todas las regiones del mundo.
+            Después de encontrar el viaje que deseas, puedes ordenar el boleto directamente.
           </p>
         </div>
 
@@ -110,7 +109,7 @@ export default function ExploreDestinations() {
             ))}
           </div>
           <Button variant="outline" className="gap-2 flex-shrink-0" data-testid="button-filters">
-            Filters
+            Filtros
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
         </div>
@@ -128,7 +127,7 @@ export default function ExploreDestinations() {
             onClick={() => console.log("Show more clicked")}
             data-testid="button-show-more"
           >
-            Show More
+            Mostrar Más
           </Button>
         </div>
       </div>
