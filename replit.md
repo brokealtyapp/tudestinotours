@@ -18,6 +18,7 @@ All core features have been implemented and tested:
 - ✅ Booking wizard now properly uploads and stores passport documents
 - ✅ Client users can normalize uploaded files without admin privileges
 - ✅ Complete end-to-end booking flow validated by architect review
+- ✅ **Platform fully translated to Spanish** - All pages, components, forms, validation messages, and notifications are now in Spanish
 
 ## Architecture
 
