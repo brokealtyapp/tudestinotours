@@ -1,0 +1,521 @@
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+
+type BookingStep = 1 | 2 | 3 | 4;
+
+interface PassengerData {
+  name: string;
+  passportNumber: string;
+  nationality: string;
+  dateOfBirth: string;
+  passportImageUrl: string;
+}
+
+export default function Booking() {
+  const { id: tourId } = useParams();
+  const [, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+
+  const [currentStep, setCurrentStep] = useState<BookingStep>(1);
+  const [numPassengers, setNumPassengers] = useState(1);
+  const [passengers, setPassengers] = useState<PassengerData[]>([]);
+  const [paymentUrl, setPaymentUrl] = useState("");
+
+  const { data: tour, isLoading: tourLoading } = useQuery<any>({
+    queryKey: ["/api/tours", tourId],
+    queryFn: () => apiRequest("GET", `/api/tours/${tourId}`),
+  });
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/signin");
+    }
+  }, [authLoading, user, setLocation]);
+
+  useEffect(() => {
+    setPassengers(
+      Array(numPassengers)
+        .fill(null)
+        .map(() => ({
+          name: "",
+          passportNumber: "",
+          nationality: "",
+          dateOfBirth: "",
+          passportImageUrl: "",
+        }))
+    );
+  }, [numPassengers]);
+
+  if (authLoading || tourLoading) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+          Loading booking information...
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!tour) {
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Tour Not Found</h1>
+          <Button onClick={() => setLocation("/tours")}>Back to Tours</Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const handleNext = () => {
+    if (currentStep === 1 && numPassengers < 1) {
+      toast({
+        title: "Error",
+        description: "Please select at least one passenger",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentStep === 2) {
+      const missingData = passengers.some(
+        (p) =>
+          !p.name || !p.passportNumber || !p.nationality || !p.dateOfBirth
+      );
+      if (missingData) {
+        toast({
+          title: "Error",
+          description: "Please fill in all passenger information",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      const missingPassports = passengers.some((p) => !p.passportImageUrl);
+      if (missingPassports) {
+        toast({
+          title: "Error",
+          description: "Please upload passport images for all passengers",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (currentStep < 4) {
+      setCurrentStep((currentStep + 1) as BookingStep);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((currentStep - 1) as BookingStep);
+    }
+  };
+
+  const handlePassengerChange = (
+    index: number,
+    field: keyof PassengerData,
+    value: string
+  ) => {
+    setPassengers((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+    );
+  };
+
+  const handlePassportUpload = async (
+    index: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const uploadUrlResponse: any = await apiRequest("POST", "/api/objects/upload");
+      const { uploadURL } = uploadUrlResponse;
+
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const normalizeResponse: any = await apiRequest("POST", "/api/objects/normalize", {
+        imageURL: uploadURL,
+      });
+
+      handlePassengerChange(index, "passportImageUrl", normalizeResponse.objectPath);
+
+      toast({
+        title: "Success",
+        description: "Passport uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload passport",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmitBooking = async () => {
+    try {
+      if (!paymentUrl) {
+        toast({
+          title: "Error",
+          description: "Please provide a payment URL",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reservationData = {
+        tourId,
+        userId: user?.id,
+        totalPrice: tour.price * numPassengers,
+        status: "pending",
+      };
+
+      const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);
+
+      const passengersPromises = passengers.map((passenger) =>
+        apiRequest("POST", "/api/passengers", {
+          ...passenger,
+          reservationId: reservation.id,
+        })
+      );
+      await Promise.all(passengersPromises);
+
+      await apiRequest("POST", "/api/payments", {
+        reservationId: reservation.id,
+        amount: reservationData.totalPrice,
+        paymentMethod: "external",
+        externalPaymentUrl: paymentUrl,
+        status: "pending",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+
+      toast({
+        title: "Success",
+        description: "Booking created successfully!",
+      });
+
+      setLocation("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create booking",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const steps = [
+    { label: "Passengers", number: 1 },
+    { label: "Details", number: 2 },
+    { label: "Documents", number: 3 },
+    { label: "Payment", number: 4 },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 max-w-4xl mx-auto px-4 py-16 w-full">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Book Your Tour</h1>
+          <p className="text-muted-foreground">{tour.title}</p>
+        </div>
+
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-8">
+              {steps.map((step, index) => (
+                <div key={step.number} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                        currentStep === step.number
+                          ? "bg-primary text-primary-foreground"
+                          : currentStep > step.number
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                      data-testid={`step-indicator-${step.number}`}
+                    >
+                      {currentStep > step.number ? (
+                        <Check className="h-5 w-5" />
+                      ) : (
+                        step.number
+                      )}
+                    </div>
+                    <span className="text-xs mt-2">{step.label}</span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`h-0.5 flex-1 mx-2 ${
+                        currentStep > step.number
+                          ? "bg-primary"
+                          : "bg-muted"
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="num-passengers">
+                    Number of Passengers (Max: {tour.maxPassengers})
+                  </Label>
+                  <Input
+                    id="num-passengers"
+                    type="number"
+                    min={1}
+                    max={tour.maxPassengers}
+                    value={numPassengers}
+                    onChange={(e) =>
+                      setNumPassengers(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    data-testid="input-num-passengers"
+                  />
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex justify-between mb-2">
+                    <span>Price per person:</span>
+                    <span className="font-semibold">${tour.price}</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span>Number of passengers:</span>
+                    <span className="font-semibold">{numPassengers}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                    <span>Total:</span>
+                    <span className="text-primary">
+                      ${tour.price * numPassengers}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                {passengers.map((passenger, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle>Passenger {index + 1}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor={`name-${index}`}>Full Name</Label>
+                        <Input
+                          id={`name-${index}`}
+                          value={passenger.name}
+                          onChange={(e) =>
+                            handlePassengerChange(index, "name", e.target.value)
+                          }
+                          data-testid={`input-passenger-name-${index}`}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`passport-${index}`}>
+                            Passport Number
+                          </Label>
+                          <Input
+                            id={`passport-${index}`}
+                            value={passenger.passportNumber}
+                            onChange={(e) =>
+                              handlePassengerChange(
+                                index,
+                                "passportNumber",
+                                e.target.value
+                              )
+                            }
+                            data-testid={`input-passenger-passport-${index}`}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`nationality-${index}`}>
+                            Nationality
+                          </Label>
+                          <Input
+                            id={`nationality-${index}`}
+                            value={passenger.nationality}
+                            onChange={(e) =>
+                              handlePassengerChange(
+                                index,
+                                "nationality",
+                                e.target.value
+                              )
+                            }
+                            data-testid={`input-passenger-nationality-${index}`}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor={`dob-${index}`}>Date of Birth</Label>
+                        <Input
+                          id={`dob-${index}`}
+                          type="date"
+                          value={passenger.dateOfBirth}
+                          onChange={(e) =>
+                            handlePassengerChange(
+                              index,
+                              "dateOfBirth",
+                              e.target.value
+                            )
+                          }
+                          data-testid={`input-passenger-dob-${index}`}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                {passengers.map((passenger, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle>
+                        Passport Document - {passenger.name || `Passenger ${index + 1}`}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor={`passport-file-${index}`}>
+                          Upload Passport Image
+                        </Label>
+                        <Input
+                          id={`passport-file-${index}`}
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => handlePassportUpload(index, e)}
+                          data-testid={`input-passenger-passport-file-${index}`}
+                        />
+                        {passenger.passportImageUrl && (
+                          <p className="text-sm text-green-600 mt-2">
+                            ✓ Passport uploaded successfully
+                          </p>
+                        )}
+                      </div>
+                      {passenger.passportImageUrl && passenger.passportImageUrl.match(/\.(jpg|jpeg|png|gif)$/i) && (
+                        <div className="border rounded-lg p-2">
+                          <img
+                            src={passenger.passportImageUrl}
+                            alt={`Passport for ${passenger.name}`}
+                            className="max-w-full h-auto rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="space-y-6">
+                <div className="p-6 bg-muted rounded-lg space-y-4">
+                  <h3 className="font-bold text-lg">Booking Summary</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Tour:</span>
+                      <span className="font-semibold">{tour.title}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Passengers:</span>
+                      <span className="font-semibold">{numPassengers}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                      <span>Total Amount:</span>
+                      <span className="text-primary">
+                        ${tour.price * numPassengers}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="payment-url">External Payment URL</Label>
+                  <Input
+                    id="payment-url"
+                    placeholder="Enter payment link (e.g., PayPal, Stripe, etc.)"
+                    value={paymentUrl}
+                    onChange={(e) => setPaymentUrl(e.target.value)}
+                    data-testid="input-payment-url"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter the URL where you completed or will complete payment
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={currentStep === 1}
+            data-testid="button-back"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+
+          {currentStep < 4 ? (
+            <Button onClick={handleNext} data-testid="button-next">
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmitBooking}
+              className="bg-destructive text-destructive-foreground"
+              data-testid="button-submit-booking"
+            >
+              Confirm Booking
+            </Button>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

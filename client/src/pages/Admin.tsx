@@ -139,11 +139,39 @@ export default function Admin() {
     setShowTourDialog(true);
   };
 
-  const handleConfirmPayment = async (paymentId: string) => {
+  const handleConfirmPayment = async (reservationId: string) => {
     try {
-      await apiRequest("PUT", `/api/payments/${paymentId}/confirm`);
+      await apiRequest("PUT", `/api/reservations/${reservationId}/status`, {
+        status: "confirmed",
+        paymentStatus: "completed",
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
-      toast({ title: "Success", description: "Payment confirmed" });
+      toast({
+        title: "Success",
+        description: "Payment confirmed successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateReservationStatus = async (
+    reservationId: string,
+    status: string
+  ) => {
+    try {
+      await apiRequest("PUT", `/api/reservations/${reservationId}/status`, {
+        status,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+      toast({
+        title: "Success",
+        description: `Reservation status updated to ${status}`,
+      });
     } catch (error: any) {
       toast({
         title: "Error",

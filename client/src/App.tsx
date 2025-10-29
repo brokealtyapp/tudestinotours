@@ -10,6 +10,8 @@ import SignIn from "@/pages/SignIn";
 import SignUp from "@/pages/SignUp";
 import Tours from "@/pages/Tours";
 import TourDetail from "@/pages/TourDetail";
+import Booking from "@/pages/Booking";
+import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 
 function Router() {
@@ -20,6 +22,8 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/tours" component={Tours} />
       <Route path="/tours/:id" component={TourDetail} />
+      <Route path="/booking/:id" component={Booking} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>

@@ -123,13 +123,15 @@ export default function TourDetail() {
                   </span>
                   <span className="text-muted-foreground">per person</span>
                 </div>
-                <Button
-                  className="w-full bg-destructive text-destructive-foreground hover-elevate active-elevate-2"
-                  size="lg"
-                  data-testid="button-book-now"
-                >
-                  Book Now
-                </Button>
+                <Link href={`/booking/${id}`}>
+                  <Button
+                    className="w-full bg-destructive text-destructive-foreground hover-elevate active-elevate-2"
+                    size="lg"
+                    data-testid="button-book-now"
+                  >
+                    Book Now
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 

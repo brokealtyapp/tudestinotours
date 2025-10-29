@@ -81,6 +81,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/objects/normalize", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.body.imageURL) {
+        return res.status(400).json({ error: "imageURL is required" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(
+        req.body.imageURL,
+      );
+      res.status(200).json({ objectPath });
+    } catch (error: any) {
+      console.error("Error normalizing object path:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
