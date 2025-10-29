@@ -20,7 +20,7 @@ export default function TourDetail() {
       <div className="min-h-screen">
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          Loading tour details...
+          Cargando detalles del tour...
         </div>
         <Footer />
       </div>
@@ -32,9 +32,9 @@ export default function TourDetail() {
       <div className="min-h-screen">
         <Header />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">Tour Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">Tour No Encontrado</h1>
           <Link href="/tours">
-            <Button>Back to Tours</Button>
+            <Button>Volver a Tours</Button>
           </Link>
         </div>
         <Footer />
@@ -49,7 +49,7 @@ export default function TourDetail() {
         <div className="mb-6">
           <Link href="/tours">
             <Button variant="outline" data-testid="button-back-to-tours">
-              ← Back to Tours
+              ← Volver a Tours
             </Button>
           </Link>
         </div>
@@ -64,7 +64,7 @@ export default function TourDetail() {
               />
             ) : (
               <div className="w-full h-96 bg-muted rounded-lg flex items-center justify-center">
-                <span className="text-muted-foreground">No image available</span>
+                <span className="text-muted-foreground">No hay imagen disponible</span>
               </div>
             )}
 
@@ -87,7 +87,7 @@ export default function TourDetail() {
                 {tour.rating || "0"}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                ({tour.reviewCount || 0} reviews)
+                ({tour.reviewCount || 0} reseñas)
               </span>
             </div>
 
@@ -102,14 +102,14 @@ export default function TourDetail() {
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
+                  <p className="text-sm text-muted-foreground">Duración</p>
                   <p className="font-semibold">{tour.duration}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Max Passengers</p>
+                  <p className="text-sm text-muted-foreground">Máx. Pasajeros</p>
                   <p className="font-semibold">{tour.maxPassengers}</p>
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function TourDetail() {
                   <span className="text-3xl font-bold text-primary">
                     ${tour.price}
                   </span>
-                  <span className="text-muted-foreground">per person</span>
+                  <span className="text-muted-foreground">por persona</span>
                 </div>
                 <Link href={`/booking/${id}`}>
                   <Button
@@ -129,14 +129,14 @@ export default function TourDetail() {
                     size="lg"
                     data-testid="button-book-now"
                   >
-                    Book Now
+                    Reservar Ahora
                   </Button>
                 </Link>
               </CardContent>
             </Card>
 
             <div>
-              <h2 className="text-2xl font-bold mb-4">Description</h2>
+              <h2 className="text-2xl font-bold mb-4">Descripción</h2>
               <p className="text-muted-foreground whitespace-pre-wrap">
                 {tour.description}
               </p>

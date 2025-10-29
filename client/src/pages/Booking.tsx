@@ -63,7 +63,7 @@ export default function Booking() {
       <div className="min-h-screen">
         <Header />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          Loading booking information...
+          Cargando información de reserva...
         </div>
         <Footer />
       </div>
@@ -75,8 +75,8 @@ export default function Booking() {
       <div className="min-h-screen">
         <Header />
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">Tour Not Found</h1>
-          <Button onClick={() => setLocation("/tours")}>Back to Tours</Button>
+          <h1 className="text-2xl font-bold mb-4">Tour No Encontrado</h1>
+          <Button onClick={() => setLocation("/tours")}>Volver a Tours</Button>
         </div>
         <Footer />
       </div>
@@ -87,7 +87,7 @@ export default function Booking() {
     if (currentStep === 1 && numPassengers < 1) {
       toast({
         title: "Error",
-        description: "Please select at least one passenger",
+        description: "Por favor selecciona al menos un pasajero",
         variant: "destructive",
       });
       return;
@@ -101,7 +101,7 @@ export default function Booking() {
       if (missingData) {
         toast({
           title: "Error",
-          description: "Please fill in all passenger information",
+          description: "Por favor completa toda la información de los pasajeros",
           variant: "destructive",
         });
         return;
@@ -113,7 +113,7 @@ export default function Booking() {
       if (missingPassports) {
         toast({
           title: "Error",
-          description: "Please upload passport images for all passengers",
+          description: "Por favor sube las imágenes de pasaporte de todos los pasajeros",
           variant: "destructive",
         });
         return;
@@ -171,13 +171,13 @@ export default function Booking() {
       handlePassengerChange(index, "passportImageUrl", normalizeResponse.objectPath);
 
       toast({
-        title: "Success",
-        description: "Passport uploaded successfully",
+        title: "Éxito",
+        description: "Pasaporte subido exitosamente",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to upload passport",
+        description: error.message || "Error al subir pasaporte",
         variant: "destructive",
       });
     }
@@ -188,7 +188,7 @@ export default function Booking() {
       if (!paymentUrl) {
         toast({
           title: "Error",
-          description: "Please provide a payment URL",
+          description: "Por favor proporciona una URL de pago",
           variant: "destructive",
         });
         return;
@@ -222,25 +222,25 @@ export default function Booking() {
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
 
       toast({
-        title: "Success",
-        description: "Booking created successfully!",
+        title: "Éxito",
+        description: "¡Reserva creada exitosamente!",
       });
 
       setLocation("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create booking",
+        description: error.message || "Error al crear la reserva",
         variant: "destructive",
       });
     }
   };
 
   const steps = [
-    { label: "Passengers", number: 1 },
-    { label: "Details", number: 2 },
-    { label: "Documents", number: 3 },
-    { label: "Payment", number: 4 },
+    { label: "Pasajeros", number: 1 },
+    { label: "Detalles", number: 2 },
+    { label: "Documentos", number: 3 },
+    { label: "Pago", number: 4 },
   ];
 
   return (
@@ -248,7 +248,7 @@ export default function Booking() {
       <Header />
       <main className="flex-1 max-w-4xl mx-auto px-4 py-16 w-full">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Book Your Tour</h1>
+          <h1 className="text-3xl font-bold mb-2">Reserva tu Tour</h1>
           <p className="text-muted-foreground">{tour.title}</p>
         </div>
 
@@ -293,7 +293,7 @@ export default function Booking() {
               <div className="space-y-6">
                 <div>
                   <Label htmlFor="num-passengers">
-                    Number of Passengers (Max: {tour.maxPassengers})
+                    Número de Pasajeros (Máx: {tour.maxPassengers})
                   </Label>
                   <Input
                     id="num-passengers"
@@ -309,11 +309,11 @@ export default function Booking() {
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                   <div className="flex justify-between mb-2">
-                    <span>Price per person:</span>
+                    <span>Precio por persona:</span>
                     <span className="font-semibold">${tour.price}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span>Number of passengers:</span>
+                    <span>Número de pasajeros:</span>
                     <span className="font-semibold">{numPassengers}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t">
@@ -331,11 +331,11 @@ export default function Booking() {
                 {passengers.map((passenger, index) => (
                   <Card key={index}>
                     <CardHeader>
-                      <CardTitle>Passenger {index + 1}</CardTitle>
+                      <CardTitle>Pasajero {index + 1}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <Label htmlFor={`name-${index}`}>Full Name</Label>
+                        <Label htmlFor={`name-${index}`}>Nombre Completo</Label>
                         <Input
                           id={`name-${index}`}
                           value={passenger.name}
@@ -348,7 +348,7 @@ export default function Booking() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor={`passport-${index}`}>
-                            Passport Number
+                            Número de Pasaporte
                           </Label>
                           <Input
                             id={`passport-${index}`}
@@ -365,7 +365,7 @@ export default function Booking() {
                         </div>
                         <div>
                           <Label htmlFor={`nationality-${index}`}>
-                            Nationality
+                            Nacionalidad
                           </Label>
                           <Input
                             id={`nationality-${index}`}
@@ -382,7 +382,7 @@ export default function Booking() {
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor={`dob-${index}`}>Date of Birth</Label>
+                        <Label htmlFor={`dob-${index}`}>Fecha de Nacimiento</Label>
                         <Input
                           id={`dob-${index}`}
                           type="date"
@@ -409,13 +409,13 @@ export default function Booking() {
                   <Card key={index}>
                     <CardHeader>
                       <CardTitle>
-                        Passport Document - {passenger.name || `Passenger ${index + 1}`}
+                        Documento de Pasaporte - {passenger.name || `Pasajero ${index + 1}`}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
                         <Label htmlFor={`passport-file-${index}`}>
-                          Upload Passport Image
+                          Subir Imagen de Pasaporte
                         </Label>
                         <Input
                           id={`passport-file-${index}`}
@@ -426,7 +426,7 @@ export default function Booking() {
                         />
                         {passenger.passportImageUrl && (
                           <p className="text-sm text-green-600 mt-2">
-                            ✓ Passport uploaded successfully
+                            ✓ Pasaporte subido exitosamente
                           </p>
                         )}
                       </div>
@@ -434,7 +434,7 @@ export default function Booking() {
                         <div className="border rounded-lg p-2">
                           <img
                             src={passenger.passportImageUrl}
-                            alt={`Passport for ${passenger.name}`}
+                            alt={`Pasaporte de ${passenger.name}`}
                             className="max-w-full h-auto rounded"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
@@ -451,18 +451,18 @@ export default function Booking() {
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="p-6 bg-muted rounded-lg space-y-4">
-                  <h3 className="font-bold text-lg">Booking Summary</h3>
+                  <h3 className="font-bold text-lg">Resumen de Reserva</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Tour:</span>
                       <span className="font-semibold">{tour.title}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Passengers:</span>
+                      <span>Pasajeros:</span>
                       <span className="font-semibold">{numPassengers}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                      <span>Total Amount:</span>
+                      <span>Monto Total:</span>
                       <span className="text-primary">
                         ${tour.price * numPassengers}
                       </span>
@@ -471,16 +471,16 @@ export default function Booking() {
                 </div>
 
                 <div>
-                  <Label htmlFor="payment-url">External Payment URL</Label>
+                  <Label htmlFor="payment-url">URL de Pago Externa</Label>
                   <Input
                     id="payment-url"
-                    placeholder="Enter payment link (e.g., PayPal, Stripe, etc.)"
+                    placeholder="Ingresa el enlace de pago (ej: PayPal, Stripe, etc.)"
                     value={paymentUrl}
                     onChange={(e) => setPaymentUrl(e.target.value)}
                     data-testid="input-payment-url"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Enter the URL where you completed or will complete payment
+                    Ingresa la URL donde completaste o completarás el pago
                   </p>
                 </div>
               </div>
@@ -496,12 +496,12 @@ export default function Booking() {
             data-testid="button-back"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Back
+            Atrás
           </Button>
 
           {currentStep < 4 ? (
             <Button onClick={handleNext} data-testid="button-next">
-              Next
+              Siguiente
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
@@ -510,7 +510,7 @@ export default function Booking() {
               className="bg-destructive text-destructive-foreground"
               data-testid="button-submit-booking"
             >
-              Confirm Booking
+              Confirmar Reserva
             </Button>
           )}
         </div>

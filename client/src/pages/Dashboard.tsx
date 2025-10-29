@@ -28,7 +28,7 @@ export default function Dashboard() {
       <div className="min-h-screen">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          Loading your bookings...
+          Cargando tus reservas...
         </div>
         <Footer />
       </div>
@@ -56,14 +56,44 @@ export default function Dashboard() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "confirmed":
+        return "Confirmada";
+      case "completed":
+        return "Completada";
+      case "cancelled":
+        return "Cancelada";
+      default:
+        return status;
+    }
+  };
+
+  const getPaymentStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "completed":
+        return "Completado";
+      case "failed":
+        return "Fallido";
+      case "refunded":
+        return "Reembolsado";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
+          <h1 className="text-3xl font-bold mb-2">Mis Reservas</h1>
           <p className="text-muted-foreground">
-            View and manage your tour reservations
+            Ve y gestiona tus reservas de tours
           </p>
         </div>
 
@@ -71,10 +101,10 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-muted-foreground mb-6">
-                You don't have any bookings yet
+                Aún no tienes ninguna reserva
               </p>
               <Link href="/tours">
-                <Button data-testid="button-browse-tours">Browse Tours</Button>
+                <Button data-testid="button-browse-tours">Explorar Tours</Button>
               </Link>
             </CardContent>
           </Card>
@@ -88,7 +118,7 @@ export default function Dashboard() {
                       {reservation.tour?.title || "Tour"}
                     </CardTitle>
                     <Badge className={getStatusColor(reservation.status)}>
-                      {reservation.status}
+                      {getStatusLabel(reservation.status)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -98,7 +128,7 @@ export default function Dashboard() {
                       <MapPin className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Location
+                          Ubicación
                         </p>
                         <p className="font-semibold">
                           {reservation.tour?.location || "N/A"}
@@ -110,10 +140,10 @@ export default function Dashboard() {
                       <Calendar className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Booking Date
+                          Fecha de Reserva
                         </p>
                         <p className="font-semibold">
-                          {new Date(reservation.createdAt).toLocaleDateString()}
+                          {new Date(reservation.createdAt).toLocaleDateString('es-ES')}
                         </p>
                       </div>
                     </div>
@@ -122,7 +152,7 @@ export default function Dashboard() {
                       <Users className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Passengers
+                          Pasajeros
                         </p>
                         <p className="font-semibold">
                           {reservation.passengers?.length || 0}
@@ -134,7 +164,7 @@ export default function Dashboard() {
                       <CreditCard className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Total Amount
+                          Monto Total
                         </p>
                         <p className="font-semibold text-primary">
                           ${reservation.totalPrice}
@@ -145,7 +175,7 @@ export default function Dashboard() {
 
                   {reservation.passengers && reservation.passengers.length > 0 && (
                     <div className="mt-6 pt-6 border-t">
-                      <h4 className="font-semibold mb-3">Passenger Details</h4>
+                      <h4 className="font-semibold mb-3">Detalles de Pasajeros</h4>
                       <div className="space-y-2">
                         {reservation.passengers.map((passenger: any, idx: number) => (
                           <div
@@ -155,7 +185,7 @@ export default function Dashboard() {
                             <div>
                               <p className="font-medium">{passenger.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                Passport: {passenger.passportNumber} |{" "}
+                                Pasaporte: {passenger.passportNumber} |{" "}
                                 {passenger.nationality}
                               </p>
                             </div>
@@ -170,10 +200,10 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">
-                            Payment Status
+                            Estado de Pago
                           </p>
-                          <p className="font-semibold capitalize">
-                            {reservation.payment.status}
+                          <p className="font-semibold">
+                            {getPaymentStatusLabel(reservation.payment.status)}
                           </p>
                         </div>
                         {reservation.payment.externalPaymentUrl && (
@@ -188,7 +218,7 @@ export default function Dashboard() {
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              View Payment
+                              Ver Pago
                             </a>
                           </Button>
                         )}

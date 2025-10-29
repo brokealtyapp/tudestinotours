@@ -23,14 +23,14 @@ export default function SignIn() {
     try {
       await login(email, password);
       toast({
-        title: "Success",
-        description: "You have successfully signed in.",
+        title: "Éxito",
+        description: "Has iniciado sesión correctamente.",
       });
       setLocation("/");
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to sign in. Please try again.",
+        description: error.message || "Error al iniciar sesión. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -47,19 +47,19 @@ export default function SignIn() {
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Iniciar Sesión</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your account
+              Ingresa tus credenciales para acceder a tu cuenta
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Correo Electrónico</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="tu@ejemplo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -68,7 +68,7 @@ export default function SignIn() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Contraseña</Label>
                 <Input
                   id="password"
                   type="password"
@@ -86,14 +86,14 @@ export default function SignIn() {
                 disabled={isLoading}
                 data-testid="button-signin"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
 
             <div className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
+              ¿No tienes una cuenta?{" "}
               <Link href="/signup" className="text-primary hover:underline" data-testid="link-signup">
-                Sign Up
+                Regístrate
               </Link>
             </div>
           </CardContent>

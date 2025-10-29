@@ -26,9 +26,9 @@ export default function Hero() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-          Your Adventure Travel
+          ¡Tus Expertos en Viajes
           <br />
-          Experts In the World!
+          de Aventura en el Mundo!
         </h1>
 
         <Card className="mt-12 p-6 max-w-4xl mx-auto bg-white/95 backdrop-blur">
@@ -36,7 +36,7 @@ export default function Hero() {
             <div className="flex items-center gap-2 p-3 border rounded-lg">
               <MapPin className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground">Destination</label>
+                <label className="text-xs text-muted-foreground">Destino</label>
                 <Input
                   type="text"
                   placeholder="Bali, Indonesia"
@@ -51,7 +51,7 @@ export default function Hero() {
             <div className="flex items-center gap-2 p-3 border rounded-lg">
               <Calendar className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground">Check-in</label>
+                <label className="text-xs text-muted-foreground">Entrada</label>
                 <Input
                   type="date"
                   value={checkIn}
@@ -65,7 +65,7 @@ export default function Hero() {
             <div className="flex items-center gap-2 p-3 border rounded-lg">
               <Calendar className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground">Check-out</label>
+                <label className="text-xs text-muted-foreground">Salida</label>
                 <Input
                   type="date"
                   value={checkOut}
@@ -79,7 +79,7 @@ export default function Hero() {
             <div className="flex items-center gap-2 p-3 border rounded-lg">
               <Users className="h-5 w-5 text-primary" />
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground">Guests</label>
+                <label className="text-xs text-muted-foreground">Huéspedes</label>
                 <Input
                   type="number"
                   value={guests}
@@ -97,7 +97,7 @@ export default function Hero() {
             data-testid="button-search"
           >
             <Search className="h-4 w-4" />
-            Search
+            Buscar
           </Button>
         </Card>
       </div>

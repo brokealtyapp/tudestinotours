@@ -26,15 +26,15 @@ export default function Tours() {
         <section className="py-16 bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold mb-4">Explore Our Tours</h1>
+              <h1 className="text-4xl font-bold mb-4">Explora Nuestros Tours</h1>
               <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-                Discover amazing destinations and unforgettable experiences around the world
+                Descubre destinos increíbles y experiencias inolvidables alrededor del mundo
               </p>
               
               <div className="flex gap-2 max-w-md mx-auto">
                 <Input
                   type="text"
-                  placeholder="Search by location..."
+                  placeholder="Buscar por ubicación..."
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -51,7 +51,7 @@ export default function Tours() {
             </div>
 
             {isLoading ? (
-              <div className="text-center py-12">Loading tours...</div>
+              <div className="text-center py-12">Cargando tours...</div>
             ) : tours && tours.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {tours.map((tour: any) => (
@@ -69,7 +69,7 @@ export default function Tours() {
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                No tours found. Try a different search.
+                No se encontraron tours. Intenta una búsqueda diferente.
               </div>
             )}
           </div>

@@ -24,7 +24,7 @@ export default function SignUp() {
     if (password !== confirmPassword) {
       toast({
         title: "Error",
-        description: "Passwords do not match.",
+        description: "Las contraseñas no coinciden.",
         variant: "destructive",
       });
       return;
@@ -35,14 +35,14 @@ export default function SignUp() {
     try {
       await register(email, password, name);
       toast({
-        title: "Success",
-        description: "Your account has been created successfully.",
+        title: "Éxito",
+        description: "Tu cuenta ha sido creada exitosamente.",
       });
       setLocation("/");
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create account. Please try again.",
+        description: error.message || "Error al crear la cuenta. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -59,19 +59,19 @@ export default function SignUp() {
 
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign Up</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Registrarse</CardTitle>
             <CardDescription className="text-center">
-              Create an account to start booking your adventures
+              Crea una cuenta para comenzar a reservar tus aventuras
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Nombre Completo</Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Juan Pérez"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -80,11 +80,11 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Correo Electrónico</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="tu@ejemplo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -93,7 +93,7 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Contraseña</Label>
                 <Input
                   id="password"
                   type="password"
@@ -106,7 +106,7 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -124,14 +124,14 @@ export default function SignUp() {
                 disabled={isLoading}
                 data-testid="button-signup"
               >
-                {isLoading ? "Creating account..." : "Sign Up"}
+                {isLoading ? "Creando cuenta..." : "Registrarse"}
               </Button>
             </form>
 
             <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
+              ¿Ya tienes una cuenta?{" "}
               <Link href="/signin" className="text-primary hover:underline" data-testid="link-signin">
-                Sign In
+                Iniciar Sesión
               </Link>
             </div>
           </CardContent>

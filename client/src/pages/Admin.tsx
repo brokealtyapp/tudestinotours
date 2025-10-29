@@ -46,7 +46,7 @@ export default function Admin() {
   if (isLoading || (!user || !isAdmin)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>{isLoading ? "Loading..." : "Redirecting..."}</p>
+        <p>{isLoading ? "Cargando..." : "Redirigiendo..."}</p>
       </div>
     );
   }
@@ -62,8 +62,8 @@ export default function Admin() {
         }));
         input.value = "";
         toast({
-          title: "Success",
-          description: "Image URL added successfully",
+          title: "Éxito",
+          description: "URL de imagen agregada exitosamente",
         });
       }
     }
@@ -79,10 +79,10 @@ export default function Admin() {
 
       if (editingTour) {
         await apiRequest("PUT", `/api/tours/${editingTour.id}`, tourData);
-        toast({ title: "Success", description: "Tour updated successfully" });
+        toast({ title: "Éxito", description: "Tour actualizado exitosamente" });
       } else {
         await apiRequest("POST", "/api/tours", tourData);
-        toast({ title: "Success", description: "Tour created successfully" });
+        toast({ title: "Éxito", description: "Tour creado exitosamente" });
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
@@ -98,11 +98,11 @@ export default function Admin() {
   };
 
   const handleDeleteTour = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this tour?")) return;
+    if (!confirm("¿Estás seguro de que quieres eliminar este tour?")) return;
     try {
       await apiRequest("DELETE", `/api/tours/${id}`);
       queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
-      toast({ title: "Success", description: "Tour deleted successfully" });
+      toast({ title: "Éxito", description: "Tour eliminado exitosamente" });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -147,8 +147,8 @@ export default function Admin() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
       toast({
-        title: "Success",
-        description: "Payment confirmed successfully",
+        title: "Éxito",
+        description: "Pago confirmado exitosamente",
       });
     } catch (error: any) {
       toast({
@@ -169,8 +169,8 @@ export default function Admin() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
       toast({
-        title: "Success",
-        description: `Reservation status updated to ${status}`,
+        title: "Éxito",
+        description: `Estado de reserva actualizado a ${status}`,
       });
     } catch (error: any) {
       toast({
@@ -181,21 +181,51 @@ export default function Admin() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "confirmed":
+        return "Confirmada";
+      case "completed":
+        return "Completada";
+      case "cancelled":
+        return "Cancelada";
+      default:
+        return status;
+    }
+  };
+
+  const getPaymentStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "completed":
+        return "Completado";
+      case "failed":
+        return "Fallido";
+      case "refunded":
+        return "Reembolsado";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+        <h1 className="text-4xl font-bold mb-8">Panel de Administración</h1>
 
         <Tabs defaultValue="tours" className="space-y-6">
           <TabsList>
             <TabsTrigger value="tours">Tours</TabsTrigger>
-            <TabsTrigger value="reservations">Reservations</TabsTrigger>
+            <TabsTrigger value="reservations">Reservas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="tours">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Tour Management</CardTitle>
+                <CardTitle>Gestión de Tours</CardTitle>
                 <Button
                   onClick={() => {
                     resetTourForm();
@@ -204,7 +234,7 @@ export default function Admin() {
                   data-testid="button-add-tour"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Tour
+                  Agregar Tour
                 </Button>
               </CardHeader>
               <CardContent>
@@ -248,7 +278,7 @@ export default function Admin() {
           <TabsContent value="reservations">
             <Card>
               <CardHeader>
-                <CardTitle>Reservation Management</CardTitle>
+                <CardTitle>Gestión de Reservas</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -260,9 +290,9 @@ export default function Admin() {
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold">Reservation #{reservation.id.slice(0, 8)}</p>
+                          <p className="font-semibold">Reserva #{reservation.id.slice(0, 8)}</p>
                           <p className="text-sm text-muted-foreground">
-                            Status: {reservation.status} | Payment: {reservation.paymentStatus}
+                            Estado: {getStatusLabel(reservation.status)} | Pago: {getPaymentStatusLabel(reservation.paymentStatus)}
                           </p>
                           <p className="text-sm">Total: ${reservation.totalPrice}</p>
                         </div>
@@ -273,7 +303,7 @@ export default function Admin() {
                             data-testid={`button-confirm-payment-${reservation.id}`}
                           >
                             <Check className="h-4 w-4 mr-2" />
-                            Confirm Payment
+                            Confirmar Pago
                           </Button>
                         )}
                       </div>
@@ -288,11 +318,11 @@ export default function Admin() {
         <Dialog open={showTourDialog} onOpenChange={setShowTourDialog}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingTour ? "Edit Tour" : "Create New Tour"}</DialogTitle>
+              <DialogTitle>{editingTour ? "Editar Tour" : "Crear Nuevo Tour"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Title</Label>
+                <Label>Título</Label>
                 <Input
                   value={tourForm.title}
                   onChange={(e) => setTourForm(prev => ({ ...prev, title: e.target.value }))}
@@ -300,7 +330,7 @@ export default function Admin() {
                 />
               </div>
               <div>
-                <Label>Description</Label>
+                <Label>Descripción</Label>
                 <Textarea
                   value={tourForm.description}
                   onChange={(e) => setTourForm(prev => ({ ...prev, description: e.target.value }))}
@@ -309,7 +339,7 @@ export default function Admin() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Location</Label>
+                  <Label>Ubicación</Label>
                   <Input
                     value={tourForm.location}
                     onChange={(e) => setTourForm(prev => ({ ...prev, location: e.target.value }))}
@@ -317,7 +347,7 @@ export default function Admin() {
                   />
                 </div>
                 <div>
-                  <Label>Price</Label>
+                  <Label>Precio</Label>
                   <Input
                     type="number"
                     value={tourForm.price}
@@ -328,16 +358,16 @@ export default function Admin() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Duration</Label>
+                  <Label>Duración</Label>
                   <Input
                     value={tourForm.duration}
                     onChange={(e) => setTourForm(prev => ({ ...prev, duration: e.target.value }))}
-                    placeholder="e.g., 3 days"
+                    placeholder="ej: 3 días"
                     data-testid="input-tour-duration"
                   />
                 </div>
                 <div>
-                  <Label>Max Passengers</Label>
+                  <Label>Máx. Pasajeros</Label>
                   <Input
                     type="number"
                     value={tourForm.maxPassengers}
@@ -347,16 +377,16 @@ export default function Admin() {
                 </div>
               </div>
               <div>
-                <Label>Images (Enter image URLs)</Label>
+                <Label>Imágenes (Ingresa URLs de imágenes)</Label>
                 <Input
-                  placeholder="Paste image URL and press Enter"
+                  placeholder="Pega la URL de la imagen y presiona Enter"
                   onKeyDown={handleImageUrlAdd}
                   data-testid="input-tour-image-url"
                 />
                 {tourForm.images.length > 0 && (
                   <div className="mt-2">
                     <p className="text-sm text-muted-foreground mb-2">
-                      {tourForm.images.length} image(s) added:
+                      {tourForm.images.length} imagen(es) agregada(s):
                     </p>
                     <div className="space-y-1">
                       {tourForm.images.map((img, idx) => (
@@ -384,10 +414,10 @@ export default function Admin() {
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setShowTourDialog(false)}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button onClick={handleSaveTour} data-testid="button-save-tour">
-                  {editingTour ? "Update" : "Create"}
+                  {editingTour ? "Actualizar" : "Crear"}
                 </Button>
               </div>
             </div>

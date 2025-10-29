@@ -33,16 +33,16 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-home">
-              Home
+              Inicio
             </Link>
             <Link href="/tours" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-tours">
               Tours
             </Link>
             <Link href="/explore" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-explore">
-              Explore
+              Explorar
             </Link>
             <Link href="/activity" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-activity">
-              Activity
+              Actividades
             </Link>
           </nav>
 
@@ -56,27 +56,27 @@ export default function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href={isAdmin ? "/admin" : "/dashboard"} data-testid="link-dashboard">
-                      {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+                      {isAdmin ? "Panel de Administración" : "Mi Panel"}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Logout
+                    Cerrar Sesión
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <>
                 <Button variant="ghost" asChild data-testid="button-signin">
-                  <Link href="/signin">Sign In</Link>
+                  <Link href="/signin">Iniciar Sesión</Link>
                 </Button>
                 <Button className="bg-primary text-primary-foreground hover-elevate active-elevate-2" asChild data-testid="button-signup">
-                  <Link href="/signup">Sign Up</Link>
+                  <Link href="/signup">Registrarse</Link>
                 </Button>
               </>
             )}
@@ -98,35 +98,35 @@ export default function Header() {
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
             <Link href="/" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-home">
-              Home
+              Inicio
             </Link>
             <Link href="/tours" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-tours">
               Tours
             </Link>
             <Link href="/explore" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-explore">
-              Explore
+              Explorar
             </Link>
             <Link href="/activity" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-activity">
-              Activity
+              Actividades
             </Link>
             <div className="flex flex-col gap-2 mt-4">
               {user ? (
                 <>
                   <Link href={isAdmin ? "/admin" : "/dashboard"} className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-dashboard">
-                    {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+                    {isAdmin ? "Panel de Administración" : "Mi Panel"}
                   </Link>
                   <Button variant="ghost" onClick={handleLogout} data-testid="button-mobile-logout">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Logout
+                    Cerrar Sesión
                   </Button>
                 </>
               ) : (
                 <>
                   <Button variant="ghost" asChild data-testid="button-mobile-signin">
-                    <Link href="/signin">Sign In</Link>
+                    <Link href="/signin">Iniciar Sesión</Link>
                   </Button>
                   <Button className="bg-primary text-primary-foreground" asChild data-testid="button-mobile-signup">
-                    <Link href="/signup">Sign Up</Link>
+                    <Link href="/signup">Registrarse</Link>
                   </Button>
                 </>
               )}
