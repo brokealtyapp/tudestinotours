@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Globe, Mail } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
 import { useState } from "react";
-import logo from "@assets/logo tu destino tours_1761750190712.png";
+import logo from "@assets/logo tu destino tours horizontal_1761754020215.png";
 
 export default function Footer() {
   const [email, setEmail] = useState("");

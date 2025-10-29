@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@assets/logo tu destino tours_1761750190712.png";
+import logo from "@assets/logo tu destino tours horizontal_1761754020215.png";
 
 export default function SignUp() {
   const [name, setName] = useState("");
