@@ -6,12 +6,11 @@ import tour2 from "@assets/generated_images/Romantic_beach_couple_walking_7c537b
 import tour3 from "@assets/generated_images/Cruise_ship_in_fjord_448b7050.png";
 import tour4 from "@assets/generated_images/Historic_ship_at_dock_61dab35e.png";
 
-//todo: remove mock functionality
 const tours = [
   {
     id: 1,
     image: tour1,
-    title: "Molokini and Turtle Town Snorkeling Adventure Aboard",
+    title: "Aventura de Snorkel en Molokini y Turtle Town a Bordo",
     location: "Bali, Indonesia",
     rating: 4.8,
     reviews: "1.4k",
@@ -21,8 +20,8 @@ const tours = [
   {
     id: 2,
     image: tour2,
-    title: "All Inclusive Ultimate Circle Island Day Tour with Lunch",
-    location: "Ontario, Canada",
+    title: "Tour Todo Incluido del Círculo de la Isla con Almuerzo",
+    location: "Ontario, Canadá",
     rating: 4.8,
     reviews: "1.4k",
     price: 154,
@@ -31,8 +30,8 @@ const tours = [
   {
     id: 3,
     image: tour3,
-    title: "Inside Park Bike Tour and Space Center Houston Admission",
-    location: "Venice, Italy",
+    title: "Tour en Bicicleta por el Parque y Admisión al Centro Espacial",
+    location: "Venecia, Italia",
     rating: 4.8,
     reviews: "1.4k",
     price: 169,
@@ -41,7 +40,7 @@ const tours = [
   {
     id: 4,
     image: tour4,
-    title: "Westminster Walking Tour & Westminster Abbey Entry",
+    title: "Tour a Pie por Westminster y Entrada a la Abadía",
     location: "Nevada, USA",
     rating: 4.8,
     reviews: "1.4k",
@@ -55,7 +54,7 @@ export default function PopularTours() {
     <section className="py-16 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold">Most Popular in 2023</h2>
+          <h2 className="text-3xl font-bold">Los Más Populares en 2023</h2>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -79,7 +78,7 @@ export default function PopularTours() {
         </div>
 
         <p className="text-muted-foreground mb-8 max-w-2xl">
-          Let's spend your money and relieve your stress by going around the island of Bali.
+          Gasta tu dinero y alivia tu estrés dando la vuelta a la isla de Bali.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

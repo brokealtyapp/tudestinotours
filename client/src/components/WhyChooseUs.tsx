@@ -3,46 +3,45 @@ import { Badge } from "@/components/ui/badge";
 import { Bike, Waves, Mountain } from "lucide-react";
 import heroImage from "@assets/generated_images/Mountain_castle_dramatic_view_e1ca76a2.png";
 
-//todo: remove mock functionality
 const testimonials = [
   {
     id: 1,
     name: "Ronald Richards",
     rating: 4.8,
-    text: "Sed perspiciatis unde omnis iste natus voluptatem.",
-    role: "Host Fideler",
+    text: "Una experiencia increíble que superó todas mis expectativas.",
+    role: "Anfitrión Fideler",
   },
   {
     id: 2,
     name: "Neri Helder",
     rating: 4.7,
-    text: "Sed perspiciatis unde omnis iste natus voluptatem.",
-    role: "Host Fideler",
+    text: "Servicio excepcional y atención al detalle impecable.",
+    role: "Anfitrión Fideler",
   },
   {
     id: 3,
     name: "Ronald Richards",
     rating: 4.8,
-    text: "Sed perspiciatis unde omnis iste natus voluptatem.",
-    role: "Host Fideler",
+    text: "Definitivamente lo recomendaría a todos mis amigos.",
+    role: "Anfitrión Fideler",
   },
 ];
 
 const features = [
   {
     icon: Mountain,
-    title: "Mountain Hiking",
-    description: "Sed perspiciatis unde omnis iste natus voluptatem totam aperiae.",
+    title: "Senderismo en Montaña",
+    description: "Disfruta de caminatas guiadas por paisajes montañosos espectaculares.",
   },
   {
     icon: Bike,
-    title: "Mountain Biking",
-    description: "At vero accusamus dignissimos ducimus blanditiis deleniti atque quos.",
+    title: "Ciclismo de Montaña",
+    description: "Rutas emocionantes en bicicleta por terrenos desafiantes y hermosos.",
   },
   {
     icon: Waves,
-    title: "Swimming & Fishing",
-    description: "Quis autem vel eum iure voluptate velit esse nihile consequatur.",
+    title: "Natación y Pesca",
+    description: "Experiencias acuáticas inolvidables en aguas cristalinas.",
   },
 ];
 
@@ -54,7 +53,7 @@ export default function WhyChooseUs() {
           <div className="relative">
             <img
               src={heroImage}
-              alt="Mountain landscape with testimonials"
+              alt="Paisaje montañoso con testimonios"
               className="rounded-lg w-full h-[500px] object-cover"
             />
             <div className="absolute top-4 left-4 bg-white rounded-lg p-3 flex items-center gap-3 shadow-lg">
@@ -98,11 +97,11 @@ export default function WhyChooseUs() {
           </div>
 
           <div>
-            <p className="text-destructive font-semibold mb-2">Why choose us</p>
+            <p className="text-destructive font-semibold mb-2">¿Por qué elegirnos?</p>
             <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-              Great Opportunity for
+              Gran Oportunidad para
               <br />
-              Adventures and Travels
+              Aventuras y Viajes
             </h2>
 
             <div className="space-y-6">

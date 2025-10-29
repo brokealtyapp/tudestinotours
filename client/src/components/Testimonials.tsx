@@ -2,22 +2,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 
-//todo: remove mock functionality
 const testimonials = [
   {
     id: 1,
     name: "Mark Smith",
     company: "Google Inc.",
     rating: 5,
-    text: "When, while lovely valley teems with vapour around meand meridian sun strikes the upper impenetrable .",
+    text: "Una experiencia maravillosa, el valle encantador lleno de vapor alrededor y el sol meridiano golpea la parte superior impenetrable.",
     avatar: "",
   },
   {
     id: 2,
     name: "Charles Patterson",
-    company: "Service Technician",
+    company: "Técnico de Servicio",
     rating: 5,
-    text: "When, while lovely valley teems with vapour around meand meridian sun strikes the upper impenetrable .",
+    text: "Servicio excepcional, el valle encantador lleno de vapor alrededor y el sol meridiano golpea la parte superior impenetrable.",
     avatar: "",
   },
 ];
@@ -28,13 +27,13 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div>
-            <p className="text-destructive font-semibold mb-2">Testimonial</p>
+            <p className="text-destructive font-semibold mb-2">Testimonios</p>
             <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-              Don'T Believe Me
+              No Me Creas a Mí
               <br />
-              Check What Client
+              Mira Lo Que Dicen
               <br />
-              Think Of Us
+              Nuestros Clientes
             </h2>
             <div className="flex gap-4 items-center">
               <Button
@@ -56,7 +55,7 @@ export default function Testimonials() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground">
-                There are many variations
+                Hay muchas variaciones
               </span>
             </div>
           </div>
