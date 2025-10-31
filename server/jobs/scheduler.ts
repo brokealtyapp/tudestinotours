@@ -48,13 +48,17 @@ async function processPaymentReminders() {
             return false; // Already sent this or later threshold
           }
           
-          // Check if we're within the configured send time window (1 hour tolerance)
+          // Check if we're within the configured send time window (60 minutes tolerance)
           const [ruleHour, ruleMinute] = rule.sendTime.split(':').map(Number);
-          const hourDiff = Math.abs(currentHour - ruleHour);
           
-          // Only send if we're within 1 hour of the configured time
+          // Calculate absolute difference in minutes
+          const currentTotalMinutes = currentHour * 60 + currentMinute;
+          const ruleTotalMinutes = ruleHour * 60 + ruleMinute;
+          const minutesDiff = Math.abs(currentTotalMinutes - ruleTotalMinutes);
+          
+          // Only send if we're within 60 minutes of the configured time
           // This prevents sending multiple times per day
-          if (hourDiff > 1) {
+          if (minutesDiff > 60) {
             return false;
           }
           
