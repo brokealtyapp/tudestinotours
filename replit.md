@@ -4,18 +4,22 @@
 Tu Destino Tours is a web platform for commercializing and managing tour reservations. It features a modern blue, red, and white branding with distinct Administrator and Client user profiles. The platform provides a complete booking system with **specific departure management**, reservation management, automated payment schedules, and PDF document generation (invoices and itineraries). Its core purpose is to streamline tour sales and management, offering a comprehensive solution for both customers and administrators.
 
 ## Recent Changes
-- **2024-10-31**: Implemented Departures System (FASE 2A-2B completed)
-  - Created `departures` table with full schema: tourId, departureDate, returnDate, totalSeats, reservedSeats, price, supplements (JSONB), cancellationPolicyOverride, paymentDeadlineDays, status
-  - Added `departureId` (nullable) field to `reservations` table for backwards compatibility
-  - Implemented 6 storage methods: getDepartures, getDeparture, createDeparture, updateDeparture, deleteDeparture, updateDepartureSeats
-  - Created complete REST API with validations:
+- **2024-10-31**: Implemented Departures System (FASE 2A-2B-2C completed)
+  - **FASE 2A - Database Schema**: Created `departures` table with full schema: tourId, departureDate, returnDate, totalSeats, reservedSeats, price, supplements (JSONB), cancellationPolicyOverride, paymentDeadlineDays, status. Added `departureId` (nullable) to `reservations` table.
+  - **FASE 2B - Backend API**: Implemented 6 storage methods and complete REST API with validations:
     - GET /api/departures (list with optional tourId filter)
     - GET /api/departures/:id (detail)
     - POST /api/departures (create with validations: future dates, seats > 0)
     - PUT /api/departures/:id (update with capacity validation)
     - DELETE /api/departures/:id (prevent deletion if has reservations)
     - POST /api/departures/:id/duplicate (duplicate to multiple dates)
-  - All routes protected with admin authentication except GET endpoints
+  - **FASE 2C - Admin UI**: Created complete departures management interface:
+    - New "Salidas" tab in admin panel with filters (tour, status)
+    - Comprehensive table with columns: Tour, Departure/Return dates, Seats (with progress bar), Occupation %, Price, Status, Actions
+    - Create/Edit dialog with full form: tour selection, date pickers, seats/price/payment deadline inputs, supplements (JSON), cancellation policy override
+    - Duplicate dialog for bulk creation to multiple dates
+    - Real-time seat tracking visualization with color-coded occupation percentage
+    - Full CRUD operations with proper validations and user feedback
 
 ## User Preferences
 None documented yet.
