@@ -21,6 +21,7 @@ import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
+import { generateInvoicePDF, generateItineraryPDF } from "./services/pdfService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Object storage routes
@@ -563,6 +564,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(config);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // PDF Generation routes
+  app.get("/api/reservations/:id/invoice", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const reservation = await storage.getReservationById(req.params.id);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Check authorization: admin can view all, clients can only view their own
+      if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
+        return res.status(403).json({ error: "No autorizado para ver esta factura" });
+      }
+
+      const tour = await storage.getTourById(reservation.tourId);
+      if (!tour) {
+        return res.status(404).json({ error: "Tour no encontrado" });
+      }
+
+      const passengers = await storage.getPassengersByReservationId(req.params.id);
+      const installments = await storage.getPaymentInstallmentsByReservationId(req.params.id);
+      const user = await storage.getUserById(reservation.userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      const pdfBuffer = await generateInvoicePDF({
+        reservation,
+        tour,
+        passengers,
+        installments,
+        user,
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="factura-${reservation.id}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generando factura PDF:", error);
+      res.status(500).json({ error: "Error generando factura" });
+    }
+  });
+
+  app.get("/api/reservations/:id/itinerary", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const reservation = await storage.getReservationById(req.params.id);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Check authorization: admin can view all, clients can only view their own
+      if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
+        return res.status(403).json({ error: "No autorizado para ver este itinerario" });
+      }
+
+      // Only generate itinerary for confirmed reservations
+      if (reservation.status !== "confirmed" && reservation.status !== "completed") {
+        return res.status(400).json({ error: "El itinerario solo está disponible para reservas confirmadas" });
+      }
+
+      const tour = await storage.getTourById(reservation.tourId);
+      if (!tour) {
+        return res.status(404).json({ error: "Tour no encontrado" });
+      }
+
+      const passengers = await storage.getPassengersByReservationId(req.params.id);
+      const user = await storage.getUserById(reservation.userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      const pdfBuffer = await generateItineraryPDF({
+        reservation,
+        tour,
+        passengers,
+        user,
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="itinerario-${tour.title.replace(/\s+/g, '-')}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generando itinerario PDF:", error);
+      res.status(500).json({ error: "Error generando itinerario" });
     }
   });
 
