@@ -280,10 +280,17 @@ export default function Booking() {
       const reservationData = {
         tourId,
         departureId: selectedDepartureId,
-        userId: user?.id,
+        userId: user?.id || null,
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        reservationDate: new Date().toISOString(),
+        departureDate: selectedDeparture.departureDate,
         numberOfPassengers: numPassengers,
         totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
         status: "pending",
+        paymentStatus: "pending",
+        paymentLink: paymentUrl,
       };
 
       const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);

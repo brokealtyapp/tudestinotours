@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import {
@@ -57,7 +57,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/objects/upload", authenticateToken, async (req: AuthRequest, res) => {
+  // Allow unauthenticated uploads for anonymous bookings
+  app.post("/api/objects/upload", async (req: Request, res: Response) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -84,7 +85,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/objects/normalize", authenticateToken, async (req: AuthRequest, res) => {
+  // Allow unauthenticated normalization for anonymous bookings
+  app.post("/api/objects/normalize", async (req: Request, res: Response) => {
     try {
       if (!req.body.imageURL) {
         return res.status(400).json({ error: "imageURL es requerido" });
@@ -551,15 +553,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reservations", authenticateToken, async (req: AuthRequest, res) => {
+  app.post("/api/reservations", async (req: Request, res: Response) => {
     try {
       const { emailService } = await import("./services/emailService");
       
-      // Validate basic reservation data
-      const validatedData = insertReservationSchema.parse({
-        ...req.body,
-        userId: req.user!.userId,
-      });
+      // Validate basic reservation data (userId is now optional for anonymous bookings)
+      const validatedData = insertReservationSchema.parse(req.body);
 
       // Require departureId
       if (!validatedData.departureId) {
@@ -618,27 +617,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createTimelineEvent({
         reservationId: reservation.id,
         eventType: "reservation_created",
-        description: `Reserva creada por ${req.user!.role === 'admin' ? 'administrador' : 'cliente'}`,
-        performedBy: req.user!.userId,
+        description: validatedData.userId 
+          ? `Reserva creada por cliente autenticado`
+          : `Reserva creada de forma anónima`,
+        performedBy: validatedData.userId || null,
         metadata: JSON.stringify({ 
           tourTitle: tour.title,
           departureDate: departure.departureDate.toISOString(),
           passengers: validatedData.numberOfPassengers,
           totalPrice: totalPrice,
+          buyerEmail: validatedData.buyerEmail,
         }),
       });
 
-      // Get user for email
-      const user = await storage.getUser(req.user!.userId);
+      // Get user for email (if authenticated)
+      const user = validatedData.userId ? await storage.getUser(validatedData.userId) : null;
       
       // Get passengers for email
       const passengers = await storage.getPassengersByReservation(reservation.id);
 
-      // Send confirmation email
-      if (user) {
-        emailService.sendReservationConfirmation(user, reservation, tour, passengers)
-          .catch(error => console.error("Error enviando email de confirmación:", error));
-      }
+      // Send confirmation email (using buyer email for anonymous reservations)
+      const emailRecipient: any = user || {
+        email: validatedData.buyerEmail,
+        name: validatedData.buyerName,
+      };
+      
+      emailService.sendReservationConfirmation(emailRecipient, reservation, tour, passengers)
+        .catch(error => console.error("Error enviando email de confirmación:", error));
 
       res.status(201).json(reservation);
     } catch (error: any) {
