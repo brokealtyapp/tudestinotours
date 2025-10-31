@@ -56,7 +56,8 @@ export default function Booking() {
   const { data: departures, isLoading: departuresLoading } = useQuery<Departure[]>({
     queryKey: ["/api/departures", tourId],
     queryFn: async () => {
-      const allDepartures = await apiRequest("GET", "/api/departures") as Departure[];
+      const response = await apiRequest("GET", "/api/departures");
+      const allDepartures = await response.json() as Departure[];
       return allDepartures
         .filter(d => d.tourId === tourId && d.status === "active")
         .filter(d => new Date(d.departureDate) > new Date())
