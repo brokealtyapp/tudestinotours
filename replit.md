@@ -49,10 +49,19 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
     - Invoices: Detailed financial summaries including payment schedules.
     - Itineraries: Comprehensive travel information, passenger details, tour descriptions, and important notes.
     - Role-based access for document downloads.
+- **Timeline Visual de Eventos**:
+    - Tracking comprehensivo del ciclo de vida de cada reserva.
+    - Registro automático de eventos críticos: creación de reserva, cambios de estado, cambios en estado de pago, creación y pago de cuotas.
+    - Visualización cronológica con íconos diferenciados por tipo de evento.
+    - Fechas relativas en español (hace X horas/días/semanas).
+    - Metadata enriquecida con información del usuario que ejecutó la acción.
+    - Visible para admins (en diálogo de gestión de cuotas) y clientes (en detalle de reserva).
+    - Tabla `reservation_timeline_events` con campos: eventType, description, performedBy, metadata (JSONB).
 
 ### System Design Choices
 - **Modular Architecture**: Clear separation between frontend and backend, with distinct services for email, PDF, and object storage.
-- **Database Schema**: Extensively designed with tables for users, tours, reservations, passengers, payments, payment installments, system configurations, and notification logging. Key relationships established for data integrity.
+- **Database Schema**: Extensively designed with tables for users, tours, reservations, passengers, payments, payment installments, system configurations, notification logging, and timeline events. Key relationships established for data integrity.
+- **Event-Driven Tracking**: Sistema de eventos automático que registra todas las acciones importantes en el ciclo de vida de reservas, proporcionando auditoría completa y visibilidad para usuarios y administradores.
 - **Error Handling**: Comprehensive error messages for both frontend and backend, fully localized in Spanish.
 
 ## External Dependencies
