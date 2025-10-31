@@ -1,7 +1,6 @@
 import {
   BarChart3,
   Calendar,
-  FileText,
   Home,
   Map,
   Settings,
@@ -22,6 +21,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import logoUrl from "@assets/logo tu destino tours horizontal_1761754020215.png";
 
 interface AdminSidebarProps {
   activeSection: string;
