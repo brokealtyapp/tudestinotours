@@ -15,6 +15,7 @@ import {
   insertReservationSchema,
   insertPassengerSchema,
   insertPaymentSchema,
+  insertPaymentInstallmentSchema,
 } from "@shared/schema";
 import {
   ObjectStorageService,
@@ -453,6 +454,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Pago no encontrado" });
       }
       res.json(payment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Payment Installments routes
+  app.get("/api/reservations/:reservationId/installments", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      // Verify the user has access to this reservation
+      const reservation = await storage.getReservation(req.params.reservationId);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
+        return res.status(403).json({ error: "Acceso denegado" });
+      }
+
+      const installments = await storage.getPaymentInstallments(req.params.reservationId);
+      res.json(installments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reservations/:reservationId/installments", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const reservation = await storage.getReservation(req.params.reservationId);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      const validatedData = insertPaymentInstallmentSchema.parse({
+        ...req.body,
+        reservationId: req.params.reservationId,
+      });
+
+      const installment = await storage.createPaymentInstallment(validatedData);
+      res.status(201).json(installment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/installments/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const installment = await storage.updatePaymentInstallment(req.params.id, req.body);
+      if (!installment) {
+        return res.status(404).json({ error: "Cuota no encontrada" });
+      }
+      res.json(installment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/installments/:id/pay", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const installment = await storage.markInstallmentAsPaid(req.params.id, req.user!.userId);
+      if (!installment) {
+        return res.status(404).json({ error: "Cuota no encontrada" });
+      }
+      res.json(installment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/installments/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.deletePaymentInstallment(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // System Configuration routes
+  app.get("/api/config", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const configs = await storage.getAllSystemConfigs();
+      res.json(configs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/config/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const config = await storage.getSystemConfig(req.params.key);
+      if (!config) {
+        return res.status(404).json({ error: "Configuración no encontrada" });
+      }
+      res.json(config);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/config", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { key, value, description } = req.body;
+      if (!key || !value) {
+        return res.status(400).json({ error: "key y value son requeridos" });
+      }
+      const config = await storage.setSystemConfig(key, value, description);
+      res.json(config);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
