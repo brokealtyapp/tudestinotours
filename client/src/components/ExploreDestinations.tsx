@@ -1,14 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import TourCard from "./TourCard";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import tour1 from "@assets/generated_images/Mountain_castle_dramatic_view_e1ca76a2.png";
-import tour2 from "@assets/generated_images/Cruise_ship_in_fjord_448b7050.png";
-import tour3 from "@assets/generated_images/Historic_ship_at_dock_61dab35e.png";
-import tour4 from "@assets/generated_images/Aerial_tropical_island_view_e3f7dcd3.png";
-import tour5 from "@assets/generated_images/Sandbar_between_tropical_islands_9f61d263.png";
-import tour6 from "@assets/generated_images/Thailand_beach_with_boat_0d72543f.png";
+import { useLocation } from "wouter";
 
 const categories = [
   "Destino Popular",
@@ -20,65 +15,25 @@ const categories = [
   "Camping",
 ];
 
-const destinations = [
-  {
-    id: 1,
-    image: tour1,
-    title: "Castillo de Sorrento",
-    location: "Amalfi, Italia",
-    rating: 4.8,
-    reviews: "1.4k",
-    price: 187,
-  },
-  {
-    id: 2,
-    image: tour2,
-    title: "Cabo Reinga",
-    location: "Northland, Nueva Zelanda",
-    rating: 4.7,
-    reviews: "1.2k",
-    price: 154,
-  },
-  {
-    id: 3,
-    image: tour3,
-    title: "Castillo de Osaka",
-    location: "Osaka, Japón",
-    rating: 4.9,
-    reviews: "2.1k",
-    price: 169,
-  },
-  {
-    id: 4,
-    image: tour4,
-    title: "Costa de Amalfi",
-    location: "Amalfi, Italia",
-    rating: 4.9,
-    reviews: "1.8k",
-    price: 149,
-  },
-  {
-    id: 5,
-    image: tour5,
-    title: "Tanah Gajah",
-    location: "Bali, Indonesia",
-    rating: 4.9,
-    reviews: "3.2k",
-    price: 138,
-  },
-  {
-    id: 6,
-    image: tour6,
-    title: "Taj Mahal",
-    location: "Agra, India",
-    rating: 4.8,
-    reviews: "2.5k",
-    price: 120,
-  },
-];
-
 export default function ExploreDestinations() {
+  const [, setLocation] = useLocation();
   const [activeCategory, setActiveCategory] = useState("Destino Popular");
+
+  const { data: tours, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/tours"],
+  });
+
+  const displayedTours = tours?.slice(0, 6) || [];
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">Cargando tours...</div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-muted/30">
@@ -112,8 +67,17 @@ export default function ExploreDestinations() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {destinations.map((destination) => (
-            <TourCard key={destination.id} {...destination} />
+          {displayedTours.map((tour: any) => (
+            <TourCard
+              key={tour.id}
+              id={tour.id}
+              image={tour.images?.[0] || "/placeholder-tour.jpg"}
+              title={tour.title}
+              location={tour.location}
+              rating={parseFloat(tour.rating || "0")}
+              reviews={tour.reviewCount?.toString() || "0"}
+              price={parseFloat(tour.price)}
+            />
           ))}
         </div>
 
@@ -121,6 +85,7 @@ export default function ExploreDestinations() {
           <Button 
             variant="outline" 
             className="hover-elevate"
+            onClick={() => setLocation("/tours")}
             data-testid="button-show-more"
           >
             Mostrar Más
