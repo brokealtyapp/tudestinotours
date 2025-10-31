@@ -62,7 +62,7 @@ export default function DeparturesManagement() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [editingDeparture, setEditingDeparture] = useState<Departure | null>(null);
   const [duplicatingDeparture, setDuplicatingDeparture] = useState<Departure | null>(null);
-  const [filterTourId, setFilterTourId] = useState<string>("");
+  const [filterTourId, setFilterTourId] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   
   const [departureForm, setDepartureForm] = useState({
@@ -85,7 +85,7 @@ export default function DeparturesManagement() {
   });
 
   const departures = allDepartures?.filter(d => {
-    if (filterTourId && d.tourId !== filterTourId) return false;
+    if (filterTourId !== "all" && d.tourId !== filterTourId) return false;
     if (filterStatus !== "all" && d.status !== filterStatus) return false;
     return true;
   });
@@ -335,7 +335,7 @@ export default function DeparturesManagement() {
                 <SelectValue placeholder="Todos los tours" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los tours</SelectItem>
+                <SelectItem value="all">Todos los tours</SelectItem>
                 {tours?.map((tour) => (
                   <SelectItem key={tour.id} value={tour.id}>
                     {tour.title}
