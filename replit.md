@@ -4,6 +4,19 @@
 Tu Destino Tours is a web platform for commercializing and managing tour reservations. It features a modern blue, red, and white branding with distinct Administrator and Client user profiles. The platform provides a complete booking system with **specific departure management**, reservation management, automated payment schedules, and PDF document generation (invoices and itineraries). Its core purpose is to streamline tour sales and management, offering a comprehensive solution for both customers and administrators.
 
 ## Recent Changes
+- **2024-10-31 (Latest)**: Implemented Reports and Analytics System (FASE 4 completed)
+  - **Backend - Storage & Routes**: Created 3 storage methods and REST endpoints:
+    - GET /api/reports/sales (filtros: startDate, endDate, tourId?, departureId?)
+    - GET /api/reports/occupation (filtros: tourId?)
+    - GET /api/reports/aging (sin filtros)
+  - **Frontend - Reports Component**: Tab "Reportes" en Admin con 3 sub-tabs:
+    - **Tab Ventas**: 3 KPI cards (Ingreso Total, Reservas, Ticket Promedio), tabla por tour con exportación CSV, gráfico de líneas mensual con Recharts
+    - **Tab Ocupación**: Tabla de salidas con % ocupación y semáforo de colores (verde >70%, amarillo 40-70%, rojo <40%), gráfico de barras horizontales, exportación CSV
+    - **Tab Cuentas por Cobrar**: 4 cards de aging buckets (0-7, 8-14, 15-30, >30 días), tabla de reservas pendientes ordenada por días vencidos, botón enviar recordatorio individual
+  - **Filtros completos**: Ventas incluye selector de salidas dinámico (se habilita al seleccionar tour)
+  - **Exportación CSV**: Implementada client-side con validación anti-división-por-cero
+  - **Visualización**: Recharts para gráficos profesionales, tablas con sorting y data-testids
+
 - **2024-10-31 (Continued)**: Implemented Passport Document Verification System (FASE 3 completed)
   - **Schema & Backend**: Extended `passengers` table with `documentStatus` (pending/approved/rejected) and `documentNotes` fields
   - **API Endpoints**:
@@ -104,6 +117,13 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
     - Metadata enriquecida con información del usuario que ejecutó la acción.
     - Visible para admins (en diálogo de gestión de cuotas) y clientes (en detalle de reserva).
     - Tabla `reservation_timeline_events` con campos: eventType, description, performedBy, metadata (JSONB).
+- **Reportes y Análisis (Admin)**:
+    - Tab "Reportes" con 3 sub-tabs de análisis de negocio.
+    - Reporte de Ventas: KPIs financieros, filtros por rango de fechas/tour/salida, tabla detallada por tour, gráfico temporal, exportación CSV.
+    - Reporte de Ocupación: Vista de capacidad por salida con % ocupación, semáforo de colores, gráfico de barras, exportación CSV.
+    - Reporte de Cuentas por Cobrar: 4 buckets de aging (0-7, 8-14, 15-30, >30 días), tabla de pendientes con días vencidos, envío de recordatorios individuales.
+    - Visualización con Recharts para gráficos profesionales.
+    - Filtros dinámicos y opcionales para drilldown de información.
 
 ### System Design Choices
 - **Modular Architecture**: Clear separation between frontend and backend, with distinct services for email, PDF, and object storage.
