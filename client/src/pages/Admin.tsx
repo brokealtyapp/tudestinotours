@@ -185,12 +185,18 @@ export default function Admin() {
     switch (status) {
       case "pending":
         return "Pendiente";
+      case "approved":
+        return "Aprobada";
       case "confirmed":
         return "Confirmada";
       case "completed":
         return "Completada";
       case "cancelled":
         return "Cancelada";
+      case "cancelada":
+        return "Cancelada";
+      case "vencida":
+        return "Vencida";
       default:
         return status;
     }
@@ -239,37 +245,51 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {tours?.map((tour: any) => (
-                    <div
-                      key={tour.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                      data-testid={`tour-item-${tour.id}`}
-                    >
-                      <div>
-                        <h3 className="font-semibold">{tour.title}</h3>
-                        <p className="text-sm text-muted-foreground">{tour.location}</p>
-                        <p className="text-sm">${tour.price} - {tour.duration}</p>
+                  {tours?.map((tour: any) => {
+                    const reservedSeats = tour.reservedSeats || 0;
+                    const availableSeats = tour.maxPassengers - reservedSeats;
+                    const occupancyPercentage = Math.round((reservedSeats / tour.maxPassengers) * 100);
+                    
+                    return (
+                      <div
+                        key={tour.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                        data-testid={`tour-item-${tour.id}`}
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{tour.title}</h3>
+                          <p className="text-sm text-muted-foreground">{tour.location}</p>
+                          <p className="text-sm">${tour.price} - {tour.duration}</p>
+                          <div className="mt-2 flex items-center gap-4">
+                            <span className="text-sm">
+                              <span className="font-medium">Cupos:</span> {availableSeats} disponibles / {tour.maxPassengers} totales
+                            </span>
+                            <span className={`text-sm font-medium ${occupancyPercentage > 80 ? 'text-red-600' : occupancyPercentage > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              {occupancyPercentage}% ocupado
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditTour(tour)}
+                            data-testid={`button-edit-${tour.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteTour(tour.id)}
+                            data-testid={`button-delete-${tour.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEditTour(tour)}
-                          data-testid={`button-edit-${tour.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteTour(tour.id)}
-                          data-testid={`button-delete-${tour.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -282,33 +302,62 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {reservations?.map((reservation: any) => (
-                    <div
-                      key={reservation.id}
-                      className="p-4 border rounded-lg"
-                      data-testid={`reservation-item-${reservation.id}`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold">Reserva #{reservation.id.slice(0, 8)}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Estado: {getStatusLabel(reservation.status)} | Pago: {getPaymentStatusLabel(reservation.paymentStatus)}
-                          </p>
-                          <p className="text-sm">Total: ${reservation.totalPrice}</p>
+                  {reservations?.map((reservation: any) => {
+                    const departureDate = reservation.departureDate ? new Date(reservation.departureDate) : null;
+                    const paymentDueDate = reservation.paymentDueDate ? new Date(reservation.paymentDueDate) : null;
+                    const now = new Date();
+                    const daysUntilDue = paymentDueDate ? Math.ceil((paymentDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                    const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
+                    const isNearDue = daysUntilDue !== null && daysUntilDue > 0 && daysUntilDue <= 7;
+                    
+                    return (
+                      <div
+                        key={reservation.id}
+                        className="p-4 border rounded-lg"
+                        data-testid={`reservation-item-${reservation.id}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-semibold">Reserva #{reservation.id.slice(0, 8)}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Estado: <span className={`font-medium ${reservation.status === 'vencida' || reservation.status === 'cancelada' ? 'text-red-600' : ''}`}>
+                                {getStatusLabel(reservation.status)}
+                              </span> | Pago: {getPaymentStatusLabel(reservation.paymentStatus)}
+                            </p>
+                            <p className="text-sm">Total: ${reservation.totalPrice} | Pasajeros: {reservation.numberOfPassengers}</p>
+                            {departureDate && (
+                              <p className="text-sm">
+                                <span className="font-medium">Salida:</span> {departureDate.toLocaleDateString('es-ES')}
+                              </p>
+                            )}
+                            {paymentDueDate && reservation.paymentStatus === 'pending' && (
+                              <p className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : isNearDue ? 'text-yellow-600 font-medium' : ''}`}>
+                                <span className="font-medium">Fecha límite de pago:</span> {paymentDueDate.toLocaleDateString('es-ES')}
+                                {daysUntilDue !== null && (
+                                  <span className="ml-2">
+                                    {isOverdue ? `(${Math.abs(daysUntilDue)} días vencido)` : `(${daysUntilDue} días restantes)`}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                          {reservation.paymentStatus === "pending" && 
+                           reservation.status !== "vencida" && 
+                           reservation.status !== "cancelada" && 
+                           reservation.status !== "cancelled" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleConfirmPayment(reservation.id)}
+                              data-testid={`button-confirm-payment-${reservation.id}`}
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Confirmar Pago
+                            </Button>
+                          )}
                         </div>
-                        {reservation.paymentStatus === "pending" && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleConfirmPayment(reservation.id)}
-                            data-testid={`button-confirm-payment-${reservation.id}`}
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Confirmar Pago
-                          </Button>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

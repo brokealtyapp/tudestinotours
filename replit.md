@@ -13,7 +13,19 @@ All core features have been implemented and tested:
 - Reservation state tracking and payment processing
 - Admin and client dashboards
 
-## Recent Changes (October 29, 2025)
+## Recent Changes (October 31, 2025)
+- ✅ **Automatizaciones Críticas Implementadas** - Sistema completo de automatización:
+  - Sistema de emails transaccionales (confirmación, recordatorios, itinerarios, cancelaciones)
+  - Recordatorios automáticos de pago (60/45/30/21/14/7/3 días antes)
+  - Cancelación automática por impago (vencida → cancelada tras 24h)
+  - Cálculo automático de fecha límite de pago (salida - 30 días)
+  - Bloqueo y liberación automática de cupos
+  - Scheduler con node-cron (diario 8AM/9AM + cada 6 horas)
+  - Panel de administrador actualizado con cupos y fechas límite
+- ✅ Schema extendido: reservedSeats, departureDate, paymentDueDate, autoCancelAt, lastReminderSent, reservation_notifications
+- ✅ Email service con modo simulado (RESEND_API_KEY opcional para producción)
+
+## Previous Changes (October 29, 2025)
 - ✅ Fixed passport upload normalization with new `/api/objects/normalize` endpoint
 - ✅ Booking wizard now properly uploads and stores passport documents
 - ✅ Client users can normalize uploaded files without admin privileges
@@ -111,14 +123,22 @@ All core features have been implemented and tested:
 
 ### Tables
 - **users**: User accounts with role-based access
-- **tours**: Tour information and availability
-- **reservations**: Booking records with state tracking
+- **tours**: Tour information, availability, and seat tracking
+  - New fields: `reservedSeats` (tracking de cupos ocupados)
+- **reservations**: Booking records with state tracking and automation fields
+  - New fields: `departureDate`, `paymentDueDate`, `autoCancelAt`, `lastReminderSent`
+  - States: pending, approved, confirmed, completed, cancelled, cancelada, vencida
 - **passengers**: Individual passenger details linked to reservations
+- **payments**: Payment tracking linked to reservations
+- **reservation_notifications**: Email notification audit trail
+  - Tracks all emails sent (confirmations, reminders, cancellations)
 
 ### Key Relationships
 - Users (1) → Reservations (N)
 - Tours (1) → Reservations (N)
 - Reservations (1) → Passengers (N)
+- Reservations (1) → Payments (N)
+- Reservations (1) → ReservationNotifications (N)
 
 ## Design Guidelines
 - Blue, red, and white color scheme
@@ -130,14 +150,58 @@ All core features have been implemented and tested:
 ## User Preferences
 None documented yet.
 
+## Automatizaciones Implementadas
+
+### Sistema de Emails Transaccionales
+El sistema utiliza el servicio `server/services/emailService.ts` que:
+- Funciona en modo simulado por defecto (logs en consola)
+- Puede activarse con producción configurando `RESEND_API_KEY` y `FROM_EMAIL`
+- Plantillas HTML completas en español:
+  - **Confirmación de reserva**: Enviado al crear reserva, incluye detalles y fecha límite
+  - **Recordatorio de pago**: Enviado en umbrales específicos (60/45/30/21/14/7/3 días)
+  - **Notificación de vencimiento**: Enviado cuando reserva pasa a estado "vencida"
+  - **Notificación de cancelación**: Enviado cuando reserva es cancelada automáticamente
+  - **Itinerario confirmado**: Enviado cuando el pago es confirmado
+
+### Cronograma de Recordatorios
+El scheduler (`server/jobs/scheduler.ts`) ejecuta:
+- **Diariamente a las 8:00 AM**: Procesamiento de recordatorios de pago
+- **Diariamente a las 9:00 AM**: Procesamiento de cancelaciones automáticas
+- **Cada 6 horas**: Ejecución adicional de ambos jobs para mayor responsiveness
+
+**Umbrales de recordatorio**: 60, 45, 30, 21, 14, 7, 3 días antes de la fecha límite
+- Tracking con `lastReminderSent` para evitar duplicados
+- Registro en tabla `reservation_notifications` para auditoría
+
+### Lógica de Cancelación Automática
+1. **Fecha límite**: Calculada automáticamente como `departureDate - 30 días`
+2. **Estado "vencida"**: Reserva marcada cuando llega fecha límite sin pago
+3. **Estado "cancelada"**: Aplicado 24 horas después si no se paga
+4. **Liberación de cupos**: Automática al cancelar, revierte `reservedSeats`
+
+### Sistema de Cupos
+- **Validación en creación**: Verifica `reservedSeats + numberOfPassengers <= maxPassengers`
+- **Bloqueo atómico**: Incrementa `reservedSeats` al crear reserva
+- **Liberación**: Decrementa `reservedSeats` al cancelar/vencer reserva
+- **Panel Admin**: Muestra cupos disponibles, ocupación % con colores (verde/amarillo/rojo)
+
+## Configuración de Emails (Opcional)
+
+Para activar el envío real de emails:
+1. Obtener API key de Resend (https://resend.com)
+2. Configurar secrets en Replit:
+   - `RESEND_API_KEY`: Tu API key de Resend
+   - `FROM_EMAIL`: Email verificado para envío (ej: noreply@tudestino.tours)
+3. El sistema detectará automáticamente la configuración y enviará emails reales
+
 ## Known Limitations
-- Email notifications not yet implemented (optional for MVP)
 - Payment processing is manual via external links (not integrated gateway)
 - Search functionality focuses only on tours (not reservations)
+- Concurrent reservation handling tested but may need load testing for high volume
 
 ## Future Enhancements
-1. Automated email notifications for booking confirmations and payment updates
-2. Integrated payment gateway (Stripe, PayPal, etc.)
-3. Advanced analytics and reporting for administrators
+1. Integrated payment gateway (Stripe, PayPal, etc.) with automatic confirmation
+2. Advanced analytics and reporting for administrators
+3. WhatsApp notifications (complemento a emails)
 4. Multi-language support
 5. Mobile application
