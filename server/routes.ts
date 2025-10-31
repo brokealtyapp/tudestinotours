@@ -24,6 +24,7 @@ import {
 } from "./objectStorage";
 import { generateInvoicePDF, generateItineraryPDF } from "./services/pdfService";
 import { captureBeforeState, createAuditLog } from "./middleware/auditMiddleware";
+import { smtpService } from "./services/smtpService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply audit middleware globally for all API routes
@@ -1455,6 +1456,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error reenviando email:", error);
       res.status(500).json({ error: "Error reenviando email" });
+    }
+  });
+
+  // Audit Logs routes
+  app.get("/api/reservations/:id/audit", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const logs = await storage.getAuditLogsByReservation(req.params.id);
+      res.json(logs);
+    } catch (error: any) {
+      console.error("Error obteniendo logs de auditoría:", error);
+      res.status(500).json({ error: "Error obteniendo logs de auditoría" });
     }
   });
 
