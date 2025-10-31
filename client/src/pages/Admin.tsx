@@ -12,6 +12,7 @@ import DeparturesManagement from "@/components/DeparturesManagement";
 import { Reports } from "@/components/Reports";
 import { Reconciliation } from "@/components/Reconciliation";
 import { PaymentCalendar } from "@/components/PaymentCalendar";
+import { EmailTemplates } from "@/components/EmailTemplates";
 import {
   Dialog,
   DialogContent,
@@ -431,6 +432,7 @@ export default function Admin() {
             <TabsTrigger value="passengers" data-testid="tab-passengers">Pasajeros</TabsTrigger>
             <TabsTrigger value="documents" data-testid="tab-documents">Documentos</TabsTrigger>
             <TabsTrigger value="reports" data-testid="tab-reports">Reportes</TabsTrigger>
+            <TabsTrigger value="templates" data-testid="tab-templates">Plantillas</TabsTrigger>
             <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
           </TabsList>
 
@@ -633,6 +635,10 @@ export default function Admin() {
 
           <TabsContent value="reports">
             <Reports />
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <EmailTemplates />
           </TabsContent>
 
           <TabsContent value="config">
