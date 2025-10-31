@@ -22,6 +22,10 @@ import {
   type InsertReservationTimelineEvent,
   type EmailTemplate,
   type InsertEmailTemplate,
+  type ReminderRule,
+  type InsertReminderRule,
+  type EmailLog,
+  type InsertEmailLog,
   users,
   tours,
   departures,
@@ -33,6 +37,8 @@ import {
   systemConfig,
   reservationTimelineEvents,
   emailTemplates,
+  reminderRules,
+  emailLogs,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -121,6 +127,17 @@ export interface IStorage {
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
   deleteEmailTemplate(id: string): Promise<void>;
+  
+  // Reminder rules methods
+  getReminderRules(): Promise<ReminderRule[]>;
+  getReminderRule(id: string): Promise<ReminderRule | undefined>;
+  createReminderRule(rule: InsertReminderRule): Promise<ReminderRule>;
+  updateReminderRule(id: string, rule: Partial<InsertReminderRule>): Promise<ReminderRule | undefined>;
+  deleteReminderRule(id: string): Promise<void>;
+  
+  // Email logs methods
+  createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
+  getEmailLogsByReservation(reservationId: string): Promise<EmailLog[]>;
 }
 
 export interface SalesReport {
@@ -850,6 +867,46 @@ export class DbStorage implements IStorage {
 
   async deleteEmailTemplate(id: string): Promise<void> {
     await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+  }
+
+  async getReminderRules(): Promise<ReminderRule[]> {
+    return await db.select().from(reminderRules).orderBy(reminderRules.daysBeforeDeadline);
+  }
+
+  async getReminderRule(id: string): Promise<ReminderRule | undefined> {
+    const result = await db.select().from(reminderRules).where(eq(reminderRules.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createReminderRule(rule: InsertReminderRule): Promise<ReminderRule> {
+    const result = await db.insert(reminderRules).values(rule).returning();
+    return result[0];
+  }
+
+  async updateReminderRule(id: string, rule: Partial<InsertReminderRule>): Promise<ReminderRule | undefined> {
+    const result = await db
+      .update(reminderRules)
+      .set({ ...rule, updatedAt: new Date() })
+      .where(eq(reminderRules.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteReminderRule(id: string): Promise<void> {
+    await db.delete(reminderRules).where(eq(reminderRules.id, id));
+  }
+
+  async createEmailLog(log: InsertEmailLog): Promise<EmailLog> {
+    const result = await db.insert(emailLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getEmailLogsByReservation(reservationId: string): Promise<EmailLog[]> {
+    return await db
+      .select()
+      .from(emailLogs)
+      .where(eq(emailLogs.reservationId, reservationId))
+      .orderBy(desc(emailLogs.sentAt));
   }
 }
 
