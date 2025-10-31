@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeScheduler } from "./jobs/scheduler";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -65,6 +66,35 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+  }
+
+  // Initialize default reminder rules if they don't exist
+  try {
+    const existingRules = await storage.getReminderRules();
+    if (existingRules.length === 0) {
+      log("[INIT] Creando reglas de recordatorio por defecto...");
+      await storage.createReminderRule({
+        daysBeforeDeadline: 7,
+        enabled: true,
+        templateType: "reminder",
+        sendTime: "09:00",
+      });
+      await storage.createReminderRule({
+        daysBeforeDeadline: 3,
+        enabled: true,
+        templateType: "reminder",
+        sendTime: "09:00",
+      });
+      await storage.createReminderRule({
+        daysBeforeDeadline: 0,
+        enabled: true,
+        templateType: "reminder",
+        sendTime: "09:00",
+      });
+      log("[INIT] Reglas de recordatorio creadas: 7, 3 y 0 días antes");
+    }
+  } catch (error) {
+    log("[INIT] Error creando reglas de recordatorio por defecto:", error);
   }
 
   // Initialize automated task scheduler
