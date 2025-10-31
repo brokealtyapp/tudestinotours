@@ -1,0 +1,75 @@
+FASE 3: GESTIÓN DE PASAJEROS Y DOCUMENTOS EN ADMIN
+FASE 3A: Tab de Pasajeros en Detalle de Reserva
+Lo que haré:
+
+Backend:
+Endpoint GET /api/reservations/:id/passengers ya existe implícitamente
+Asegurar que retorna todos los campos: fullName, dateOfBirth, passportNumber, nationality, departureAirport
+Frontend (Admin.tsx - modal de gestión de reserva):
+Agregar nuevo tab "Pasajeros" al TabsList existente
+Componente PassengersTab:
+Tabla con columnas:
+Nombre Completo
+Fecha Nacimiento
+Pasaporte #
+Nacionalidad
+Aeropuerto Salida
+Documento (link si existe)
+Acción: Ver documentos (lleva al tab Documentos)
+Mostrar contador "X pasajeros" en header del tab
+Resultado: Admin puede ver todos los pasajeros de una reserva.
+
+FASE 3B: Tab de Documentos - Visualización
+Lo que haré:
+
+Backend:
+Asegurar que /api/reservations/:id/passengers incluye URLs de documentos
+Si usamos Object Storage, generar URLs firmadas con expiración
+Frontend - Componente DocumentsTab:
+Grid de cards, uno por pasajero:
+Header: Nombre del pasajero
+Preview de documento (imagen thumbnail si es JPG/PNG, icono PDF si es PDF)
+Click en preview → modal fullscreen con imagen completa
+Estado de verificación: Badge (Pendiente/Aprobado/Rechazado)
+Botones:
+Aprobar
+Rechazar (abre input para comentario)
+Descargar
+Solicitar corrección
+Modal de Preview:
+Fullscreen overlay oscuro
+Imagen centrada a tamaño real
+Zoom in/out
+Botón cerrar (X)
+Resultado: Admin puede visualizar todos los pasaportes subidos.
+
+FASE 3C: Verificación y Solicitud de Correcciones
+Lo que haré:
+
+Schema (shared/schema.ts):
+Agregar a tabla passengers:
+documentStatus: text("document_status").default("pending"), // pending, approved, rejected
+documentNotes: text("document_notes"), // comentarios internos del admin
+
+Backend:
+PUT /api/passengers/:id/document-status
+Body: { status: 'approved' | 'rejected', notes?: string }
+Actualizar passenger
+Si status='rejected', crear evento en timeline de la reserva
+Enviar email al cliente solicitando corrección (con notes como razón)
+Frontend:
+Botón "Aprobar" → PUT con status='approved'
+Botón "Rechazar" → Modal con textarea para notes → PUT con status='rejected'
+Botón "Solicitar Corrección" → Modal con:
+Checklist de problemas comunes:
+ Foto borrosa
+ Datos no visibles
+ Documento vencido
+ Formato incorrecto
+Textarea adicional
+Botón enviar → PUT + email al cliente
+Email Template:
+"Necesitamos que vuelvas a subir el documento de pasaporte"
+Mostrar razón/comentarios
+Link para re-subir documento
+Resultado: Admin puede validar documentos y solicitar correcciones.

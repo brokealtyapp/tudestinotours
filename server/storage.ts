@@ -99,6 +99,63 @@ export interface IStorage {
   // Timeline events methods
   createTimelineEvent(event: InsertReservationTimelineEvent): Promise<ReservationTimelineEvent>;
   getTimelineEvents(reservationId: string): Promise<ReservationTimelineEvent[]>;
+  
+  // Reports methods
+  getSalesReport(startDate: Date, endDate: Date, tourId?: string, departureId?: string): Promise<SalesReport>;
+  getOccupationReport(startDate: Date, endDate: Date, tourId?: string): Promise<OccupationReportItem[]>;
+  getAgingReport(): Promise<AgingReport>;
+}
+
+export interface SalesReport {
+  summary: {
+    totalRevenue: number;
+    totalReservations: number;
+    averageOrderValue: number;
+  };
+  byTour: Array<{
+    tourId: string;
+    tourName: string;
+    revenue: number;
+    count: number;
+  }>;
+  byMonth: Array<{
+    month: string;
+    revenue: number;
+    count: number;
+  }>;
+}
+
+export interface OccupationReportItem {
+  departureId: string;
+  tourId: string;
+  tourName: string;
+  departureDate: Date;
+  returnDate: Date | null;
+  totalSeats: number;
+  reservedSeats: number;
+  occupationPercentage: number;
+}
+
+export interface AgingReport {
+  buckets: {
+    current: number;
+    days8to14: number;
+    days15to30: number;
+    overdue: number;
+  };
+  reservations: Array<{
+    id: string;
+    code: string;
+    tourName: string;
+    buyerName: string;
+    buyerEmail: string;
+    totalPrice: number;
+    balanceDue: number;
+    paymentDueDate: Date | null;
+    daysOverdue: number;
+    status: string;
+    paymentStatus: string;
+  }>;
 }
 
 export class DbStorage implements IStorage {
@@ -467,6 +524,217 @@ export class DbStorage implements IStorage {
       .from(reservationTimelineEvents)
       .where(eq(reservationTimelineEvents.reservationId, reservationId))
       .orderBy(desc(reservationTimelineEvents.createdAt));
+  }
+  
+  // Reports methods
+  async getSalesReport(startDate: Date, endDate: Date, tourId?: string, departureId?: string): Promise<SalesReport> {
+    const conditions = [
+      sql`${reservations.reservationDate} >= ${startDate}`,
+      sql`${reservations.reservationDate} <= ${endDate}`,
+      or(
+        eq(reservations.status, 'confirmed'),
+        eq(reservations.status, 'completed')
+      )
+    ];
+
+    if (tourId) {
+      conditions.push(eq(reservations.tourId, tourId));
+    }
+    if (departureId) {
+      conditions.push(eq(reservations.departureId, departureId));
+    }
+
+    const results = await db
+      .select({
+        id: reservations.id,
+        tourId: reservations.tourId,
+        tourName: tours.title,
+        totalPrice: reservations.totalPrice,
+        reservationDate: reservations.reservationDate,
+        status: reservations.status,
+        paymentStatus: reservations.paymentStatus,
+      })
+      .from(reservations)
+      .innerJoin(tours, eq(reservations.tourId, tours.id))
+      .where(and(...conditions));
+
+    const totalRevenue = results.reduce((sum, r) => sum + parseFloat(r.totalPrice), 0);
+    const totalReservations = results.length;
+    const averageOrderValue = totalReservations > 0 ? totalRevenue / totalReservations : 0;
+
+    const tourMap = new Map<string, { tourId: string; tourName: string; revenue: number; count: number }>();
+    results.forEach(r => {
+      const existing = tourMap.get(r.tourId);
+      if (existing) {
+        existing.revenue += parseFloat(r.totalPrice);
+        existing.count++;
+      } else {
+        tourMap.set(r.tourId, {
+          tourId: r.tourId,
+          tourName: r.tourName,
+          revenue: parseFloat(r.totalPrice),
+          count: 1,
+        });
+      }
+    });
+
+    const monthMap = new Map<string, { revenue: number; count: number }>();
+    results.forEach(r => {
+      const month = r.reservationDate.toISOString().substring(0, 7);
+      const existing = monthMap.get(month);
+      if (existing) {
+        existing.revenue += parseFloat(r.totalPrice);
+        existing.count++;
+      } else {
+        monthMap.set(month, {
+          revenue: parseFloat(r.totalPrice),
+          count: 1,
+        });
+      }
+    });
+
+    return {
+      summary: {
+        totalRevenue,
+        totalReservations,
+        averageOrderValue,
+      },
+      byTour: Array.from(tourMap.values()),
+      byMonth: Array.from(monthMap.entries()).map(([month, data]) => ({
+        month,
+        ...data,
+      })),
+    };
+  }
+
+  async getOccupationReport(startDate: Date, endDate: Date, tourId?: string): Promise<OccupationReportItem[]> {
+    const conditions = [
+      sql`${departures.departureDate} >= ${startDate}`,
+      sql`${departures.departureDate} <= ${endDate}`
+    ];
+
+    if (tourId) {
+      conditions.push(eq(departures.tourId, tourId));
+    }
+
+    const results = await db
+      .select({
+        departureId: departures.id,
+        tourId: departures.tourId,
+        tourName: tours.title,
+        departureDate: departures.departureDate,
+        returnDate: departures.returnDate,
+        totalSeats: departures.totalSeats,
+        reservedSeats: departures.reservedSeats,
+      })
+      .from(departures)
+      .innerJoin(tours, eq(departures.tourId, tours.id))
+      .where(and(...conditions))
+      .orderBy(departures.departureDate);
+
+    return results.map(r => ({
+      departureId: r.departureId,
+      tourId: r.tourId,
+      tourName: r.tourName,
+      departureDate: r.departureDate,
+      returnDate: r.returnDate,
+      totalSeats: r.totalSeats,
+      reservedSeats: r.reservedSeats,
+      occupationPercentage: r.totalSeats > 0 ? (r.reservedSeats / r.totalSeats) * 100 : 0,
+    }));
+  }
+
+  async getAgingReport(): Promise<AgingReport> {
+    const allPayments = await db
+      .select({
+        reservationId: payments.reservationId,
+        amount: payments.amount,
+        status: payments.status,
+      })
+      .from(payments);
+
+    const paymentsByReservation = new Map<string, number>();
+    allPayments.forEach(p => {
+      if (p.status === 'confirmed') {
+        const current = paymentsByReservation.get(p.reservationId) || 0;
+        paymentsByReservation.set(p.reservationId, current + parseFloat(p.amount));
+      }
+    });
+
+    const results = await db
+      .select({
+        id: reservations.id,
+        tourId: reservations.tourId,
+        tourName: tours.title,
+        buyerName: reservations.buyerName,
+        buyerEmail: reservations.buyerEmail,
+        totalPrice: reservations.totalPrice,
+        paymentDueDate: reservations.paymentDueDate,
+        status: reservations.status,
+        paymentStatus: reservations.paymentStatus,
+      })
+      .from(reservations)
+      .innerJoin(tours, eq(reservations.tourId, tours.id))
+      .where(
+        and(
+          sql`${reservations.status} != 'cancelled'`,
+          sql`${reservations.status} != 'completed'`
+        )
+      );
+
+    const now = new Date();
+    const buckets = {
+      current: 0,
+      days8to14: 0,
+      days15to30: 0,
+      overdue: 0,
+    };
+
+    const reservationsWithBalance = results
+      .map(r => {
+        const totalPrice = parseFloat(r.totalPrice);
+        const paidAmount = paymentsByReservation.get(r.id) || 0;
+        const balanceDue = totalPrice - paidAmount;
+
+        let daysOverdue = 0;
+        if (r.paymentDueDate) {
+          const diffTime = now.getTime() - r.paymentDueDate.getTime();
+          daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        if (balanceDue > 0) {
+          if (daysOverdue > 30) {
+            buckets.overdue += balanceDue;
+          } else if (daysOverdue >= 15) {
+            buckets.days15to30 += balanceDue;
+          } else if (daysOverdue >= 8) {
+            buckets.days8to14 += balanceDue;
+          } else {
+            buckets.current += balanceDue;
+          }
+        }
+
+        return {
+          id: r.id,
+          code: r.id.substring(0, 8).toUpperCase(),
+          tourName: r.tourName,
+          buyerName: r.buyerName,
+          buyerEmail: r.buyerEmail,
+          totalPrice,
+          balanceDue,
+          paymentDueDate: r.paymentDueDate,
+          daysOverdue: Math.max(0, daysOverdue),
+          status: r.status,
+          paymentStatus: r.paymentStatus,
+        };
+      })
+      .filter(r => r.balanceDue > 0)
+      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+
+    return {
+      buckets,
+      reservations: reservationsWithBalance,
+    };
   }
 }
 

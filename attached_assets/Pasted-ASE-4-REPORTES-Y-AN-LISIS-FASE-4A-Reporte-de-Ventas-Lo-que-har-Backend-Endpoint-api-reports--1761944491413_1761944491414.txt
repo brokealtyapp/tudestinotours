@@ -1,0 +1,73 @@
+ASE 4: REPORTES Y ANÁLISIS
+FASE 4A: Reporte de Ventas
+Lo que haré:
+
+Backend - Endpoint /api/reports/sales:
+Query params: startDate, endDate, tourId (optional), departureId (optional)
+Retorna:
+{
+  "summary": {
+    "totalRevenue": 50000,
+    "totalReservations": 25,
+    "averageOrderValue": 2000
+  },
+  "byTour": [
+    { "tourName": "Tour A", "revenue": 30000, "count": 15 },
+    ...
+  ],
+  "byMonth": [
+    { "month": "2025-01", "revenue": 15000, "count": 8 },
+    ...
+  ]
+}
+
+Frontend - Nueva tab "Reportes" > Sub-tab "Ventas":
+Filtros:
+DatePicker rango de fechas
+Select Tour (todas/específico)
+Select Salida (si hay tour seleccionado)
+Cards de resumen (Revenue total, # Reservas, AOV)
+Tabla "Ventas por Tour":
+Columnas: Tour, Reservas, Revenue, AOV
+Ordenable por columnas
+Gráfico de barras "Ventas por mes" (Recharts)
+Botón "Exportar CSV" → genera y descarga CSV con todos los datos
+Exportación CSV:
+Cliente genera CSV del array de datos
+Columnas: Fecha, Tour, # Reservas, Revenue
+Download automático
+Resultado: Reporte de ventas con filtros y exportación.
+
+FASE 4B: Reporte de Ocupación
+Lo que haré:
+
+Backend - Endpoint /api/reports/occupation:
+Query params: startDate, endDate, tourId
+Retorna array de salidas con:
+Tour name, Departure date, Total seats, Reserved seats, % Occupation
+Frontend - Sub-tab "Ocupación":
+Filtros de fecha y tour
+Tabla con columnas mencionadas
+Gráfico de barras horizontales (% ocupación por salida)
+Indicadores de color (rojo <40%, amarillo 40-70%, verde >70%)
+Exportar CSV
+Resultado: Vista de qué salidas están llenas y cuáles no.
+
+FASE 4C: Aging de Cuentas por Cobrar
+Lo que haré:
+
+Backend - Endpoint /api/reports/aging:
+Filtrar reservas con balanceDue > 0
+Calcular días desde paymentDueDate:
+Bucket 0-7 días
+Bucket 8-14 días
+Bucket 15-30 días
+Bucket >30 días (vencidas)
+Retornar totales por bucket y lista de reservas
+Frontend - Sub-tab "Cuentas por Cobrar":
+4 Cards mostrando monto total por bucket
+Tabla con todas las reservas pendientes:
+Código, Tour, Saldo, Días vencidos, Estado
+Ordenar por días vencidos descendente
+Acción rápida: "Enviar Recordatorio"
+Resultado: Identificar cuentas en riesgo y tomar acción.

@@ -1132,6 +1132,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports routes (admin only)
+  app.get("/api/reports/sales", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, tourId, departureId } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "startDate y endDate son requeridos" });
+      }
+
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ error: "Formato de fecha inválido" });
+      }
+
+      const report = await storage.getSalesReport(
+        start,
+        end,
+        tourId as string | undefined,
+        departureId as string | undefined
+      );
+
+      res.json(report);
+    } catch (error: any) {
+      console.error("Error generando reporte de ventas:", error);
+      res.status(500).json({ error: "Error generando reporte" });
+    }
+  });
+
+  app.get("/api/reports/occupation", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, tourId } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "startDate y endDate son requeridos" });
+      }
+
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ error: "Formato de fecha inválido" });
+      }
+
+      const report = await storage.getOccupationReport(
+        start,
+        end,
+        tourId as string | undefined
+      );
+
+      res.json(report);
+    } catch (error: any) {
+      console.error("Error generando reporte de ocupación:", error);
+      res.status(500).json({ error: "Error generando reporte" });
+    }
+  });
+
+  app.get("/api/reports/aging", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const report = await storage.getAgingReport();
+      res.json(report);
+    } catch (error: any) {
+      console.error("Error generando reporte de aging:", error);
+      res.status(500).json({ error: "Error generando reporte" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
