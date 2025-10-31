@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Check, X, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -447,6 +447,32 @@ export default function Admin() {
                             )}
                           </div>
                           <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const token = localStorage.getItem('token');
+                                window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
+                              }}
+                              data-testid={`button-download-invoice-${reservation.id}`}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Factura
+                            </Button>
+                            {(reservation.status === "confirmed" || reservation.status === "completed") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const token = localStorage.getItem('token');
+                                  window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
+                                }}
+                                data-testid={`button-download-itinerary-${reservation.id}`}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Itinerario
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"

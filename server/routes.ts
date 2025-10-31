@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PDF Generation routes
   app.get("/api/reservations/:id/invoice", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const reservation = await storage.getReservationById(req.params.id);
+      const reservation = await storage.getReservation(req.params.id);
       if (!reservation) {
         return res.status(404).json({ error: "Reserva no encontrada" });
       }
@@ -580,14 +580,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "No autorizado para ver esta factura" });
       }
 
-      const tour = await storage.getTourById(reservation.tourId);
+      const tour = await storage.getTour(reservation.tourId);
       if (!tour) {
         return res.status(404).json({ error: "Tour no encontrado" });
       }
 
-      const passengers = await storage.getPassengersByReservationId(req.params.id);
-      const installments = await storage.getPaymentInstallmentsByReservationId(req.params.id);
-      const user = await storage.getUserById(reservation.userId);
+      const passengers = await storage.getPassengersByReservation(req.params.id);
+      const installments = await storage.getPaymentInstallments(req.params.id);
+      const user = await storage.getUser(reservation.userId);
       if (!user) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
@@ -611,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reservations/:id/itinerary", authenticateToken, async (req: AuthRequest, res) => {
     try {
-      const reservation = await storage.getReservationById(req.params.id);
+      const reservation = await storage.getReservation(req.params.id);
       if (!reservation) {
         return res.status(404).json({ error: "Reserva no encontrada" });
       }
@@ -626,13 +626,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "El itinerario solo está disponible para reservas confirmadas" });
       }
 
-      const tour = await storage.getTourById(reservation.tourId);
+      const tour = await storage.getTour(reservation.tourId);
       if (!tour) {
         return res.status(404).json({ error: "Tour no encontrado" });
       }
 
-      const passengers = await storage.getPassengersByReservationId(req.params.id);
-      const user = await storage.getUserById(reservation.userId);
+      const passengers = await storage.getPassengersByReservation(req.params.id);
+      const user = await storage.getUser(reservation.userId);
       if (!user) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
