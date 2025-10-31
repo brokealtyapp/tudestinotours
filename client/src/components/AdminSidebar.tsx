@@ -85,12 +85,13 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
   return (
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
-          <div>
-            <h2 className="font-semibold text-lg">Tu Destino Tours</h2>
-            <p className="text-xs text-muted-foreground">Panel de Administración</p>
-          </div>
+        <div className="flex flex-col gap-2">
+          <img 
+            src={logoUrl} 
+            alt="Tu Destino Tours" 
+            className="h-12 w-auto object-contain"
+          />
+          <p className="text-xs text-muted-foreground text-center">Panel de Administración</p>
         </div>
       </SidebarHeader>
       <SidebarContent>
