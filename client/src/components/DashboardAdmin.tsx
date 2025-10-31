@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react";
 import FunnelChart from "./FunnelChart";
+import UpcomingDeadlinesTable from "./UpcomingDeadlinesTable";
 
 interface FunnelData {
   received: number;
@@ -9,6 +10,16 @@ interface FunnelData {
   approved: number;
   partialPaid: number;
   paid: number;
+}
+
+interface UpcomingDeadline {
+  reservationId: string;
+  bookingCode: string;
+  tourName: string;
+  departureDate: string;
+  daysRemaining: number;
+  dueDate: string;
+  balanceDue: number;
 }
 
 interface DashboardKPIs {
@@ -27,6 +38,7 @@ interface DashboardKPIs {
     count: number;
   };
   upcomingDeadlinesCount: number;
+  upcomingDeadlines: UpcomingDeadline[];
   funnel: FunnelData;
 }
 
@@ -164,23 +176,21 @@ export default function DashboardAdmin() {
         </CardContent>
       </Card>
 
-      {/* Additional info section */}
-      {kpis.upcomingDeadlinesCount > 0 && (
-        <Card data-testid="card-upcoming-deadlines-alert">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              Vencimientos Próximos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Tienes <span className="font-semibold text-foreground">{kpis.upcomingDeadlinesCount}</span> reserva{kpis.upcomingDeadlinesCount !== 1 ? 's' : ''} 
-              {' '}con vencimiento en los próximos 30 días.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Upcoming Deadlines Table */}
+      <Card data-testid="card-upcoming-deadlines">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-yellow-500" />
+            Vencimientos Próximos (30 días)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Reservas con pagos pendientes que vencen próximamente
+          </p>
+        </CardHeader>
+        <CardContent>
+          <UpcomingDeadlinesTable deadlines={kpis.upcomingDeadlines} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
