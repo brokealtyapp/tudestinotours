@@ -25,6 +25,7 @@ import {
 import { generateInvoicePDF, generateItineraryPDF } from "./services/pdfService";
 import { captureBeforeState, createAuditLog } from "./middleware/auditMiddleware";
 import { smtpService } from "./services/smtpService";
+import { PERMISSIONS, getPermissionsForRole } from "./permissions";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply audit middleware globally for all API routes
@@ -1467,6 +1468,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error obteniendo logs de auditoría:", error);
       res.status(500).json({ error: "Error obteniendo logs de auditoría" });
+    }
+  });
+
+  // User Management routes
+  app.get("/api/admin/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove password from response
+      const sanitizedUsers = users.map(u => {
+        const { password, ...userWithoutPassword } = u;
+        return userWithoutPassword;
+      });
+      res.json(sanitizedUsers);
+    } catch (error: any) {
+      console.error("Error obteniendo usuarios:", error);
+      res.status(500).json({ error: "Error obteniendo usuarios" });
+    }
+  });
+
+  app.put("/api/admin/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { name, email, active } = req.body;
+      const user = await storage.updateUser(req.params.id, { name, email, active });
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error actualizando usuario:", error);
+      res.status(500).json({ error: "Error actualizando usuario" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/role", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { role } = req.body;
+      // Get permissions for the role
+      const permissions = getPermissionsForRole(role);
+      const user = await storage.updateUserRole(req.params.id, role, permissions);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error actualizando rol:", error);
+      res.status(500).json({ error: "Error actualizando rol" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/permissions", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { permissions } = req.body;
+      const user = await storage.updateUserPermissions(req.params.id, permissions);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error actualizando permisos:", error);
+      res.status(500).json({ error: "Error actualizando permisos" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/toggle-active", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { active } = req.body;
+      const user = await storage.toggleUserActive(req.params.id, active);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error cambiando estado de usuario:", error);
+      res.status(500).json({ error: "Error cambiando estado de usuario" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      // Prevent self-deletion
+      if (req.user && req.params.id === req.user.userId) {
+        return res.status(400).json({ error: "No puedes eliminar tu propia cuenta" });
+      }
+      await storage.deleteUser(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error eliminando usuario:", error);
+      res.status(500).json({ error: "Error eliminando usuario" });
+    }
+  });
+
+  // System Settings routes
+  app.get("/api/settings", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const settings = await storage.getSettings(category);
+      res.json(settings);
+    } catch (error: any) {
+      console.error("Error obteniendo configuraciones:", error);
+      res.status(500).json({ error: "Error obteniendo configuraciones" });
+    }
+  });
+
+  app.get("/api/settings/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const setting = await storage.getSetting(req.params.key);
+      if (!setting) {
+        return res.status(404).json({ error: "Configuración no encontrada" });
+      }
+      res.json(setting);
+    } catch (error: any) {
+      console.error("Error obteniendo configuración:", error);
+      res.status(500).json({ error: "Error obteniendo configuración" });
+    }
+  });
+
+  app.post("/api/settings", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const setting = await storage.createSetting({
+        ...req.body,
+        updatedBy: req.user?.userId,
+      });
+      res.json(setting);
+    } catch (error: any) {
+      console.error("Error creando configuración:", error);
+      res.status(500).json({ error: "Error creando configuración" });
+    }
+  });
+
+  app.put("/api/settings/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { value } = req.body;
+      const setting = await storage.updateSetting(req.params.key, value, req.user?.userId);
+      if (!setting) {
+        return res.status(404).json({ error: "Configuración no encontrada" });
+      }
+      res.json(setting);
+    } catch (error: any) {
+      console.error("Error actualizando configuración:", error);
+      res.status(500).json({ error: "Error actualizando configuración" });
+    }
+  });
+
+  app.delete("/api/settings/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteSetting(req.params.key);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error eliminando configuración:", error);
+      res.status(500).json({ error: "Error eliminando configuración" });
     }
   });
 

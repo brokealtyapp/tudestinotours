@@ -28,6 +28,8 @@ import {
   type InsertEmailLog,
   type AuditLog,
   type InsertAuditLog,
+  type SystemSetting,
+  type InsertSystemSetting,
   users,
   tours,
   departures,
@@ -42,6 +44,7 @@ import {
   reminderRules,
   emailLogs,
   auditLogs,
+  systemSettings,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -147,6 +150,21 @@ export interface IStorage {
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogsByReservation(reservationId: string): Promise<AuditLog[]>;
   getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]>;
+
+  // User management methods
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
+  updateUserPermissions(id: string, permissions: string[]): Promise<User | undefined>;
+  updateUserRole(id: string, role: string, permissions: string[]): Promise<User | undefined>;
+  toggleUserActive(id: string, active: boolean): Promise<User | undefined>;
+
+  // System settings methods
+  getSettings(category?: string): Promise<SystemSetting[]>;
+  getSetting(key: string): Promise<SystemSetting | undefined>;
+  createSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  updateSetting(key: string, value: string, updatedBy?: string): Promise<SystemSetting | undefined>;
+  deleteSetting(key: string): Promise<void>;
 }
 
 export interface SalesReport {
@@ -942,6 +960,97 @@ export class DbStorage implements IStorage {
       .from(auditLogs)
       .where(and(eq(auditLogs.entityType, entityType), eq(auditLogs.entityId, entityId)))
       .orderBy(desc(auditLogs.timestamp));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set(user)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateUserPermissions(id: string, permissions: string[]): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ permissions })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateUserRole(id: string, role: string, permissions: string[]): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ role, permissions })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async toggleUserActive(id: string, active: boolean): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ active })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getSettings(category?: string): Promise<SystemSetting[]> {
+    if (category) {
+      return await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.category, category))
+        .orderBy(systemSettings.key);
+    }
+    return await db
+      .select()
+      .from(systemSettings)
+      .orderBy(systemSettings.category, systemSettings.key);
+  }
+
+  async getSetting(key: string): Promise<SystemSetting | undefined> {
+    const result = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key))
+      .limit(1);
+    return result[0];
+  }
+
+  async createSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
+    const result = await db
+      .insert(systemSettings)
+      .values(setting)
+      .returning();
+    return result[0];
+  }
+
+  async updateSetting(key: string, value: string, updatedBy?: string): Promise<SystemSetting | undefined> {
+    const result = await db
+      .update(systemSettings)
+      .set({ value, updatedAt: new Date(), updatedBy })
+      .where(eq(systemSettings.key, key))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSetting(key: string): Promise<void> {
+    await db.delete(systemSettings).where(eq(systemSettings.key, key));
   }
 }
 
