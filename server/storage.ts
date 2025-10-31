@@ -104,6 +104,9 @@ export interface IStorage {
   getSalesReport(startDate: Date, endDate: Date, tourId?: string, departureId?: string): Promise<SalesReport>;
   getOccupationReport(startDate: Date, endDate: Date, tourId?: string): Promise<OccupationReportItem[]>;
   getAgingReport(): Promise<AgingReport>;
+  
+  // Reconciliation methods
+  getReconciliationData(filters?: { startDate?: string; endDate?: string; status?: string; minAmount?: number }): Promise<any[]>;
 }
 
 export interface SalesReport {

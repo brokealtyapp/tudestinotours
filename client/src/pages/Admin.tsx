@@ -10,6 +10,7 @@ import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
 import DeparturesManagement from "@/components/DeparturesManagement";
 import { Reports } from "@/components/Reports";
+import { Reconciliation } from "@/components/Reconciliation";
 import {
   Dialog,
   DialogContent,
@@ -425,6 +426,7 @@ export default function Admin() {
             <TabsTrigger value="tours" data-testid="tab-tours">Tours</TabsTrigger>
             <TabsTrigger value="departures" data-testid="tab-departures">Salidas</TabsTrigger>
             <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">Pagos</TabsTrigger>
             <TabsTrigger value="passengers" data-testid="tab-passengers">Pasajeros</TabsTrigger>
             <TabsTrigger value="documents" data-testid="tab-documents">Documentos</TabsTrigger>
             <TabsTrigger value="reports" data-testid="tab-reports">Reportes</TabsTrigger>
@@ -609,6 +611,10 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Reconciliation />
           </TabsContent>
 
           <TabsContent value="reports">
