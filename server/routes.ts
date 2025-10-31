@@ -272,6 +272,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paid: reservations.filter(r => r.paymentStatus === "completed" || r.status === "confirmed").length,
       };
 
+      // Occupation by departure - group reservations by tour+date
+      const departureGroups = new Map<string, { tourId: string; tourName: string; departureDate: string; passengerCount: number; maxPassengers: number }>();
+      
+      for (const reservation of reservations.filter(r => r.status !== "cancelled")) {
+        const key = `${reservation.tourId}-${reservation.departureDate}`;
+        const tour = tours.find(t => t.id === reservation.tourId);
+        
+        if (tour && reservation.departureDate) {
+          const departureDateObj = new Date(reservation.departureDate);
+          if (departureDateObj >= now) { // Only future departures
+            const existing = departureGroups.get(key);
+            if (existing) {
+              existing.passengerCount += reservation.passengerCount;
+            } else {
+              departureGroups.set(key, {
+                tourId: reservation.tourId,
+                tourName: tour.title,
+                departureDate: reservation.departureDate,
+                passengerCount: reservation.passengerCount,
+                maxPassengers: tour.maxPassengers,
+              });
+            }
+          }
+        }
+      }
+
+      const occupationByDeparture = Array.from(departureGroups.values())
+        .map(dep => ({
+          tourName: dep.tourName,
+          departureDate: dep.departureDate,
+          occupiedSeats: dep.passengerCount,
+          maxSeats: dep.maxPassengers,
+          occupationPercentage: dep.maxPassengers > 0 ? Math.round((dep.passengerCount / dep.maxPassengers) * 100) : 0,
+        }))
+        .sort((a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
+        .slice(0, 10); // Next 10 departures
+
       res.json({
         gmv,
         reservationsByStatus,
@@ -283,6 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         upcomingDeadlinesCount: upcomingDeadlines.length,
         upcomingDeadlines,
         funnel,
+        occupationByDeparture,
       });
     } catch (error: any) {
       console.error("Error fetching dashboard KPIs:", error);
