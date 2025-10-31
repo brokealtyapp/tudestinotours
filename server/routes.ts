@@ -223,26 +223,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .reduce((sum, r) => sum + parseFloat(r.totalPrice.toString()), 0);
       const pendingPaymentsCount = reservations.filter(r => r.paymentStatus === "pending" || r.paymentStatus === "partial").length;
 
-      // Find upcoming deadlines (next 30 days)
+      // Find upcoming deadlines (next 30 days) with full details
       const now = new Date();
       const thirtyDaysFromNow = new Date(now);
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-      const upcomingDeadlines = reservations
-        .filter(r => {
-          if (!r.paymentDueDate) return false;
-          const dueDate = new Date(r.paymentDueDate);
-          return dueDate >= now && dueDate <= thirtyDaysFromNow && (r.paymentStatus === "pending" || r.paymentStatus === "partial");
-        })
-        .map(r => {
-          const dueDate = new Date(r.paymentDueDate!);
-          const daysRemaining = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return {
-            reservationId: r.id,
-            daysRemaining,
-            dueDate: r.paymentDueDate,
-          };
-        })
+      const upcomingDeadlinesData = await Promise.all(
+        reservations
+          .filter(r => {
+            if (!r.paymentDueDate) return false;
+            const dueDate = new Date(r.paymentDueDate);
+            return dueDate >= now && dueDate <= thirtyDaysFromNow && (r.paymentStatus === "pending" || r.paymentStatus === "partial");
+          })
+          .map(async (r) => {
+            const tour = await storage.getTour(r.tourId);
+            const dueDate = new Date(r.paymentDueDate!);
+            const daysRemaining = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            
+            // Calculate balance due (totalPrice - paid installments)
+            const installments = await storage.getInstallmentsByReservation(r.id);
+            const paidAmount = installments
+              .filter(i => i.status === "paid")
+              .reduce((sum, i) => sum + parseFloat(i.amountDue.toString()), 0);
+            const balanceDue = parseFloat(r.totalPrice.toString()) - paidAmount;
+
+            return {
+              reservationId: r.id,
+              bookingCode: r.id.substring(0, 8).toUpperCase(),
+              tourName: tour?.title || "Tour no encontrado",
+              departureDate: r.departureDate,
+              daysRemaining,
+              dueDate: r.paymentDueDate,
+              balanceDue,
+            };
+          })
+      );
+
+      const upcomingDeadlines = upcomingDeadlinesData
         .sort((a, b) => a.daysRemaining - b.daysRemaining)
         .slice(0, 10); // Top 10
 
@@ -264,6 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           count: pendingPaymentsCount,
         },
         upcomingDeadlinesCount: upcomingDeadlines.length,
+        upcomingDeadlines,
         funnel,
       });
     } catch (error: any) {
