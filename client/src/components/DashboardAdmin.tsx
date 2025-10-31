@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react";
+import FunnelChart from "./FunnelChart";
+
+interface FunnelData {
+  received: number;
+  underReview: number;
+  approved: number;
+  partialPaid: number;
+  paid: number;
+}
 
 interface DashboardKPIs {
   gmv: number;
@@ -18,6 +27,7 @@ interface DashboardKPIs {
     count: number;
   };
   upcomingDeadlinesCount: number;
+  funnel: FunnelData;
 }
 
 export default function DashboardAdmin() {
@@ -140,6 +150,19 @@ export default function DashboardAdmin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Funnel Chart */}
+      <Card data-testid="card-funnel">
+        <CardHeader>
+          <CardTitle>Embudo de Conversión</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Flujo de reservas desde recepción hasta pago completo
+          </p>
+        </CardHeader>
+        <CardContent>
+          <FunnelChart data={kpis.funnel} />
+        </CardContent>
+      </Card>
 
       {/* Additional info section */}
       {kpis.upcomingDeadlinesCount > 0 && (
