@@ -23,8 +23,12 @@ import {
   ObjectNotFoundError,
 } from "./objectStorage";
 import { generateInvoicePDF, generateItineraryPDF } from "./services/pdfService";
+import { captureBeforeState, createAuditLog } from "./middleware/auditMiddleware";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply audit middleware globally for all API routes
+  app.use('/api', captureBeforeState, createAuditLog);
+
   // Object storage routes
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
