@@ -10,11 +10,14 @@ import {
   type InsertPassenger,
   type Payment,
   type InsertPayment,
+  type ReservationNotification,
+  type InsertReservationNotification,
   users,
   tours,
   reservations,
   passengers,
   payments,
+  reservationNotifications,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 
@@ -45,6 +48,19 @@ export interface IStorage {
   // Payment methods
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: string, status: string, confirmedBy?: string): Promise<Payment | undefined>;
+  
+  // Reservation notification methods
+  createReservationNotification(notification: InsertReservationNotification): Promise<ReservationNotification>;
+  getReservationNotifications(reservationId: string): Promise<ReservationNotification[]>;
+  
+  // Seat management methods
+  incrementReservedSeats(tourId: string, count: number): Promise<void>;
+  decrementReservedSeats(tourId: string, count: number): Promise<void>;
+  
+  // Reservation automation methods
+  getReservationsForReminders(): Promise<Reservation[]>;
+  getReservationsForCancellation(): Promise<Reservation[]>;
+  updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>): Promise<Reservation | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -175,6 +191,83 @@ export class DbStorage implements IStorage {
       .update(payments)
       .set(updateData)
       .where(eq(payments.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Reservation notification methods
+  async createReservationNotification(notification: InsertReservationNotification): Promise<ReservationNotification> {
+    const result = await db.insert(reservationNotifications).values(notification).returning();
+    return result[0];
+  }
+
+  async getReservationNotifications(reservationId: string): Promise<ReservationNotification[]> {
+    return await db
+      .select()
+      .from(reservationNotifications)
+      .where(eq(reservationNotifications.reservationId, reservationId))
+      .orderBy(desc(reservationNotifications.sentAt));
+  }
+
+  // Seat management methods
+  async incrementReservedSeats(tourId: string, count: number): Promise<void> {
+    await db
+      .update(tours)
+      .set({ reservedSeats: sql`${tours.reservedSeats} + ${count}` })
+      .where(eq(tours.id, tourId));
+  }
+
+  async decrementReservedSeats(tourId: string, count: number): Promise<void> {
+    await db
+      .update(tours)
+      .set({ reservedSeats: sql`GREATEST(${tours.reservedSeats} - ${count}, 0)` })
+      .where(eq(tours.id, tourId));
+  }
+
+  // Reservation automation methods
+  async getReservationsForReminders(): Promise<Reservation[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.paymentStatus, "pending"),
+          or(
+            eq(reservations.status, "pending"),
+            eq(reservations.status, "approved")
+          ),
+          sql`${reservations.paymentDueDate} > ${now}`
+        )
+      );
+  }
+
+  async getReservationsForCancellation(): Promise<Reservation[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.paymentStatus, "pending"),
+          or(
+            eq(reservations.status, "pending"),
+            eq(reservations.status, "approved"),
+            eq(reservations.status, "vencida")
+          ),
+          sql`${reservations.paymentDueDate} <= ${now}`
+        )
+      );
+  }
+
+  async updateReservationAutomationFields(
+    id: string,
+    fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>
+  ): Promise<Reservation | undefined> {
+    const result = await db
+      .update(reservations)
+      .set(fields)
+      .where(eq(reservations.id, id))
       .returning();
     return result[0];
   }

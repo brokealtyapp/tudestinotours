@@ -276,11 +276,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reservations", authenticateToken, async (req: AuthRequest, res) => {
     try {
+      const { emailService } = await import("./services/emailService");
+      
+      // Validate basic reservation data
       const validatedData = insertReservationSchema.parse({
         ...req.body,
         userId: req.user!.userId,
       });
-      const reservation = await storage.createReservation(validatedData);
+
+      // Get tour to validate seats and calculate dates
+      const tour = await storage.getTour(validatedData.tourId);
+      if (!tour) {
+        return res.status(404).json({ error: "Tour no encontrado" });
+      }
+
+      // Validate available seats
+      const availableSeats = tour.maxPassengers - (tour.reservedSeats || 0);
+      if (validatedData.numberOfPassengers > availableSeats) {
+        return res.status(400).json({ 
+          error: `No hay suficientes cupos disponibles. Cupos disponibles: ${availableSeats}` 
+        });
+      }
+
+      // Calculate payment due date (30 days before departure)
+      const departureDate = new Date(validatedData.departureDate);
+      const paymentDueDate = new Date(departureDate);
+      paymentDueDate.setDate(paymentDueDate.getDate() - 30);
+
+      // Calculate auto-cancel date (24 hours after payment due date)
+      const autoCancelAt = new Date(paymentDueDate);
+      autoCancelAt.setHours(autoCancelAt.getHours() + 24);
+
+      // Create reservation with calculated dates
+      const reservation = await storage.createReservation({
+        ...validatedData,
+        paymentDueDate,
+        autoCancelAt,
+      });
+
+      // Increment reserved seats
+      await storage.incrementReservedSeats(tour.id, validatedData.numberOfPassengers);
+
+      // Get user for email
+      const user = await storage.getUser(req.user!.userId);
+      
+      // Get passengers for email
+      const passengers = await storage.getPassengersByReservation(reservation.id);
+
+      // Send confirmation email
+      if (user) {
+        emailService.sendReservationConfirmation(user, reservation, tour, passengers)
+          .catch(error => console.error("Error enviando email de confirmación:", error));
+      }
+
       res.status(201).json(reservation);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -289,15 +337,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/reservations/:id/status", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
+      const { emailService } = await import("./services/emailService");
       const { status, paymentStatus } = req.body;
+      
+      // Get current reservation
+      const currentReservation = await storage.getReservation(req.params.id);
+      if (!currentReservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // If cancelling or status is vencida/cancelada, release seats
+      if (status === "cancelled" || status === "cancelada" || status === "vencida") {
+        await storage.decrementReservedSeats(
+          currentReservation.tourId,
+          currentReservation.numberOfPassengers
+        );
+      }
+
+      // Update reservation
       const reservation = await storage.updateReservationStatus(
         req.params.id,
         status,
         paymentStatus
       );
-      if (!reservation) {
-        return res.status(404).json({ error: "Reserva no encontrada" });
+
+      // If payment is confirmed, send itinerary
+      if (paymentStatus === "confirmed") {
+        const user = await storage.getUser(reservation!.userId);
+        const tour = await storage.getTour(reservation!.tourId);
+        const passengers = await storage.getPassengersByReservation(reservation!.id);
+        
+        if (user && tour) {
+          emailService.sendItinerary(user, reservation!, tour, passengers)
+            .catch(error => console.error("Error enviando itinerario:", error));
+        }
       }
+
       res.json(reservation);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
