@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -47,9 +47,34 @@ export const insertTourSchema = createInsertSchema(tours).omit({
 export type InsertTour = z.infer<typeof insertTourSchema>;
 export type Tour = typeof tours.$inferSelect;
 
+export const departures = pgTable("departures", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tourId: varchar("tour_id").notNull().references(() => tours.id),
+  departureDate: timestamp("departure_date").notNull(),
+  returnDate: timestamp("return_date"),
+  totalSeats: integer("total_seats").notNull(),
+  reservedSeats: integer("reserved_seats").notNull().default(0),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  supplements: jsonb("supplements"),
+  cancellationPolicyOverride: text("cancellation_policy_override"),
+  paymentDeadlineDays: integer("payment_deadline_days").notNull().default(30),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertDepartureSchema = createInsertSchema(departures).omit({
+  id: true,
+  createdAt: true,
+  reservedSeats: true,
+});
+
+export type InsertDeparture = z.infer<typeof insertDepartureSchema>;
+export type Departure = typeof departures.$inferSelect;
+
 export const reservations = pgTable("reservations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tourId: varchar("tour_id").notNull().references(() => tours.id),
+  departureId: varchar("departure_id").references(() => departures.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   reservationDate: timestamp("reservation_date").notNull(),
   departureDate: timestamp("departure_date").notNull(),
