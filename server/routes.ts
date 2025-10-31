@@ -535,10 +535,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createTimelineEvent({
         reservationId: req.params.reservationId,
         eventType: "installment_created",
-        description: `Cuota de pago creada: $${validatedData.amount} (${validatedData.installmentNumber}/${validatedData.totalInstallments})`,
+        description: `Cuota de pago ${validatedData.installmentNumber} creada: $${validatedData.amountDue}`,
         performedBy: req.user!.userId,
         metadata: JSON.stringify({ 
-          amount: validatedData.amount,
+          amountDue: validatedData.amountDue,
           dueDate: validatedData.dueDate,
           installmentNumber: validatedData.installmentNumber,
         }),
@@ -573,10 +573,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createTimelineEvent({
         reservationId: installment.reservationId,
         eventType: "installment_paid",
-        description: `Cuota ${installment.installmentNumber}/${installment.totalInstallments} marcada como pagada: $${installment.amount}`,
+        description: `Cuota ${installment.installmentNumber} marcada como pagada: $${installment.amountDue}`,
         performedBy: req.user!.userId,
         metadata: JSON.stringify({ 
-          amount: installment.amount,
+          amountDue: installment.amountDue,
           installmentNumber: installment.installmentNumber,
         }),
       });
@@ -653,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const user = await storage.getUser(event.performedBy);
             return {
               ...event,
-              performedByName: user ? `${user.fullName} (${user.email})` : 'Usuario desconocido',
+              performedByName: user ? `${user.name} (${user.email})` : 'Usuario desconocido',
             };
           }
           return {
