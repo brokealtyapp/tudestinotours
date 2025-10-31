@@ -111,7 +111,7 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2023 Tu Destino Tours plantilla premium.</p>
+            <p>© 2024 Todos los Derechos Reservados. Desarrollado por SEO Consulting</p>
             <Link href="/privacy" className="hover:text-foreground">
               Política de Privacidad
             </Link>
