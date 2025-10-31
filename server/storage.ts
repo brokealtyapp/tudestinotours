@@ -78,11 +78,13 @@ export interface IStorage {
   
   // Passenger methods
   getAllPassengers(): Promise<Passenger[]>;
+  getPassenger(id: string): Promise<Passenger | undefined>;
   getPassengersByReservation(reservationId: string): Promise<Passenger[]>;
   createPassenger(passenger: InsertPassenger): Promise<Passenger>;
   updatePassengerDocumentStatus(id: string, status: string, notes?: string): Promise<Passenger | undefined>;
   
   // Payment methods
+  getPayment(id: string): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: string, status: string, confirmedBy?: string): Promise<Payment | undefined>;
   
@@ -100,6 +102,7 @@ export interface IStorage {
   updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>): Promise<Reservation | undefined>;
   
   // Payment installments methods
+  getPaymentInstallment(id: string): Promise<PaymentInstallment | undefined>;
   getPaymentInstallments(reservationId: string): Promise<PaymentInstallment[]>;
   createPaymentInstallment(installment: InsertPaymentInstallment): Promise<PaymentInstallment>;
   updatePaymentInstallment(id: string, data: Partial<InsertPaymentInstallment>): Promise<PaymentInstallment | undefined>;
@@ -374,6 +377,15 @@ export class DbStorage implements IStorage {
       .orderBy(desc(passengers.createdAt));
   }
 
+  async getPassenger(id: string): Promise<Passenger | undefined> {
+    const result = await db
+      .select()
+      .from(passengers)
+      .where(eq(passengers.id, id))
+      .limit(1);
+    return result[0];
+  }
+
   async getPassengersByReservation(reservationId: string): Promise<Passenger[]> {
     return await db
       .select()
@@ -400,6 +412,15 @@ export class DbStorage implements IStorage {
   }
 
   // Payment methods
+  async getPayment(id: string): Promise<Payment | undefined> {
+    const result = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.id, id))
+      .limit(1);
+    return result[0];
+  }
+
   async createPayment(payment: InsertPayment): Promise<Payment> {
     const result = await db.insert(payments).values(payment).returning();
     return result[0];
@@ -501,6 +522,15 @@ export class DbStorage implements IStorage {
   }
   
   // Payment installments methods
+  async getPaymentInstallment(id: string): Promise<PaymentInstallment | undefined> {
+    const result = await db
+      .select()
+      .from(paymentInstallments)
+      .where(eq(paymentInstallments.id, id))
+      .limit(1);
+    return result[0];
+  }
+
   async getPaymentInstallments(reservationId: string): Promise<PaymentInstallment[]> {
     return await db
       .select()
@@ -1030,6 +1060,11 @@ export class DbStorage implements IStorage {
       .where(eq(systemSettings.key, key))
       .limit(1);
     return result[0];
+  }
+
+  // Alias for audit middleware compatibility
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    return this.getSetting(key);
   }
 
   async createSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
