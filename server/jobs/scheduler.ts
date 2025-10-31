@@ -1,9 +1,7 @@
 import cron from "node-cron";
 import { storage } from "../storage";
 import { emailService } from "../services/emailService";
-
-// Reminder thresholds in days (60, 45, 30, 21, 14, 7, 3)
-const REMINDER_THRESHOLDS = [60, 45, 30, 21, 14, 7, 3];
+import { smtpService } from "../services/smtpService";
 
 // Calculate days between two dates
 function daysBetween(date1: Date, date2: Date): number {
@@ -12,13 +10,24 @@ function daysBetween(date1: Date, date2: Date): number {
   return Math.floor(diff / msPerDay);
 }
 
-// Process payment reminders
+// Process payment reminders using reminder_rules configuration
 async function processPaymentReminders() {
   console.log("[SCHEDULER] Procesando recordatorios de pago...");
   
   try {
     const reservations = await storage.getReservationsForReminders();
+    const reminderRules = await storage.getReminderRules();
     const now = new Date();
+    
+    // Filter only enabled rules and sort by days before deadline
+    const enabledRules = reminderRules
+      .filter(rule => rule.enabled)
+      .sort((a, b) => b.daysBeforeDeadline - a.daysBeforeDeadline);
+
+    if (enabledRules.length === 0) {
+      console.log("[SCHEDULER] No hay reglas de recordatorio habilitadas");
+      return;
+    }
 
     for (const reservation of reservations) {
       if (!reservation.paymentDueDate) {
@@ -27,29 +36,41 @@ async function processPaymentReminders() {
 
       const daysUntilDue = daysBetween(now, new Date(reservation.paymentDueDate));
       
-      // Find the next reminder threshold that should be sent
-      const nextThreshold = REMINDER_THRESHOLDS.find(threshold => {
+      // Find the next reminder rule that should be sent
+      const nextRule = enabledRules.find(rule => {
         // Check if we're at or past this threshold
-        if (daysUntilDue <= threshold) {
+        if (daysUntilDue <= rule.daysBeforeDeadline) {
           // Check if we haven't sent this threshold yet
           const lastSent = reservation.lastReminderSent || 999;
-          return threshold < lastSent;
+          return rule.daysBeforeDeadline < lastSent;
         }
         return false;
       });
 
-      if (nextThreshold !== undefined) {
+      if (nextRule) {
         // Get user and tour info
         const user = await storage.getUser(reservation.userId);
         const tour = await storage.getTour(reservation.tourId);
+        const departure = await storage.getDeparture(reservation.departureId);
 
-        if (user && tour) {
-          // Send reminder email
-          const success = await emailService.sendPaymentReminder(
-            user,
-            reservation,
-            tour,
-            nextThreshold
+        if (user && tour && departure) {
+          // Prepare variables for template
+          const variables = {
+            nombre_cliente: user.name,
+            tour_nombre: tour.title,
+            codigo_reserva: reservation.id.substring(0, 8).toUpperCase(),
+            monto_total: reservation.totalPrice.toFixed(2),
+            fecha_limite: new Date(reservation.paymentDueDate).toLocaleDateString('es-ES'),
+            dias_restantes: daysUntilDue.toString(),
+            fecha_salida: new Date(departure.departureDate).toLocaleDateString('es-ES'),
+          };
+
+          // Send email using SMTP service with template
+          const success = await smtpService.sendTemplateEmail(
+            user.email,
+            nextRule.templateType,
+            variables,
+            reservation.id
           );
 
           if (success) {
@@ -57,16 +78,24 @@ async function processPaymentReminders() {
             await storage.createReservationNotification({
               reservationId: reservation.id,
               notificationType: "payment_reminder",
-              daysBeforeDeparture: nextThreshold,
+              daysBeforeDeparture: nextRule.daysBeforeDeadline,
               emailStatus: "sent",
+            });
+
+            // Create timeline event
+            await storage.createTimelineEvent({
+              reservationId: reservation.id,
+              eventType: "email_sent",
+              description: `Recordatorio de pago enviado (${nextRule.daysBeforeDeadline} días antes)`,
+              metadata: JSON.stringify({ templateType: nextRule.templateType }),
             });
 
             // Update last reminder sent
             await storage.updateReservationAutomationFields(reservation.id, {
-              lastReminderSent: nextThreshold,
+              lastReminderSent: nextRule.daysBeforeDeadline,
             });
 
-            console.log(`[SCHEDULER] Recordatorio enviado para reserva ${reservation.id} (${nextThreshold} días)`);
+            console.log(`[SCHEDULER] Recordatorio enviado para reserva ${reservation.id} (${nextRule.daysBeforeDeadline} días)`);
           }
         }
       }
