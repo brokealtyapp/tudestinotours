@@ -47,8 +47,8 @@ export default function Tours() {
     // Filtrar por ubicación de búsqueda local
     if (searchLocation) {
       filtered = filtered.filter(tour => 
-        tour.name?.toLowerCase().includes(searchLocation.toLowerCase()) ||
-        tour.destination?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        tour.title?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        tour.location?.toLowerCase().includes(searchLocation.toLowerCase()) ||
         tour.description?.toLowerCase().includes(searchLocation.toLowerCase())
       );
     }
@@ -161,8 +161,8 @@ export default function Tours() {
                     <div key={tour.id} onClick={() => navigate(`/tours/${tour.id}`)} className="cursor-pointer">
                       <TourCard
                         image={tour.images?.[0] || "/placeholder-tour.jpg"}
-                        title={tour.name}
-                        location={tour.destination}
+                        title={tour.title}
+                        location={tour.location}
                         rating={parseFloat(tour.rating || "0")}
                         reviews={tour.reviewCount?.toString() || "0"}
                         price={parseFloat(tour.price)}
