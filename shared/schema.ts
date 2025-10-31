@@ -108,6 +108,8 @@ export const passengers = pgTable("passengers", {
   nationality: text("nationality").notNull(),
   dateOfBirth: timestamp("date_of_birth").notNull(),
   passportImageUrl: text("passport_image_url"),
+  documentStatus: text("document_status").notNull().default("pending"),
+  documentNotes: text("document_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

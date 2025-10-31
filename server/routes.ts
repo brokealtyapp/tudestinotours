@@ -769,6 +769,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/passengers/:id/document-status", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { status, notes } = req.body;
+      const { emailService } = await import("./services/emailService");
+
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: "Estado inválido. Debe ser: pending, approved, o rejected" });
+      }
+
+      const passenger = await storage.updatePassengerDocumentStatus(req.params.id, status, notes);
+      
+      if (!passenger) {
+        return res.status(404).json({ error: "Pasajero no encontrado" });
+      }
+
+      // Get reservation for timeline event and email
+      const reservation = await storage.getReservation(passenger.reservationId);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Create timeline event
+      await storage.createTimelineEvent({
+        reservationId: passenger.reservationId,
+        eventType: status === 'approved' ? 'document_approved' : status === 'rejected' ? 'document_rejected' : 'document_pending',
+        description: status === 'approved' 
+          ? `Documento de ${passenger.fullName} aprobado`
+          : status === 'rejected'
+          ? `Documento de ${passenger.fullName} rechazado - Se solicitó corrección`
+          : `Documento de ${passenger.fullName} marcado como pendiente`,
+        performedBy: req.user!.userId,
+        metadata: JSON.stringify({ 
+          passengerId: passenger.id,
+          passengerName: passenger.fullName,
+          documentStatus: status,
+          notes: notes || null
+        }),
+      });
+
+      // If rejected, send email to buyer requesting correction
+      if (status === 'rejected') {
+        const tour = await storage.getTour(reservation.tourId);
+        
+        emailService.sendDocumentRejectionNotification(
+          { email: reservation.buyerEmail, name: reservation.buyerName },
+          reservation,
+          passenger,
+          tour,
+          notes || "El documento no cumple con los requisitos necesarios"
+        ).catch(error => console.error("Error enviando email de rechazo de documento:", error));
+      }
+
+      res.json(passenger);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Payment routes
   app.post("/api/payments", authenticateToken, async (req: AuthRequest, res) => {
     try {

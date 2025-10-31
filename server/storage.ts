@@ -64,6 +64,7 @@ export interface IStorage {
   // Passenger methods
   getPassengersByReservation(reservationId: string): Promise<Passenger[]>;
   createPassenger(passenger: InsertPassenger): Promise<Passenger>;
+  updatePassengerDocumentStatus(id: string, status: string, notes?: string): Promise<Passenger | undefined>;
   
   // Payment methods
   createPayment(payment: InsertPayment): Promise<Payment>;
@@ -256,6 +257,19 @@ export class DbStorage implements IStorage {
 
   async createPassenger(passenger: InsertPassenger): Promise<Passenger> {
     const result = await db.insert(passengers).values(passenger).returning();
+    return result[0];
+  }
+
+  async updatePassengerDocumentStatus(id: string, status: string, notes?: string): Promise<Passenger | undefined> {
+    const updateData: any = { documentStatus: status };
+    if (notes !== undefined) {
+      updateData.documentNotes = notes;
+    }
+    const result = await db
+      .update(passengers)
+      .set(updateData)
+      .where(eq(passengers.id, id))
+      .returning();
     return result[0];
   }
 

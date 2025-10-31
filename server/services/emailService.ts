@@ -338,6 +338,93 @@ class EmailService {
       html,
     });
   }
+
+  async sendDocumentRejectionNotification(
+    buyer: { email: string; name: string },
+    reservation: Reservation,
+    passenger: Passenger,
+    tour: Tour | undefined,
+    rejectionReason: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .warning { background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #dc2626; font-weight: bold; }
+          .button { display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Acción Requerida: Documento Rechazado</h1>
+          </div>
+          <div class="content">
+            <p>Estimado/a ${buyer.name},</p>
+            
+            <div class="warning">
+              <p><strong>⚠️ Necesitamos que vuelvas a subir un documento de pasaporte</strong></p>
+            </div>
+
+            <p>Hemos revisado el documento de pasaporte del pasajero <strong>${passenger.fullName}</strong> y lamentablemente no cumple con los requisitos necesarios.</p>
+            
+            <div class="details">
+              <h3>Razón del Rechazo</h3>
+              <p>${rejectionReason}</p>
+            </div>
+
+            <div class="details">
+              <h3>Detalles de la Reserva</h3>
+              <p><strong>Número de reserva:</strong> ${reservation.id}</p>
+              ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
+              <p><strong>Pasajero:</strong> ${passenger.fullName}</p>
+              <p><strong>Pasaporte:</strong> ${passenger.passportNumber}</p>
+            </div>
+
+            <div class="details">
+              <h3>Requisitos del Documento</h3>
+              <ul>
+                <li>La foto debe ser clara y legible</li>
+                <li>Todos los datos del pasaporte deben ser visibles</li>
+                <li>El documento debe estar vigente</li>
+                <li>Formato aceptado: JPG, PNG o PDF</li>
+                <li>Tamaño máximo: 10MB</li>
+              </ul>
+            </div>
+
+            <p><strong>Próximos pasos:</strong></p>
+            <ol>
+              <li>Toma una nueva foto del pasaporte asegurándote de que cumpla con los requisitos</li>
+              <li>Inicia sesión en tu panel de reservas</li>
+              <li>Sube el nuevo documento</li>
+            </ol>
+
+            <p>Por favor, sube el documento correcto lo antes posible para que podamos procesar tu reserva.</p>
+
+            <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: buyer.email,
+      subject: `⚠️ Acción Requerida - Documento Rechazado - Reserva ${reservation.id}`,
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();
