@@ -14,6 +14,15 @@ All core features have been implemented and tested:
 - Admin and client dashboards
 
 ## Recent Changes (October 31, 2025)
+- ✅ **Sistema de Pagos Parciales Implementado** - Gestión completa de cronogramas de pago:
+  - Tabla `payment_installments` para tracking de cuotas individuales
+  - Tabla `system_config` para configuraciones globales (DEFAULT_MIN_DEPOSIT_PERCENTAGE)
+  - Campo `minDepositPercentage` en tours (override opcional por tour)
+  - Endpoints API completos para CRUD de installments y configuración
+  - Panel de admin con tab "Configuración" para porcentaje mínimo global
+  - Interfaz de gestión de cronograma: agregar/eliminar/marcar como pagada cuotas
+  - Dashboard de cliente con visualización de cronograma y enlaces de pago
+  - Dual payment flows: pagos escalonados múltiples O depósito inicial + saldo final
 - ✅ **Automatizaciones Críticas Implementadas** - Sistema completo de automatización:
   - Sistema de emails transaccionales (confirmación, recordatorios, itinerarios, cancelaciones)
   - Recordatorios automáticos de pago (60/45/30/21/14/7/3 días antes)
@@ -22,7 +31,7 @@ All core features have been implemented and tested:
   - Bloqueo y liberación automática de cupos
   - Scheduler con node-cron (diario 8AM/9AM + cada 6 horas)
   - Panel de administrador actualizado con cupos y fechas límite
-- ✅ Schema extendido: reservedSeats, departureDate, paymentDueDate, autoCancelAt, lastReminderSent, reservation_notifications
+- ✅ Schema extendido: reservedSeats, departureDate, paymentDueDate, autoCancelAt, lastReminderSent, reservation_notifications, payment_installments, system_config
 - ✅ Email service con modo simulado (RESEND_API_KEY opcional para producción)
 
 ## Previous Changes (October 29, 2025)
@@ -119,17 +128,33 @@ All core features have been implemented and tested:
 - `POST /api/objects/normalize`: Normalize uploaded file URLs (authenticated users)
 - `GET /objects/:path`: Retrieve uploaded files
 
+#### Payment Installments (Pagos Parciales)
+- `GET /api/reservations/:reservationId/installments`: Get all installments for a reservation
+- `POST /api/reservations/:reservationId/installments`: Create new installment (admin only)
+- `PUT /api/installments/:id`: Update installment details (admin only)
+- `PUT /api/installments/:id/pay`: Mark installment as paid (admin only)
+- `DELETE /api/installments/:id`: Delete installment (admin only)
+
+#### System Configuration
+- `GET /api/config`: Get all system configurations (admin only)
+- `GET /api/config/:key`: Get specific configuration value (admin only)
+- `POST /api/config`: Create or update system configuration (admin only)
+
 ## Database Schema
 
 ### Tables
 - **users**: User accounts with role-based access
 - **tours**: Tour information, availability, and seat tracking
-  - New fields: `reservedSeats` (tracking de cupos ocupados)
+  - New fields: `reservedSeats` (tracking de cupos ocupados), `minDepositPercentage` (override opcional)
 - **reservations**: Booking records with state tracking and automation fields
   - New fields: `departureDate`, `paymentDueDate`, `autoCancelAt`, `lastReminderSent`
   - States: pending, approved, confirmed, completed, cancelled, cancelada, vencida
 - **passengers**: Individual passenger details linked to reservations
 - **payments**: Payment tracking linked to reservations
+- **payment_installments**: Individual payment installments (cuotas) for partial payment schedules
+  - Fields: `reservationId`, `amount`, `dueDate`, `status` (pending/paid/overdue), `paymentLink`, `description`, `paidAt`, `paidBy`
+- **system_config**: Global system configurations
+  - Key-value store for settings like `DEFAULT_MIN_DEPOSIT_PERCENTAGE`
 - **reservation_notifications**: Email notification audit trail
   - Tracks all emails sent (confirmations, reminders, cancellations)
 
@@ -138,6 +163,7 @@ All core features have been implemented and tested:
 - Tours (1) → Reservations (N)
 - Reservations (1) → Passengers (N)
 - Reservations (1) → Payments (N)
+- Reservations (1) → PaymentInstallments (N)
 - Reservations (1) → ReservationNotifications (N)
 
 ## Design Guidelines
@@ -185,6 +211,49 @@ El scheduler (`server/jobs/scheduler.ts`) ejecuta:
 - **Liberación**: Decrementa `reservedSeats` al cancelar/vencer reserva
 - **Panel Admin**: Muestra cupos disponibles, ocupación % con colores (verde/amarillo/rojo)
 
+## Sistema de Pagos Parciales
+
+### Arquitectura de Pagos Flexibles
+El sistema soporta dos modelos de pago:
+1. **Pago único**: Cliente paga el total al crear la reserva
+2. **Pagos parciales escalonados**: Cliente paga en múltiples cuotas programadas
+
+### Configuración de Porcentajes Mínimos
+- **Porcentaje global**: Configurable en `Admin > Configuración` (default: 30%)
+- **Override por tour**: Campo opcional `minDepositPercentage` en cada tour
+- **Prioridad**: Tour-specific > Global default
+
+### Gestión de Cronogramas (Admin)
+En el panel de reservas, botón "Gestionar Pagos" para:
+- Ver todas las cuotas programadas con estados (pendiente/pagado/vencido)
+- Crear nuevas cuotas con monto, fecha límite, enlace de pago y descripción
+- Marcar cuotas como pagadas manualmente
+- Eliminar cuotas del cronograma
+- Ver resumen: Total / Pagado / Pendiente
+
+### Visualización Cliente
+Dashboard del cliente incluye sección "Cronograma de Pagos" colapsable:
+- Resumen de pagos: total, pagado, pendiente
+- Lista de cuotas con estado y fecha límite
+- Botón "Pagar Ahora" con enlace externo (Mercado Pago, PayPal, etc.)
+- Historial de cuotas pagadas con fecha de pago
+
+### Integración con Enlaces Externos
+- NO hay integración con pasarelas de pago automatizada
+- Admin proporciona enlaces externos personalizados por cuota
+- Cliente hace clic y completa pago en plataforma externa
+- Admin marca manualmente como pagado tras verificar
+
+### Tablas Relacionadas
+- `payment_installments`: Tracking individual de cuotas
+- `system_config`: Almacena DEFAULT_MIN_DEPOSIT_PERCENTAGE
+- `tours.minDepositPercentage`: Override opcional por tour
+
+### Estados de Cuotas
+- **pending**: Cuota creada, esperando pago
+- **paid**: Cuota pagada y confirmada por admin
+- **overdue**: Fecha límite vencida sin pago (tracking futuro)
+
 ## Configuración de Emails (Opcional)
 
 Para activar el envío real de emails:
@@ -196,12 +265,15 @@ Para activar el envío real de emails:
 
 ## Known Limitations
 - Payment processing is manual via external links (not integrated gateway)
+- Payment installments tracked manually (admin confirms each payment)
 - Search functionality focuses only on tours (not reservations)
 - Concurrent reservation handling tested but may need load testing for high volume
 
 ## Future Enhancements
 1. Integrated payment gateway (Stripe, PayPal, etc.) with automatic confirmation
-2. Advanced analytics and reporting for administrators
-3. WhatsApp notifications (complemento a emails)
-4. Multi-language support
-5. Mobile application
+2. Automatic installment status updates (pending → overdue)
+3. Email reminders for upcoming installment due dates
+4. Advanced analytics and reporting for administrators
+5. WhatsApp notifications (complemento a emails)
+6. Multi-language support
+7. Mobile application
