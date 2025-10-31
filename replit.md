@@ -1,7 +1,21 @@
 # Tu Destino Tours
 
 ## Overview
-Tu Destino Tours is a web platform for commercializing and managing tour reservations. It features a modern blue, red, and white branding with distinct Administrator and Client user profiles. The platform provides a complete booking system, reservation management, automated payment schedules, and PDF document generation (invoices and itineraries). Its core purpose is to streamline tour sales and management, offering a comprehensive solution for both customers and administrators.
+Tu Destino Tours is a web platform for commercializing and managing tour reservations. It features a modern blue, red, and white branding with distinct Administrator and Client user profiles. The platform provides a complete booking system with **specific departure management**, reservation management, automated payment schedules, and PDF document generation (invoices and itineraries). Its core purpose is to streamline tour sales and management, offering a comprehensive solution for both customers and administrators.
+
+## Recent Changes
+- **2024-10-31**: Implemented Departures System (FASE 2A-2B completed)
+  - Created `departures` table with full schema: tourId, departureDate, returnDate, totalSeats, reservedSeats, price, supplements (JSONB), cancellationPolicyOverride, paymentDeadlineDays, status
+  - Added `departureId` (nullable) field to `reservations` table for backwards compatibility
+  - Implemented 6 storage methods: getDepartures, getDeparture, createDeparture, updateDeparture, deleteDeparture, updateDepartureSeats
+  - Created complete REST API with validations:
+    - GET /api/departures (list with optional tourId filter)
+    - GET /api/departures/:id (detail)
+    - POST /api/departures (create with validations: future dates, seats > 0)
+    - PUT /api/departures/:id (update with capacity validation)
+    - DELETE /api/departures/:id (prevent deletion if has reservations)
+    - POST /api/departures/:id/duplicate (duplicate to multiple dates)
+  - All routes protected with admin authentication except GET endpoints
 
 ## User Preferences
 None documented yet.
@@ -24,7 +38,15 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 ### Feature Specifications
 - **Authentication**: JWT-based with role-based access control (Administrator, Client).
 - **Tour Management (Admin)**: CRUD operations for tours, image uploads, setting tour details, search and filter.
-- **Booking System (Client)**: Multi-step wizard including tour selection, passenger information, passport document uploads, and booking submission.
+- **Departures Management (Admin)**:
+    - Create specific departures for tours with individual pricing, dates, and capacity.
+    - Manage departure-level supplements (early bird discounts, single room supplements, etc.) stored as JSONB.
+    - Override cancellation policies and payment deadlines per departure.
+    - Duplicate departures to multiple dates in bulk.
+    - Real-time seat tracking (reservedSeats/totalSeats) with automatic updates.
+    - Prevent deletion of departures with active reservations.
+    - Filter departures by tour and view chronologically.
+- **Booking System (Client)**: Multi-step wizard including tour selection, **specific departure selection**, passenger information, passport document uploads, and booking submission.
 - **Reservation Management**:
     - State tracking (pending, confirmed, completed, cancelled, overdue).
     - Admin actions: confirm payments, update status.
@@ -60,8 +82,14 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 
 ### System Design Choices
 - **Modular Architecture**: Clear separation between frontend and backend, with distinct services for email, PDF, and object storage.
-- **Database Schema**: Extensively designed with tables for users, tours, reservations, passengers, payments, payment installments, system configurations, notification logging, and timeline events. Key relationships established for data integrity.
+- **Database Schema**: Extensively designed with tables for users, tours, **departures** (specific tour instances with dates/pricing/capacity), reservations, passengers, payments, payment installments, system configurations, notification logging, and timeline events. Key relationships established for data integrity.
+- **Departure-Centric Model**: Shift from "tour + free date" to "select specific departure" enables:
+  - Individual pricing per departure (seasonal pricing, early bird discounts).
+  - Real-time capacity management at the departure level.
+  - Flexible supplements and policies per departure.
+  - Better forecasting and occupancy tracking.
 - **Event-Driven Tracking**: Sistema de eventos automático que registra todas las acciones importantes en el ciclo de vida de reservas, proporcionando auditoría completa y visibilidad para usuarios y administradores.
+- **Backwards Compatibility**: `departureId` is nullable in reservations table to preserve existing data during migration phase.
 - **Error Handling**: Comprehensive error messages for both frontend and backend, fully localized in Spanish.
 
 ## External Dependencies

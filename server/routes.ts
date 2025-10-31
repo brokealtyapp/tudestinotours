@@ -242,10 +242,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const daysRemaining = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             
             // Calculate balance due (totalPrice - paid installments)
-            const installments = await storage.getInstallmentsByReservation(r.id);
+            const installments = await storage.getPaymentInstallments(r.id);
             const paidAmount = installments
-              .filter(i => i.status === "paid")
-              .reduce((sum, i) => sum + parseFloat(i.amountDue.toString()), 0);
+              .filter((i: any) => i.status === "paid")
+              .reduce((sum: number, i: any) => sum + parseFloat(i.amountDue.toString()), 0);
             const balanceDue = parseFloat(r.totalPrice.toString()) - paidAmount;
 
             return {
@@ -285,13 +285,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (departureDateObj >= now) { // Only future departures
             const existing = departureGroups.get(key);
             if (existing) {
-              existing.passengerCount += reservation.passengerCount;
+              existing.passengerCount += reservation.numberOfPassengers;
             } else {
               departureGroups.set(key, {
                 tourId: reservation.tourId,
                 tourName: tour.title,
-                departureDate: reservation.departureDate,
-                passengerCount: reservation.passengerCount,
+                departureDate: reservation.departureDate.toISOString(),
+                passengerCount: reservation.numberOfPassengers,
                 maxPassengers: tour.maxPassengers,
               });
             }
@@ -504,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           returnDate: original.returnDate ? new Date(new Date(date).getTime() + (new Date(original.returnDate).getTime() - new Date(original.departureDate).getTime())) : undefined,
           totalSeats: original.totalSeats,
           price: original.price,
-          supplements: original.supplements,
+          supplements: original.supplements as any,
           cancellationPolicyOverride: original.cancellationPolicyOverride,
           paymentDeadlineDays: original.paymentDeadlineDays,
           status: original.status,
