@@ -1,55 +1,26 @@
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import TourCard from "./TourCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import tour1 from "@assets/generated_images/Thailand_beach_with_boat_0d72543f.png";
-import tour2 from "@assets/generated_images/Romantic_beach_couple_walking_7c537b30.png";
-import tour3 from "@assets/generated_images/Cruise_ship_in_fjord_448b7050.png";
-import tour4 from "@assets/generated_images/Historic_ship_at_dock_61dab35e.png";
-
-const tours = [
-  {
-    id: 1,
-    image: tour1,
-    title: "Aventura de Snorkel en Molokini y Turtle Town a Bordo",
-    location: "Bali, Indonesia",
-    rating: 4.8,
-    reviews: "1.4k",
-    price: 187,
-    discount: 20,
-  },
-  {
-    id: 2,
-    image: tour2,
-    title: "Tour Todo Incluido del Círculo de la Isla con Almuerzo",
-    location: "Ontario, Canadá",
-    rating: 4.8,
-    reviews: "1.4k",
-    price: 154,
-    discount: 20,
-  },
-  {
-    id: 3,
-    image: tour3,
-    title: "Tour en Bicicleta por el Parque y Admisión al Centro Espacial",
-    location: "Venecia, Italia",
-    rating: 4.8,
-    reviews: "1.4k",
-    price: 169,
-    discount: 20,
-  },
-  {
-    id: 4,
-    image: tour4,
-    title: "Tour a Pie por Westminster y Entrada a la Abadía",
-    location: "Nevada, USA",
-    rating: 4.8,
-    reviews: "1.4k",
-    price: 148,
-    discount: 20,
-  },
-];
 
 export default function PopularTours() {
+  const { data: tours, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/tours"],
+  });
+
+  const popularTours = tours
+    ?.sort((a, b) => parseFloat(b.rating || "0") - parseFloat(a.rating || "0"))
+    .slice(0, 4) || [];
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">Cargando tours...</div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="py-16 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,8 +53,17 @@ export default function PopularTours() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tours.map((tour) => (
-            <TourCard key={tour.id} {...tour} />
+          {popularTours.map((tour: any) => (
+            <TourCard
+              key={tour.id}
+              id={tour.id}
+              image={tour.images?.[0] || "/placeholder-tour.jpg"}
+              title={tour.title}
+              location={tour.location}
+              rating={parseFloat(tour.rating || "0")}
+              reviews={tour.reviewCount?.toString() || "0"}
+              price={parseFloat(tour.price)}
+            />
           ))}
         </div>
       </div>
