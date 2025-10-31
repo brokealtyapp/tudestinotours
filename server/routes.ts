@@ -12,6 +12,7 @@ import {
 import {
   insertUserSchema,
   insertTourSchema,
+  insertDepartureSchema,
   insertReservationSchema,
   insertPassengerSchema,
   insertPaymentSchema,
@@ -380,6 +381,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Departure routes
+  app.get("/api/departures", async (req, res) => {
+    try {
+      const { tourId } = req.query;
+      const departures = await storage.getDepartures(tourId as string | undefined);
+      res.json(departures);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/departures/:id", async (req, res) => {
+    try {
+      const departure = await storage.getDeparture(req.params.id);
+      if (!departure) {
+        return res.status(404).json({ error: "Salida no encontrada" });
+      }
+      res.json(departure);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/departures", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertDepartureSchema.parse(req.body);
+      
+      // Validación: fechas futuras
+      if (new Date(validatedData.departureDate) < new Date()) {
+        return res.status(400).json({ error: "La fecha de salida debe ser futura" });
+      }
+      
+      // Validación: totalSeats > 0
+      if (validatedData.totalSeats <= 0) {
+        return res.status(400).json({ error: "El total de cupos debe ser mayor a 0" });
+      }
+      
+      const departure = await storage.createDeparture(validatedData);
+      res.status(201).json(departure);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/departures/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertDepartureSchema.partial().parse(req.body);
+      
+      // Validación: si se actualiza fecha, debe ser futura
+      if (validatedData.departureDate && new Date(validatedData.departureDate) < new Date()) {
+        return res.status(400).json({ error: "La fecha de salida debe ser futura" });
+      }
+      
+      // Validación: si se actualizan cupos, validar contra reservas
+      if (validatedData.totalSeats !== undefined) {
+        const existing = await storage.getDeparture(req.params.id);
+        if (existing && validatedData.totalSeats < existing.reservedSeats) {
+          return res.status(400).json({ 
+            error: `No se puede reducir cupos a ${validatedData.totalSeats}. Ya hay ${existing.reservedSeats} cupos reservados` 
+          });
+        }
+      }
+      
+      const departure = await storage.updateDeparture(req.params.id, validatedData);
+      if (!departure) {
+        return res.status(404).json({ error: "Salida no encontrada" });
+      }
+      res.json(departure);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/departures/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const departure = await storage.getDeparture(req.params.id);
+      if (!departure) {
+        return res.status(404).json({ error: "Salida no encontrada" });
+      }
+      
+      // Validación: no eliminar si tiene reservas
+      if (departure.reservedSeats > 0) {
+        return res.status(400).json({ 
+          error: "No se puede eliminar una salida con reservas activas" 
+        });
+      }
+      
+      await storage.deleteDeparture(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/departures/:id/duplicate", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { dates } = req.body;
+      
+      if (!Array.isArray(dates) || dates.length === 0) {
+        return res.status(400).json({ error: "Se requiere un array de fechas" });
+      }
+      
+      const original = await storage.getDeparture(req.params.id);
+      if (!original) {
+        return res.status(404).json({ error: "Salida original no encontrada" });
+      }
+      
+      const createdDepartures = [];
+      for (const date of dates) {
+        // Validar que la fecha sea futura
+        if (new Date(date) < new Date()) {
+          continue; // Saltar fechas pasadas
+        }
+        
+        const newDeparture = await storage.createDeparture({
+          tourId: original.tourId,
+          departureDate: new Date(date),
+          returnDate: original.returnDate ? new Date(new Date(date).getTime() + (new Date(original.returnDate).getTime() - new Date(original.departureDate).getTime())) : undefined,
+          totalSeats: original.totalSeats,
+          price: original.price,
+          supplements: original.supplements,
+          cancellationPolicyOverride: original.cancellationPolicyOverride,
+          paymentDeadlineDays: original.paymentDeadlineDays,
+          status: original.status,
+        });
+        createdDepartures.push(newDeparture);
+      }
+      
+      res.status(201).json({ 
+        message: `${createdDepartures.length} salidas creadas exitosamente`,
+        departures: createdDepartures 
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   });
 
