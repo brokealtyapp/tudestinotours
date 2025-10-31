@@ -271,10 +271,17 @@ export default function Dashboard() {
                       <Calendar className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Fecha de Reserva
+                          Fecha de Salida
                         </p>
                         <p className="font-semibold">
-                          {new Date(reservation.createdAt).toLocaleDateString('es-ES')}
+                          {reservation.departureDate 
+                            ? new Date(reservation.departureDate).toLocaleDateString('es-ES', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            : "Por confirmar"}
                         </p>
                       </div>
                     </div>
