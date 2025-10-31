@@ -4,6 +4,27 @@
 Tu Destino Tours is a web platform for commercializing and managing tour reservations. It features a modern blue, red, and white branding with distinct Administrator and Client user profiles. The platform provides a complete booking system with **specific departure management**, reservation management, automated payment schedules, and PDF document generation (invoices and itineraries). Its core purpose is to streamline tour sales and management, offering a comprehensive solution for both customers and administrators.
 
 ## Recent Changes
+- **2024-10-31 (Continued)**: Implemented Passport Document Verification System (FASE 3 completed)
+  - **Schema & Backend**: Extended `passengers` table with `documentStatus` (pending/approved/rejected) and `documentNotes` fields
+  - **API Endpoints**:
+    - GET /api/passengers (admin-only endpoint to retrieve all passengers)
+    - PUT /api/passengers/:id/document-status (admin-only endpoint to approve/reject documents)
+  - **Email Notifications**: Automated email to buyer when document is rejected, requesting correction with detailed reasoning
+  - **Timeline Events**: Automatic logging of document status changes (approved/rejected/pending) in reservation timeline
+  - **Admin UI - Pasajeros Tab**: Complete passenger table showing all passengers with their data (name, passport, nationality, birthdate, reservation ID, document status, actions)
+  - **Admin UI - Documentos Tab**: 
+    - Grid view with document previews showing passport images
+    - Status badges (pending/approved/rejected) with color coding
+    - Quick approve buttons directly from grid
+    - Click to view fullscreen modal
+  - **Document Verification Modal**:
+    - Fullscreen image viewer for detailed passport inspection
+    - Passenger information display (passport number, nationality, birthdate, reservation ID)
+    - Current status indicator
+    - Notes/rejection reason textarea
+    - Actions: Approve, Reject with mandatory notes (sends email to buyer)
+    - All actions create timeline events for audit trail
+
 - **2024-10-31**: Implemented Departures System (FASE 2A-2B-2C completed)
   - **FASE 2A - Database Schema**: Created `departures` table with full schema: tourId, departureDate, returnDate, totalSeats, reservedSeats, price, supplements (JSONB), cancellationPolicyOverride, paymentDeadlineDays, status. Added `departureId` (nullable) to `reservations` table.
   - **FASE 2B - Backend API**: Implemented 6 storage methods and complete REST API with validations:
