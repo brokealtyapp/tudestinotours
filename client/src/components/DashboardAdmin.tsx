@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react";
 import FunnelChart from "./FunnelChart";
 import UpcomingDeadlinesTable from "./UpcomingDeadlinesTable";
+import OccupationChart from "./OccupationChart";
 
 interface FunnelData {
   received: number;
@@ -20,6 +21,14 @@ interface UpcomingDeadline {
   daysRemaining: number;
   dueDate: string;
   balanceDue: number;
+}
+
+interface DepartureOccupation {
+  tourName: string;
+  departureDate: string;
+  occupiedSeats: number;
+  maxSeats: number;
+  occupationPercentage: number;
 }
 
 interface DashboardKPIs {
@@ -40,6 +49,7 @@ interface DashboardKPIs {
   upcomingDeadlinesCount: number;
   upcomingDeadlines: UpcomingDeadline[];
   funnel: FunnelData;
+  occupationByDeparture: DepartureOccupation[];
 }
 
 export default function DashboardAdmin() {
@@ -189,6 +199,19 @@ export default function DashboardAdmin() {
         </CardHeader>
         <CardContent>
           <UpcomingDeadlinesTable deadlines={kpis.upcomingDeadlines} />
+        </CardContent>
+      </Card>
+
+      {/* Occupation by Departure Chart */}
+      <Card data-testid="card-occupation-chart">
+        <CardHeader>
+          <CardTitle>Ocupación por Salida</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Próximas 10 salidas programadas y su nivel de ocupación
+          </p>
+        </CardHeader>
+        <CardContent>
+          <OccupationChart data={kpis.occupationByDeparture} />
         </CardContent>
       </Card>
     </div>
