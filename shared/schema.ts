@@ -28,6 +28,7 @@ export const tours = pgTable("tours", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: text("duration").notNull(),
   maxPassengers: integer("max_passengers").notNull(),
+  reservedSeats: integer("reserved_seats").notNull().default(0),
   images: text("images").array().notNull().default(sql`ARRAY[]::text[]`),
   featured: boolean("featured").notNull().default(false),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
@@ -50,6 +51,10 @@ export const reservations = pgTable("reservations", {
   tourId: varchar("tour_id").notNull().references(() => tours.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   reservationDate: timestamp("reservation_date").notNull(),
+  departureDate: timestamp("departure_date").notNull(),
+  paymentDueDate: timestamp("payment_due_date"),
+  autoCancelAt: timestamp("auto_cancel_at"),
+  lastReminderSent: integer("last_reminder_sent"),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("pending"),
@@ -103,3 +108,21 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({
 
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Payment = typeof payments.$inferSelect;
+
+export const reservationNotifications = pgTable("reservation_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reservationId: varchar("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
+  notificationType: text("notification_type").notNull(),
+  daysBeforeDeparture: integer("days_before_departure"),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  emailStatus: text("email_status").notNull().default("sent"),
+  errorMessage: text("error_message"),
+});
+
+export const insertReservationNotificationSchema = createInsertSchema(reservationNotifications).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type InsertReservationNotification = z.infer<typeof insertReservationNotificationSchema>;
+export type ReservationNotification = typeof reservationNotifications.$inferSelect;
