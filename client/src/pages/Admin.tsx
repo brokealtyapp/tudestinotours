@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
+import DeparturesManagement from "@/components/DeparturesManagement";
 import {
   Dialog,
   DialogContent,
@@ -332,12 +333,17 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="tours" data-testid="tab-tours">Tours</TabsTrigger>
+            <TabsTrigger value="departures" data-testid="tab-departures">Salidas</TabsTrigger>
             <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
             <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
             <DashboardAdmin />
+          </TabsContent>
+
+          <TabsContent value="departures">
+            <DeparturesManagement />
           </TabsContent>
 
           <TabsContent value="tours">
