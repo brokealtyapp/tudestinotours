@@ -18,6 +18,8 @@ async function processPaymentReminders() {
     const reservations = await storage.getReservationsForReminders();
     const reminderRules = await storage.getReminderRules();
     const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
     // Filter only enabled rules and sort by days before deadline
     const enabledRules = reminderRules
@@ -42,7 +44,21 @@ async function processPaymentReminders() {
         if (daysUntilDue <= rule.daysBeforeDeadline) {
           // Check if we haven't sent this threshold yet
           const lastSent = reservation.lastReminderSent || 999;
-          return rule.daysBeforeDeadline < lastSent;
+          if (rule.daysBeforeDeadline >= lastSent) {
+            return false; // Already sent this or later threshold
+          }
+          
+          // Check if we're within the configured send time window (1 hour tolerance)
+          const [ruleHour, ruleMinute] = rule.sendTime.split(':').map(Number);
+          const hourDiff = Math.abs(currentHour - ruleHour);
+          
+          // Only send if we're within 1 hour of the configured time
+          // This prevents sending multiple times per day
+          if (hourDiff > 1) {
+            return false;
+          }
+          
+          return true;
         }
         return false;
       });

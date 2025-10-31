@@ -1,7 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Mail, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Mail, CheckCircle2, XCircle, Clock, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import type { EmailLog } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -11,8 +14,35 @@ interface EmailCommunicationsProps {
 }
 
 export default function EmailCommunications({ reservationId }: EmailCommunicationsProps) {
+  const { toast } = useToast();
+  
   const { data: logs = [], isLoading } = useQuery<EmailLog[]>({
     queryKey: ["/api/reservations", reservationId, "communications"],
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const response = await fetch(`/api/email-logs/${logId}/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to resend");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations", reservationId, "communications"] });
+      toast({
+        title: "Email reenviado",
+        description: "El email se ha reenviado correctamente",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo reenviar el email",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -93,6 +123,20 @@ export default function EmailCommunications({ reservationId }: EmailCommunicatio
                   <div className="flex items-center gap-2">
                     {getStatusIcon(log.status)}
                     {getStatusBadge(log.status)}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => resendMutation.mutate(log.id)}
+                      disabled={resendMutation.isPending}
+                      data-testid={`button-resend-${log.id}`}
+                    >
+                      {resendMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span className="ml-2">Reenviar</span>
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

@@ -138,6 +138,7 @@ export interface IStorage {
   // Email logs methods
   createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
   getEmailLogsByReservation(reservationId: string): Promise<EmailLog[]>;
+  getEmailLog(id: string): Promise<EmailLog | undefined>;
 }
 
 export interface SalesReport {
@@ -907,6 +908,11 @@ export class DbStorage implements IStorage {
       .from(emailLogs)
       .where(eq(emailLogs.reservationId, reservationId))
       .orderBy(desc(emailLogs.sentAt));
+  }
+
+  async getEmailLog(id: string): Promise<EmailLog | undefined> {
+    const result = await db.select().from(emailLogs).where(eq(emailLogs.id, id)).limit(1);
+    return result[0];
   }
 }
 

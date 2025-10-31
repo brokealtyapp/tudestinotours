@@ -1421,6 +1421,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/email-logs/:id/resend", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const log = await storage.getEmailLog(req.params.id);
+      if (!log) {
+        return res.status(404).json({ error: "Log de email no encontrado" });
+      }
+
+      // Get reservation to find recipient
+      const reservation = await storage.getReservation(log.reservationId);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Resend using SMTP service with original template type
+      // Extract variables from the body or use defaults
+      const success = await smtpService.sendTemplateEmail(
+        log.recipientEmail,
+        log.templateType,
+        {}, // Could parse variables from original body if needed
+        log.reservationId
+      );
+
+      if (!success) {
+        return res.status(500).json({ error: "No se pudo reenviar el email" });
+      }
+
+      res.json({ success: true, message: "Email reenviado correctamente" });
+    } catch (error: any) {
+      console.error("Error reenviando email:", error);
+      res.status(500).json({ error: "Error reenviando email" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
