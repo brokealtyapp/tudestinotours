@@ -1,0 +1,235 @@
+1) Resumen Ejecutivo
+
+Tu Destino Tours será una plataforma de e‑commerce turístico enfocada en la venta de tours con un flujo de reservas claro, gestión de pasajeros y pagos parciales, cancelación automática por impago y comunicaciones transaccionales (correo y opcionalmente WhatsApp). La solución prioriza conversión, experiencia móvil, cumplimiento de políticas de datos y automatización operativa.
+--------------------------------
+2) Objetivos de Negocio
+
+Incrementar la tasa de conversión de campañas pagadas a reservas confirmadas.
+
+Reducir fricción en la recolección de datos de pasajeros y documentos (pasaportes).
+
+Automatizar recordatorios de pago (parciales y total) y envío de itinerarios.
+
+Disminuir carga operativa con panel de control unificado y reportes.
+
+Mejorar visibilidad SEO para tráfico orgánico sostenido.
+--------------------------------
+3) Público Objetivo
+
+Viajeros individuales y grupos (familias/colegios) que buscan tours organizados.
+
+Operadores y agentes que necesitan confirmar cupos y procesar pagos por lote.
+--------------------------------
+4) Arquitectura de Información (Sitio Público)
+
+Home (Landing): héroe con buscador de tours, beneficios, categorías, testimonios, sellos de confianza.
+
+Catálogo de Tours: filtros (destino, fecha de salida, duración, precio, tipo de tour, idioma).
+
+Ficha de Tour:
+
+Galería, video, mapa.
+
+Descripción, highlights, itinerario resumido y descargable (PDF/folleto).
+
+Salidas disponibles (fechas/cupos/precios), políticas, FAQ.
+
+CTA «Reservar».
+
+Proceso de Reserva (Wizard): datos del comprador y pasajeros; subida de fotos de pasaporte; elección de método de pago; resumen.
+
+Checkout: pago inicial/parcial o completo; términos y condiciones.
+
+Confirmación: estado de reserva, número de orden, próximos pasos, botón para crear cuenta o iniciar sesión.
+
+Mi Cuenta (Cliente): reservas, pagos, documentos, itinerarios y facturas.
+
+Blog/Guías (opcional), Contacto, Políticas, Términos, FAQ.
+--------------------------------
+5) Flujos Clave (alineados al Paso a Paso solicitado)
+
+Paso 1 — Llega por publicidad
+
+Landings dedicadas por campaña (UTM), con contenido congruente y CTA directos.
+
+Paso 2 — Selecciona el tour deseado
+
+Ficha con: información completa, folleto en PDF, precio, fechas de salida, cupos, condiciones y extras opcionales.
+
+Botón «Reservar» visible y sticky en mobile.
+
+Paso 3 — Formulario de reservaCampos por comprador y por cada pasajero:
+
+Nombre completo, correo, teléfono, aeropuerto de salida, número de pasaporte, adjuntar foto de pasaporte (validación de formato y tamaño), fecha de nacimiento, nacionalidad (opcional).
+
+Aceptación de términos y política de privacidad.
+
+Carga masiva con plantilla CSV (opcional) para grupos.
+
+Paso 4 — Panel de control (Administrador)
+
+Visualización central de la reserva con datos de comprador y pasajeros, documentos adjuntos y estado de pagos.
+
+Acciones: aprobar, solicitar correcciones, enviar enlace de pago, registrar pagos offline, emitir reembolsos (según política), cancelar.
+
+Paso 5 — Correo al cliente
+
+Email transaccional: «Tu reserva está siendo procesada» con número de reserva, resumen y tiempos de revisión.
+
+Paso 6 — Aprobación y cobro
+
+Administrador aprueba y envía enlace de pago incrustado con detalle de la reserva.
+
+Regla: La reserva debe estar pagada 1 mes antes de la salida.
+
+Pagos parciales permitidos: el sistema gestiona saldo pendiente.
+
+Cancelación automática: si no se confirma el pago antes del límite, la reserva pasa a Vencida y luego Cancelada, con notificación automática.
+
+Envío automático de itinerario por correo al quedar pagada (o programado X días antes de la salida).
+--------------------------------
+6) Roles y Permisos
+
+Perfil Cliente
+
+Crear cuenta, iniciar sesión (email/password, social login opcional).
+
+Ver/editar datos personales (limitado), gestionar pasajeros frecuentes.
+
+Subir/actualizar documentos (pasaportes) por reserva.
+
+Ver estado de reserva, historial y recibos/facturas (PDF).
+
+Realizar pagos parciales o totales mediante enlace seguro.
+
+Descargar itinerario y voucher.
+
+Recibir notificaciones por email (y WhatsApp opcional).
+
+Perfil Administrador
+
+Dashboard con KPIs (reservas por estado, ingresos, próximos vencimientos, salidas próximas, desempeño por campaña).
+
+Gestión de Tours: crear/editar fichas, fotos, itinerarios, folletos PDF, categorías, etiquetas, SEO.
+
+Gestión de Salidas: fechas, cupos, tarifas, suplementos, políticas de cancelación.
+
+Gestión de Reservas: revisión, aprobación, solicitud de datos/documentos faltantes, asignación de estado.
+
+Gestión de Pagos: enlaces de pago, registro de pagos parciales, conciliación, reembolsos (según pasarela), reportes.
+
+Gestión de Pasajeros y Documentos (verificación visual/automatizada).
+
+Automatizaciones: plantillas de email, reglas de recordatorio, disparadores por estado/fecha.
+
+Reportes: ventas, ocupación por salida, AB tests de landings, fuentes de tráfico.
+
+Ajustes: branding (colores/Logo), pasarelas, dominios, impuestos/monedas, políticas, usuarios y permisos, auditoría.
+--------------------------------
+7) Estados del Ciclo de Vida de la Reserva
+
+Recibida → En revisión → Aprobada / Pendiente de pago → Parcialmente pagada → Pagada → Itinerario enviado → Completada.
+
+Excepciones: Vencida (no pago antes de la fecha límite), Cancelada, Reembolsada.
+
+Fechas clave: creación, aprobación, vencimiento (30 días antes de la salida), recordatorios, pago final, envío de itinerario.
+--------------------------------
+8) Reglas de Negocio (clave)
+
+El sistema calcula fecha límite de pago: salida − 30 días.
+
+Pagos parciales habilitados: porcentaje mínimo configurable (ej. 20%).
+
+Cancelación automática: si al llegar la fecha límite el saldo > 0, cambiar a Vencida y tras X horas/días a Cancelada; notificar.
+
+Bloqueo de cupos al crear la reserva; liberación automática al cancelar/vencer.
+
+Validaciones de documentos: tipos (JPG/PNG/PDF), tamaño máx., lectura opcional OCR.
+
+No almacenar tarjetas (cumplimiento PCI); cobro vía pasarela con enlace seguro.
+--------------------------------
+9) Comunicaciones y Plantillas de Email
+
+Reserva recibida (al Paso 5).
+
+Reserva aprobada + enlace de pago (Paso 6).
+
+Recordatorios de pago: 60/45/30/21/14/7/3 días antes y el día límite.
+
+Pago parcial confirmado (muestra saldo y fecha límite).
+
+Pago completado + comprobante/recibo.
+
+Itinerario (PDF/HTML) + recomendaciones de viaje.
+
+Cambio de horarios/logística (si aplica).
+
+Reserva vencida/cancelada.
+
+Encuesta post‑viaje (NPS) al volver.
+
+(WhatsApp/SMS opcional con consentimiento explícito.)
+--------------------------------
+10) Módulos y Funcionalidades Detalladas
+
+10.1 Catálogo y Búsqueda
+
+Listado con filtros avanzados y ordenamientos (precio, popularidad, próximas salidas).
+
+Paginación/scroll infinito, favoritos, comparador (opcional).
+
+Schema.org (Tour/TravelAction) y rich snippets para SEO.
+
+10.2 Ficha de Tour
+
+Galería, video, mapa, itinerario expandible, folleto descargable.
+
+Selector de fecha/salida con cupos y precios dinámicos.
+
+CTA fijo «Reservar».
+
+Políticas y FAQ específicas.
+
+10.3 Reserva y Pasajeros
+
+Wizard paso a paso con guardado automático (draft).
+
+Gestión de múltiples pasajeros con duplicación de datos para agilizar.
+
+Subida múltiple de pasaportes; vista previa y verificación.
+
+Resumen final con desglose de pagos.
+
+10.4 Pagos
+
+Enlace de pago seguro (Stripe/PayPal/dLocal/Azul*) El administrador colocará el enlace generado por fuera de la plataforma por lo que no necesitamos integraciones adicionales a metodos de pago con tarjeta.
+
+Pagos parciales configurables; saldo y cronograma.
+
+Conversión de moneda (ej. USD/DOP) y impuestos (configurables).
+
+Facturas/recibos PDF.
+
+10.5 Panel del Cliente
+
+Reservas activas y pasadas, estados y líneas de tiempo.
+
+Botón «Pagar ahora» (parcial/final).
+
+Documentos y pasajeros asociados; re‑subida y validaciones.
+
+Descarga de itinerario y voucher.
+
+10.6 Panel del Administrador
+
+Dashboard con KPIs, embudo y alertas (vencimientos próximos).
+
+CRUD de tours/salidas, capacidad y pricing.
+
+Gestión de reservas y pagos con timeline de eventos.
+
+Editor de plantillas de email (variables dinámicas).
+
+Reportes exportables (CSV/XLSX) y conciliación.
+
+Bitácora/Auditoría de acciones
