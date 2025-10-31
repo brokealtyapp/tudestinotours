@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Check, X } from "lucide-react";
+import { Plus, Edit, Trash2, Check, X, DollarSign } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,10 +35,22 @@ export default function Admin() {
     images: [] as string[],
   });
   const [minDepositPercentage, setMinDepositPercentage] = useState("30");
+  const [showInstallmentsDialog, setShowInstallmentsDialog] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<any>(null);
+  const [installmentForm, setInstallmentForm] = useState({
+    amount: "",
+    dueDate: "",
+    paymentLink: "",
+    description: "",
+  });
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
   const { data: systemConfig } = useQuery<any[]>({ queryKey: ["/api/config"] });
+  const { data: installments } = useQuery<any[]>({ 
+    queryKey: ["/api/reservations", selectedReservation?.id, "installments"],
+    enabled: !!selectedReservation,
+  });
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
@@ -253,6 +265,62 @@ export default function Admin() {
     }
   };
 
+  const handleManageInstallments = (reservation: any) => {
+    setSelectedReservation(reservation);
+    setShowInstallmentsDialog(true);
+  };
+
+  const handleAddInstallment = async () => {
+    if (!selectedReservation) return;
+    
+    try {
+      await apiRequest("POST", `/api/reservations/${selectedReservation.id}/installments`, {
+        amount: parseFloat(installmentForm.amount),
+        dueDate: installmentForm.dueDate,
+        paymentLink: installmentForm.paymentLink,
+        description: installmentForm.description,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations", selectedReservation.id, "installments"] });
+      setInstallmentForm({ amount: "", dueDate: "", paymentLink: "", description: "" });
+      toast({ title: "Éxito", description: "Cuota agregada exitosamente" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkInstallmentPaid = async (installmentId: string) => {
+    try {
+      await apiRequest("PUT", `/api/installments/${installmentId}/pay`, {});
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations", selectedReservation.id, "installments"] });
+      toast({ title: "Éxito", description: "Cuota marcada como pagada" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteInstallment = async (installmentId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/installments/${installmentId}`, {});
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations", selectedReservation.id, "installments"] });
+      toast({ title: "Éxito", description: "Cuota eliminada exitosamente" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="max-w-7xl mx-auto">
@@ -378,19 +446,30 @@ export default function Admin() {
                               </p>
                             )}
                           </div>
-                          {reservation.paymentStatus === "pending" && 
-                           reservation.status !== "vencida" && 
-                           reservation.status !== "cancelada" && 
-                           reservation.status !== "cancelled" && (
+                          <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleConfirmPayment(reservation.id)}
-                              data-testid={`button-confirm-payment-${reservation.id}`}
+                              variant="outline"
+                              onClick={() => handleManageInstallments(reservation)}
+                              data-testid={`button-manage-installments-${reservation.id}`}
                             >
-                              <Check className="h-4 w-4 mr-2" />
-                              Confirmar Pago
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Gestionar Pagos
                             </Button>
-                          )}
+                            {reservation.paymentStatus === "pending" && 
+                             reservation.status !== "vencida" && 
+                             reservation.status !== "cancelada" && 
+                             reservation.status !== "cancelled" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleConfirmPayment(reservation.id)}
+                                data-testid={`button-confirm-payment-${reservation.id}`}
+                              >
+                                <Check className="h-4 w-4 mr-2" />
+                                Confirmar Pago
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -564,6 +643,138 @@ export default function Admin() {
                 <Button onClick={handleSaveTour} data-testid="button-save-tour">
                   {editingTour ? "Actualizar" : "Crear"}
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showInstallmentsDialog} onOpenChange={setShowInstallmentsDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Gestión de Cronograma de Pagos
+                {selectedReservation && (
+                  <p className="text-sm text-muted-foreground font-normal mt-1">
+                    Reserva #{selectedReservation.id.slice(0, 8)} - Total: ${selectedReservation.totalPrice}
+                  </p>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold mb-3">Cuotas de Pago Programadas</h3>
+                {installments && installments.length > 0 ? (
+                  <div className="space-y-2">
+                    {installments.map((installment: any) => (
+                      <div
+                        key={installment.id}
+                        className="p-3 border rounded-lg flex justify-between items-center"
+                        data-testid={`installment-${installment.id}`}
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">${installment.amount}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Vence: {new Date(installment.dueDate).toLocaleDateString('es-ES')}
+                          </p>
+                          {installment.description && (
+                            <p className="text-sm text-muted-foreground">{installment.description}</p>
+                          )}
+                          {installment.paymentLink && (
+                            <a 
+                              href={installment.paymentLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline"
+                            >
+                              Enlace de pago
+                            </a>
+                          )}
+                          <p className="text-sm font-medium mt-1">
+                            Estado: {installment.status === 'paid' ? 'Pagado' : installment.status === 'pending' ? 'Pendiente' : installment.status === 'overdue' ? 'Vencido' : installment.status}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {installment.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleMarkInstallmentPaid(installment.id)}
+                              data-testid={`button-mark-paid-${installment.id}`}
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Marcar Pagado
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteInstallment(installment.id)}
+                            data-testid={`button-delete-installment-${installment.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No hay cuotas programadas para esta reserva.</p>
+                )}
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-3">Agregar Nueva Cuota</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Monto</Label>
+                      <Input
+                        type="number"
+                        value={installmentForm.amount}
+                        onChange={(e) => setInstallmentForm(prev => ({ ...prev, amount: e.target.value }))}
+                        placeholder="0.00"
+                        data-testid="input-installment-amount"
+                      />
+                    </div>
+                    <div>
+                      <Label>Fecha de Vencimiento</Label>
+                      <Input
+                        type="date"
+                        value={installmentForm.dueDate}
+                        onChange={(e) => setInstallmentForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                        data-testid="input-installment-due-date"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Enlace de Pago (Mercado Pago, PayPal, etc.)</Label>
+                    <Input
+                      value={installmentForm.paymentLink}
+                      onChange={(e) => setInstallmentForm(prev => ({ ...prev, paymentLink: e.target.value }))}
+                      placeholder="https://..."
+                      data-testid="input-installment-payment-link"
+                    />
+                  </div>
+                  <div>
+                    <Label>Descripción (Opcional)</Label>
+                    <Input
+                      value={installmentForm.description}
+                      onChange={(e) => setInstallmentForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="ej: Depósito inicial, Segundo pago, etc."
+                      data-testid="input-installment-description"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      onClick={handleAddInstallment}
+                      data-testid="button-add-installment"
+                      disabled={!installmentForm.amount || !installmentForm.dueDate}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Cuota
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </DialogContent>
