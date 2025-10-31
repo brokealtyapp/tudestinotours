@@ -47,6 +47,11 @@ export default function Booking() {
   const [selectedDepartureId, setSelectedDepartureId] = useState<string>("");
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [paymentUrl, setPaymentUrl] = useState("");
+  
+  // Datos del comprador (requeridos para reservas anónimas)
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
 
   const { data: tour, isLoading: tourLoading } = useQuery<any>({
     queryKey: ["/api/tours", tourId],
@@ -140,6 +145,28 @@ export default function Booking() {
     }
 
     if (currentStep === 2) {
+      // Validar datos del comprador
+      if (!buyerName || !buyerEmail || !buyerPhone) {
+        toast({
+          title: "Error",
+          description: "Por favor completa tus datos de contacto (nombre, email y teléfono)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validar email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(buyerEmail)) {
+        toast({
+          title: "Error",
+          description: "Por favor ingresa un correo electrónico válido",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validar datos de pasajeros
       const missingData = passengers.some(
         (p) =>
           !p.name || !p.passportNumber || !p.nationality || !p.dateOfBirth
@@ -487,6 +514,56 @@ export default function Booking() {
 
             {currentStep === 2 && (
               <div className="space-y-6">
+                {/* Datos del Comprador */}
+                <Card className="border-primary">
+                  <CardHeader>
+                    <CardTitle>Datos del Comprador</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Ingresa tus datos de contacto para recibir la confirmación de tu reserva
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="buyer-name">Nombre Completo *</Label>
+                      <Input
+                        id="buyer-name"
+                        value={buyerName}
+                        onChange={(e) => setBuyerName(e.target.value)}
+                        placeholder="Juan Pérez"
+                        data-testid="input-buyer-name"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="buyer-email">Correo Electrónico *</Label>
+                        <Input
+                          id="buyer-email"
+                          type="email"
+                          value={buyerEmail}
+                          onChange={(e) => setBuyerEmail(e.target.value)}
+                          placeholder="ejemplo@correo.com"
+                          data-testid="input-buyer-email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="buyer-phone">Teléfono *</Label>
+                        <Input
+                          id="buyer-phone"
+                          type="tel"
+                          value={buyerPhone}
+                          onChange={(e) => setBuyerPhone(e.target.value)}
+                          placeholder="+1 (809) 555-1234"
+                          data-testid="input-buyer-phone"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Datos de Pasajeros */}
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Información de Pasajeros</h3>
+                </div>
                 {passengers.map((passenger, index) => (
                   <Card key={index}>
                     <CardHeader>
