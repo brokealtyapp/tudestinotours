@@ -1,23 +1,73 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useEffect, useState, useMemo } from "react";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import TourCard from "@/components/TourCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Search, X, Calendar, Users } from "lucide-react";
 
 export default function Tours() {
+  const [location, navigate] = useLocation();
   const [searchLocation, setSearchLocation] = useState("");
-  const [location, setLocation] = useState("");
+  
+  // Leer query params
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      tourId: params.get("tourId"),
+      checkIn: params.get("checkIn"),
+      checkOut: params.get("checkOut"),
+      adults: parseInt(params.get("adults") || "0"),
+      youth: parseInt(params.get("youth") || "0"),
+      children: parseInt(params.get("children") || "0"),
+      babies: parseInt(params.get("babies") || "0"),
+    };
+  }, [location]);
 
   const { data: tours, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/tours", location],
+    queryKey: ["/api/tours"],
   });
 
+  // Filtrar tours según los parámetros de búsqueda
+  const filteredTours = useMemo(() => {
+    if (!tours) return [];
+    
+    let filtered = [...tours];
+    
+    // Filtrar por tourId si existe
+    if (queryParams.tourId) {
+      filtered = filtered.filter(tour => tour.id.toString() === queryParams.tourId);
+    }
+    
+    // Filtrar por ubicación de búsqueda local
+    if (searchLocation) {
+      filtered = filtered.filter(tour => 
+        tour.name?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        tour.destination?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        tour.description?.toLowerCase().includes(searchLocation.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [tours, queryParams.tourId, searchLocation]);
+
   const handleSearch = () => {
-    setLocation(searchLocation);
+    // La búsqueda local ya está manejada por el estado searchLocation
+    // que se usa en filteredTours
   };
+
+  const clearFilters = () => {
+    setSearchLocation("");
+    navigate("/tours");
+  };
+
+  const totalGuests = queryParams.adults + queryParams.youth + queryParams.children + queryParams.babies;
+  const hasFilters = queryParams.tourId || queryParams.checkIn || queryParams.checkOut || totalGuests > 0 || searchLocation;
 
   return (
     <div className="min-h-screen">
@@ -50,26 +100,87 @@ export default function Tours() {
               </div>
             </div>
 
+            {/* Filtros activos */}
+            {hasFilters && (
+              <div className="mb-8 p-4 bg-background rounded-lg border">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold">Filtros aplicados:</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Limpiar filtros
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {queryParams.checkIn && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Entrada: {format(parseISO(queryParams.checkIn), "d MMM yyyy", { locale: es })}
+                    </Badge>
+                  )}
+                  {queryParams.checkOut && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Salida: {format(parseISO(queryParams.checkOut), "d MMM yyyy", { locale: es })}
+                    </Badge>
+                  )}
+                  {totalGuests > 0 && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Users className="h-3 w-3" />
+                      {totalGuests} {totalGuests === 1 ? "persona" : "personas"}
+                      {queryParams.adults > 0 && ` (${queryParams.adults} adultos)`}
+                      {queryParams.youth > 0 && ` (${queryParams.youth} jóvenes)`}
+                      {queryParams.children > 0 && ` (${queryParams.children} niños)`}
+                      {queryParams.babies > 0 && ` (${queryParams.babies} bebés)`}
+                    </Badge>
+                  )}
+                  {searchLocation && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Search className="h-3 w-3" />
+                      Ubicación: {searchLocation}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Resultados */}
             {isLoading ? (
               <div className="text-center py-12">Cargando tours...</div>
-            ) : tours && tours.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tours.map((tour: any) => (
-                  <div key={tour.id} onClick={() => window.location.href = `/tours/${tour.id}`}>
-                    <TourCard
-                      image={tour.images[0] || "/placeholder-tour.jpg"}
-                      title={tour.title}
-                      location={tour.location}
-                      rating={parseFloat(tour.rating || "0")}
-                      reviews={tour.reviewCount?.toString() || "0"}
-                      price={parseFloat(tour.price)}
-                    />
-                  </div>
-                ))}
-              </div>
+            ) : filteredTours && filteredTours.length > 0 ? (
+              <>
+                <div className="mb-4 text-sm text-muted-foreground">
+                  {filteredTours.length} {filteredTours.length === 1 ? "tour encontrado" : "tours encontrados"}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTours.map((tour: any) => (
+                    <div key={tour.id} onClick={() => navigate(`/tours/${tour.id}`)} className="cursor-pointer">
+                      <TourCard
+                        image={tour.images?.[0] || "/placeholder-tour.jpg"}
+                        title={tour.name}
+                        location={tour.destination}
+                        rating={parseFloat(tour.rating || "0")}
+                        reviews={tour.reviewCount?.toString() || "0"}
+                        price={parseFloat(tour.price)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                No se encontraron tours. Intenta una búsqueda diferente.
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">
+                  No se encontraron tours que coincidan con tu búsqueda.
+                </p>
+                {hasFilters && (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Limpiar filtros
+                  </Button>
+                )}
               </div>
             )}
           </div>
