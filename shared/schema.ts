@@ -168,3 +168,21 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
 
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type SystemConfig = typeof systemConfig.$inferSelect;
+
+export const reservationTimelineEvents = pgTable("reservation_timeline_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reservationId: varchar("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  description: text("description").notNull(),
+  performedBy: varchar("performed_by").references(() => users.id),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertReservationTimelineEventSchema = createInsertSchema(reservationTimelineEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReservationTimelineEvent = z.infer<typeof insertReservationTimelineEventSchema>;
+export type ReservationTimelineEvent = typeof reservationTimelineEvents.$inferSelect;
