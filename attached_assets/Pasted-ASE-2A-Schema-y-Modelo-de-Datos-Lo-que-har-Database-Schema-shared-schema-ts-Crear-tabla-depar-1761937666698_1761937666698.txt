@@ -1,0 +1,150 @@
+ASE 2A: Schema y Modelo de Datos
+Lo que haré:
+
+Database Schema (shared/schema.ts):
+Crear tabla departures:
+export const departures = pgTable("departures", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tourId: varchar("tour_id").notNull().references(() => tours.id),
+  departureDate: timestamp("departure_date").notNull(),
+  returnDate: timestamp("return_date"),
+  totalSeats: integer("total_seats").notNull(),
+  reservedSeats: integer("reserved_seats").default(0).notNull(),
+  price: real("price").notNull(), // Puede override precio base del tour
+  supplements: jsonb("supplements"), // {earlyBird: -50, singleRoom: 100}
+  cancellationPolicyOverride: text("cancellation_policy_override"),
+  paymentDeadlineDays: integer("payment_deadline_days").default(30),
+  status: text("status").default("active"), // active, cancelled, completed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+Crear tipos Zod:
+export const insertDepartureSchema = createInsertSchema(departures).omit({ 
+  id: true, 
+  createdAt: true,
+  reservedSeats: true 
+});
+export type InsertDeparture = z.infer<typeof insertDepartureSchema>;
+export type Departure = typeof departures.$inferSelect;
+
+Migration:
+Generar migración con drizzle-kit
+Ejecutar migración en BD de desarrollo
+Modificar tabla reservations:
+Agregar campo departureId (nullable inicialmente para no romper datos existentes)
+En el futuro será required
+Resultado: Modelo de datos que soporta múltiples salidas por tour.
+
+FASE 2B: API Backend para Salidas
+Lo que haré:
+
+Storage Interface (server/storage.ts):
+Agregar métodos en IStorage y DbStorage:
+getDepartures(tourId?: string): Promise<Departure[]>
+getDeparture(id: string): Promise<Departure | undefined>
+createDeparture(departure: InsertDeparture): Promise<Departure>
+updateDeparture(id: string, departure: Partial<InsertDeparture>): Promise<Departure>
+deleteDeparture(id: string): Promise<void>
+updateDepartureSeats(id: string, seatsChange: number): Promise<void>
+
+Routes (server/routes.ts):
+GET /api/departures - listar todas (con filtro opcional por tourId)
+GET /api/departures/:id - obtener una salida
+POST /api/departures - crear (solo admin)
+PUT /api/departures/:id - actualizar (solo admin)
+DELETE /api/departures/:id - eliminar si no tiene reservas (solo admin)
+POST /api/departures/:id/duplicate - duplicar salida a nuevas fechas
+Validaciones:
+No permitir crear salida con departureDate en el pasado
+totalSeats debe ser > 0
+reservedSeats no puede exceder totalSeats
+Al eliminar, verificar que no haya reservas asociadas
+Resultado: API completa para gestionar salidas.
+
+FASE 2C: UI de Gestión de Salidas - Vista Lista/Tabla
+Lo que haré:
+
+Componente DeparturesTab (en Admin.tsx):
+Agregar nueva tab "Salidas" al Tabs principal
+Toggle entre vista "Tabla" y "Calendario"
+Filtros:
+Select de Tour (todos los tours)
+DatePicker de rango de fechas
+Status (activas/canceladas/completadas)
+Componente DeparturesTable:
+Tabla con columnas:
+Tour (nombre)
+Fecha Salida
+Fecha Regreso
+Cupos (15/20 con barra de progreso)
+% Ocupación
+Precio
+Estado
+Acciones (Editar, Duplicar, Eliminar)
+Ordenar por fecha de salida
+Paginación
+useQuery para /api/departures
+Dialogo Create/Edit Departure:
+Form con campos:
+Select de Tour (required)
+DatePicker Fecha Salida (required)
+DatePicker Fecha Regreso (optional)
+Input Cupos Totales (number, required)
+Input Precio (number, puede heredar del tour o override)
+Input Días para pago límite (default 30)
+Textarea Suplementos (JSON o campos individuales)
+Textarea Política de Cancelación Override (optional)
+Validaciones con react-hook-form + zodResolver
+Botones Cancelar / Guardar
+Funcionalidad Duplicar:
+Modal con DatePicker múltiple para seleccionar nuevas fechas
+Botón "Duplicar a estas fechas"
+Crear múltiples salidas con mismos datos pero fechas diferentes
+Resultado: Admin puede gestionar salidas en vista de tabla.
+
+FASE 2D: UI de Gestión de Salidas - Vista Calendario
+Lo que haré:
+
+Componente DeparturesCalendar:
+Usar librería react-big-calendar o shadcn Calendar extendido
+Vista mensual mostrando:
+Cada salida como evento en su fecha
+Badge con % ocupación (color coded)
+Precio "from" del tour
+Click en fecha vacía → abrir modal crear salida con esa fecha precargada
+Click en evento → abrir modal editar salida
+Vista de día:
+Sidebar mostrando todas las salidas de ese día
+Quick edit inline de cupos y precio
+Indicadores visuales:
+Dot verde: <50% ocupación
+Dot amarillo: 50-80% ocupación
+Dot rojo: >80% ocupación
+Dot gris: salida cancelada
+Resultado: Vista calendario intuitiva para gestionar salidas.
+
+FASE 2E: Integración con Sistema de Reservas
+Lo que haré:
+
+Modificar Booking Flow (client/src/pages/Booking.tsx):
+Paso 1 existente (seleccionar tour) ahora muestra:
+Lista de salidas disponibles para ese tour
+Cada salida muestra: fecha, cupos disponibles, precio
+Usuario DEBE seleccionar una salida antes de continuar
+Guardar departureId en el estado del wizard
+Backend (crear reserva):
+Modificar POST /api/reservations para requerir departureId
+Al crear reserva:
+Incrementar reservedSeats de la salida
+Calcular paymentDueDate = departureDate - paymentDeadlineDays
+Validar que hay cupos disponibles (totalSeats - reservedSeats >= guestCount)
+Cancelación de Reserva:
+Al cancelar/vencer reserva:
+Decrementar reservedSeats de la salida
+Liberar cupos automáticamente
+Migraciones de datos existentes:
+Script para convertir reservas antiguas:
+Crear salida "genérica" por cada tour existente con reservas
+Asignar departureId a reservas antiguas
+Calcular reservedSeats sumando passengers de esas reservas
+Resultado: Sistema completo de salidas integrado con reservas.
