@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
+import DashboardAdmin from "@/components/DashboardAdmin";
 import {
   Dialog,
   DialogContent,
@@ -325,14 +326,19 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Panel de Administración</h1>
+        <h1 className="text-4xl font-bold mb-8" data-testid="text-admin-title">Panel de Administración</h1>
 
-        <Tabs defaultValue="tours" className="space-y-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="tours">Tours</TabsTrigger>
-            <TabsTrigger value="reservations">Reservas</TabsTrigger>
-            <TabsTrigger value="config">Configuración</TabsTrigger>
+            <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="tours" data-testid="tab-tours">Tours</TabsTrigger>
+            <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
+            <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard">
+            <DashboardAdmin />
+          </TabsContent>
 
           <TabsContent value="tours">
             <Card>
