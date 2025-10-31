@@ -94,7 +94,8 @@ app.use((req, res, next) => {
       log("[INIT] Reglas de recordatorio creadas: 7, 3 y 0 días antes");
     }
   } catch (error) {
-    log("[INIT] Error creando reglas de recordatorio por defecto:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`[INIT] Error creando reglas de recordatorio por defecto: ${errorMessage}`);
   }
 
   // Initialize automated task scheduler

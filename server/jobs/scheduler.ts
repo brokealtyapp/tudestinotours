@@ -47,19 +47,23 @@ async function processPaymentReminders() {
         return false;
       });
 
-      if (nextRule) {
+      if (nextRule && reservation.userId) {
         // Get user and tour info
         const user = await storage.getUser(reservation.userId);
-        const tour = await storage.getTour(reservation.tourId);
-        const departure = await storage.getDeparture(reservation.departureId);
+        const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
+        const departure = reservation.departureId ? await storage.getDeparture(reservation.departureId) : null;
 
         if (user && tour && departure) {
           // Prepare variables for template
+          const totalPrice = typeof reservation.totalPrice === 'number' 
+            ? reservation.totalPrice 
+            : parseFloat(reservation.totalPrice);
+          
           const variables = {
             nombre_cliente: user.name,
             tour_nombre: tour.title,
             codigo_reserva: reservation.id.substring(0, 8).toUpperCase(),
-            monto_total: reservation.totalPrice.toFixed(2),
+            monto_total: totalPrice.toFixed(2),
             fecha_limite: new Date(reservation.paymentDueDate).toLocaleDateString('es-ES'),
             dias_restantes: daysUntilDue.toString(),
             fecha_salida: new Date(departure.departureDate).toLocaleDateString('es-ES'),
@@ -132,8 +136,8 @@ async function processAutoCancellations() {
           });
 
           // Get user and tour info
-          const user = await storage.getUser(reservation.userId);
-          const tour = await storage.getTour(reservation.tourId);
+          const user = reservation.userId ? await storage.getUser(reservation.userId) : null;
+          const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
 
           if (user && tour) {
             await emailService.sendCancellationNotice(user, reservation, tour, "vencida");
@@ -161,8 +165,8 @@ async function processAutoCancellations() {
           );
 
           // Get user and tour info
-          const user = await storage.getUser(reservation.userId);
-          const tour = await storage.getTour(reservation.tourId);
+          const user = reservation.userId ? await storage.getUser(reservation.userId) : null;
+          const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
 
           if (user && tour) {
             await emailService.sendCancellationNotice(user, reservation, tour, "cancelada");

@@ -35,10 +35,13 @@ export default function ReminderConfig() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/reminder-rules", {
+      const response = await fetch("/api/reminder-rules", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error("Failed to create");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminder-rules"] });
@@ -60,10 +63,13 @@ export default function ReminderConfig() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return await apiRequest(`/api/reminder-rules/${id}`, {
+      const response = await fetch(`/api/reminder-rules/${id}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!response.ok) throw new Error("Failed to update");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminder-rules"] });
@@ -85,9 +91,11 @@ export default function ReminderConfig() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/reminder-rules/${id}`, {
+      const response = await fetch(`/api/reminder-rules/${id}`, {
         method: "DELETE",
       });
+      if (!response.ok) throw new Error("Failed to delete");
+      return response.status === 204 ? null : response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminder-rules"] });
@@ -107,10 +115,13 @@ export default function ReminderConfig() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      return await apiRequest(`/api/reminder-rules/${id}`, {
+      const response = await fetch(`/api/reminder-rules/${id}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled }),
       });
+      if (!response.ok) throw new Error("Failed to toggle");
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminder-rules"] });

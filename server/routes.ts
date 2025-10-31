@@ -711,9 +711,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If payment is confirmed, send itinerary
-      if (paymentStatus === "confirmed") {
-        const user = await storage.getUser(reservation!.userId);
-        const tour = await storage.getTour(reservation!.tourId);
+      if (paymentStatus === "confirmed" && reservation) {
+        const user = await storage.getUser(reservation.userId);
+        const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
         const passengers = await storage.getPassengersByReservation(reservation!.id);
         
         if (user && tour) {
@@ -1086,7 +1086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const passengers = await storage.getPassengersByReservation(req.params.id);
       const installments = await storage.getPaymentInstallments(req.params.id);
-      const user = await storage.getUser(reservation.userId);
+      const user = reservation.userId ? await storage.getUser(reservation.userId) : null;
       if (!user) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
@@ -1131,7 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const passengers = await storage.getPassengersByReservation(req.params.id);
-      const user = await storage.getUser(reservation.userId);
+      const user = reservation.userId ? await storage.getUser(reservation.userId) : null;
       if (!user) {
         return res.status(404).json({ error: "Usuario no encontrado" });
       }
