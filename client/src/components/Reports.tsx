@@ -127,11 +127,22 @@ function SalesReport() {
   const [startDate, setStartDate] = useState(format(defaultStart, 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(defaultEnd, 'yyyy-MM-dd'));
   const [selectedTour, setSelectedTour] = useState<string>("");
+  const [selectedDeparture, setSelectedDeparture] = useState<string>("");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ['/api/tours'] });
 
+  const { data: departures } = useQuery<any[]>({
+    queryKey: ['/api/departures', { tourId: selectedTour }],
+    enabled: !!selectedTour,
+  });
+
   const { data: report, isLoading } = useQuery<SalesReport>({
-    queryKey: ['/api/reports/sales', { startDate, endDate, tourId: selectedTour || undefined }],
+    queryKey: ['/api/reports/sales', { 
+      startDate, 
+      endDate, 
+      tourId: selectedTour || undefined,
+      departureId: selectedDeparture || undefined
+    }],
     enabled: !!startDate && !!endDate,
   });
 
@@ -141,7 +152,7 @@ function SalesReport() {
       Tour: item.tourName,
       Reservas: item.count,
       'Ingreso Total': item.revenue.toFixed(2),
-      'Ticket Promedio': (item.revenue / item.count).toFixed(2),
+      'Ticket Promedio': item.count > 0 ? (item.revenue / item.count).toFixed(2) : '0.00',
     }));
     exportToCSV(exportData, 'reporte-ventas');
   };
@@ -153,7 +164,7 @@ function SalesReport() {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start-date">Fecha Inicio</Label>
               <input
@@ -178,7 +189,10 @@ function SalesReport() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tour-filter">Tour (Opcional)</Label>
-              <Select value={selectedTour} onValueChange={setSelectedTour}>
+              <Select value={selectedTour} onValueChange={(value) => {
+                setSelectedTour(value);
+                setSelectedDeparture("");
+              }}>
                 <SelectTrigger id="tour-filter" data-testid="select-tour-filter">
                   <SelectValue placeholder="Todos los tours" />
                 </SelectTrigger>
@@ -187,6 +201,26 @@ function SalesReport() {
                   {tours?.map((tour) => (
                     <SelectItem key={tour.id} value={tour.id}>
                       {tour.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="departure-filter">Salida (Opcional)</Label>
+              <Select 
+                value={selectedDeparture} 
+                onValueChange={setSelectedDeparture}
+                disabled={!selectedTour}
+              >
+                <SelectTrigger id="departure-filter" data-testid="select-departure-filter">
+                  <SelectValue placeholder="Todas las salidas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las salidas</SelectItem>
+                  {departures?.map((departure) => (
+                    <SelectItem key={departure.id} value={departure.id}>
+                      {format(new Date(departure.departureDate), 'dd MMM yyyy', { locale: es })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -265,7 +299,10 @@ function SalesReport() {
                         ${item.revenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell className="text-right">
-                        ${(item.revenue / item.count).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        ${item.count > 0 
+                          ? (item.revenue / item.count).toLocaleString('es-MX', { minimumFractionDigits: 2 })
+                          : '0.00'
+                        }
                       </TableCell>
                     </TableRow>
                   ))}
