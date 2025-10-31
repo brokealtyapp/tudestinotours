@@ -319,6 +319,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment reserved seats
       await storage.incrementReservedSeats(tour.id, validatedData.numberOfPassengers);
 
+      // Log timeline event
+      await storage.createTimelineEvent({
+        reservationId: reservation.id,
+        eventType: "reservation_created",
+        description: `Reserva creada por ${req.user!.role === 'admin' ? 'administrador' : 'cliente'}`,
+        performedBy: req.user!.userId,
+        metadata: JSON.stringify({ 
+          tourTitle: tour.title,
+          passengers: validatedData.numberOfPassengers,
+          totalPrice: validatedData.totalPrice,
+        }),
+      });
+
       // Get user for email
       const user = await storage.getUser(req.user!.userId);
       
@@ -348,6 +361,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
+      const oldStatus = currentReservation.status;
+      const oldPaymentStatus = currentReservation.paymentStatus;
+
       // If cancelling or status is vencida/cancelada, release seats
       if (status === "cancelled" || status === "cancelada" || status === "vencida") {
         await storage.decrementReservedSeats(
@@ -362,6 +378,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         paymentStatus
       );
+
+      // Log timeline events
+      if (status && status !== oldStatus) {
+        await storage.createTimelineEvent({
+          reservationId: req.params.id,
+          eventType: "status_changed",
+          description: `Estado cambiado de "${oldStatus}" a "${status}" por administrador`,
+          performedBy: req.user!.userId,
+          metadata: JSON.stringify({ oldStatus, newStatus: status }),
+        });
+      }
+
+      if (paymentStatus && paymentStatus !== oldPaymentStatus) {
+        await storage.createTimelineEvent({
+          reservationId: req.params.id,
+          eventType: "payment_status_changed",
+          description: `Estado de pago cambiado de "${oldPaymentStatus}" a "${paymentStatus}" por administrador`,
+          performedBy: req.user!.userId,
+          metadata: JSON.stringify({ oldPaymentStatus, newPaymentStatus: paymentStatus }),
+        });
+      }
 
       // If payment is confirmed, send itinerary
       if (paymentStatus === "confirmed") {
@@ -493,6 +530,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const installment = await storage.createPaymentInstallment(validatedData);
+
+      // Log timeline event
+      await storage.createTimelineEvent({
+        reservationId: req.params.reservationId,
+        eventType: "installment_created",
+        description: `Cuota de pago creada: $${validatedData.amount} (${validatedData.installmentNumber}/${validatedData.totalInstallments})`,
+        performedBy: req.user!.userId,
+        metadata: JSON.stringify({ 
+          amount: validatedData.amount,
+          dueDate: validatedData.dueDate,
+          installmentNumber: validatedData.installmentNumber,
+        }),
+      });
+
       res.status(201).json(installment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -517,6 +568,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!installment) {
         return res.status(404).json({ error: "Cuota no encontrada" });
       }
+
+      // Log timeline event
+      await storage.createTimelineEvent({
+        reservationId: installment.reservationId,
+        eventType: "installment_paid",
+        description: `Cuota ${installment.installmentNumber}/${installment.totalInstallments} marcada como pagada: $${installment.amount}`,
+        performedBy: req.user!.userId,
+        metadata: JSON.stringify({ 
+          amount: installment.amount,
+          installmentNumber: installment.installmentNumber,
+        }),
+      });
+
       res.json(installment);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -564,6 +628,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(config);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Timeline routes
+  app.get("/api/reservations/:id/timeline", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const reservation = await storage.getReservation(req.params.id);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Check authorization: admin can view all, clients can only view their own
+      if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
+        return res.status(403).json({ error: "No autorizado para ver este historial" });
+      }
+
+      const events = await storage.getTimelineEvents(req.params.id);
+      
+      // Enrich events with user information
+      const enrichedEvents = await Promise.all(
+        events.map(async (event) => {
+          if (event.performedBy) {
+            const user = await storage.getUser(event.performedBy);
+            return {
+              ...event,
+              performedByName: user ? `${user.fullName} (${user.email})` : 'Usuario desconocido',
+            };
+          }
+          return {
+            ...event,
+            performedByName: 'Sistema automático',
+          };
+        })
+      );
+
+      res.json(enrichedEvents);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
