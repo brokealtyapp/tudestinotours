@@ -240,3 +240,42 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
 
 export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+export const reminderRules = pgTable("reminder_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  daysBeforeDeadline: integer("days_before_deadline").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  templateType: text("template_type").notNull(),
+  sendTime: text("send_time").notNull().default("09:00"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertReminderRuleSchema = createInsertSchema(reminderRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertReminderRule = z.infer<typeof insertReminderRuleSchema>;
+export type ReminderRule = typeof reminderRules.$inferSelect;
+
+export const emailLogs = pgTable("email_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reservationId: varchar("reservation_id").references(() => reservations.id, { onDelete: "cascade" }),
+  templateType: text("template_type").notNull(),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  recipientEmail: text("recipient_email").notNull(),
+  status: text("status").notNull().default("sent"),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  errorMessage: text("error_message"),
+});
+
+export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+export type EmailLog = typeof emailLogs.$inferSelect;
