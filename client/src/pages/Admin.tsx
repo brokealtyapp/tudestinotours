@@ -31,17 +31,29 @@ export default function Admin() {
     price: "",
     duration: "",
     maxPassengers: "",
+    minDepositPercentage: "",
     images: [] as string[],
   });
+  const [minDepositPercentage, setMinDepositPercentage] = useState("30");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
+  const { data: systemConfig } = useQuery<any[]>({ queryKey: ["/api/config"] });
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
       setLocation("/");
     }
   }, [isLoading, user, isAdmin, setLocation]);
+
+  useEffect(() => {
+    if (systemConfig) {
+      const config = systemConfig.find((c: any) => c.key === "DEFAULT_MIN_DEPOSIT_PERCENTAGE");
+      if (config) {
+        setMinDepositPercentage(config.value);
+      }
+    }
+  }, [systemConfig]);
 
   if (isLoading || (!user || !isAdmin)) {
     return (
@@ -71,11 +83,15 @@ export default function Admin() {
 
   const handleSaveTour = async () => {
     try {
-      const tourData = {
+      const tourData: any = {
         ...tourForm,
         price: parseFloat(tourForm.price),
         maxPassengers: parseInt(tourForm.maxPassengers),
       };
+      
+      if (tourForm.minDepositPercentage) {
+        tourData.minDepositPercentage = parseInt(tourForm.minDepositPercentage);
+      }
 
       if (editingTour) {
         await apiRequest("PUT", `/api/tours/${editingTour.id}`, tourData);
@@ -120,6 +136,7 @@ export default function Admin() {
       price: "",
       duration: "",
       maxPassengers: "",
+      minDepositPercentage: "",
       images: [],
     });
     setEditingTour(null);
@@ -134,6 +151,7 @@ export default function Admin() {
       price: tour.price,
       duration: tour.duration,
       maxPassengers: tour.maxPassengers.toString(),
+      minDepositPercentage: tour.minDepositPercentage ? tour.minDepositPercentage.toString() : "",
       images: tour.images || [],
     });
     setShowTourDialog(true);
@@ -217,6 +235,24 @@ export default function Admin() {
     }
   };
 
+  const handleSaveConfig = async () => {
+    try {
+      await apiRequest("POST", "/api/config", {
+        key: "DEFAULT_MIN_DEPOSIT_PERCENTAGE",
+        value: minDepositPercentage,
+        description: "Porcentaje mínimo de depósito inicial requerido para todas las reservas"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/config"] });
+      toast({ title: "Éxito", description: "Configuración guardada exitosamente" });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="max-w-7xl mx-auto">
@@ -226,6 +262,7 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="tours">Tours</TabsTrigger>
             <TabsTrigger value="reservations">Reservas</TabsTrigger>
+            <TabsTrigger value="config">Configuración</TabsTrigger>
           </TabsList>
 
           <TabsContent value="tours">
@@ -362,6 +399,50 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="config">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuración de Pagos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="min-deposit">Porcentaje Mínimo de Depósito Global (%)</Label>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Este es el porcentaje mínimo que los clientes deben pagar como depósito inicial para cualquier reserva. Puedes configurar excepciones por tour individual.
+                    </p>
+                    <div className="flex gap-4 items-end">
+                      <div className="flex-1 max-w-xs">
+                        <Input
+                          id="min-deposit"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={minDepositPercentage}
+                          onChange={(e) => setMinDepositPercentage(e.target.value)}
+                          data-testid="input-min-deposit-percentage"
+                        />
+                      </div>
+                      <Button onClick={handleSaveConfig} data-testid="button-save-config">
+                        Guardar Configuración
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold mb-2">Información Adicional</h3>
+                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                      <li>Este porcentaje aplica por defecto a todos los tours nuevos</li>
+                      <li>Puedes configurar un porcentaje diferente para tours específicos en la sección "Tours"</li>
+                      <li>Si un tour tiene un porcentaje configurado, ese valor anula el global</li>
+                      <li>Los clientes deberán pagar al menos este porcentaje del total al hacer la reserva</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         <Dialog open={showTourDialog} onOpenChange={setShowTourDialog}>
@@ -424,6 +505,21 @@ export default function Admin() {
                     data-testid="input-tour-max-passengers"
                   />
                 </div>
+              </div>
+              <div>
+                <Label>% Mínimo de Depósito (Opcional)</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Deja vacío para usar la configuración global. Ingresa un valor para anular el porcentaje global para este tour.
+                </p>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={tourForm.minDepositPercentage}
+                  onChange={(e) => setTourForm(prev => ({ ...prev, minDepositPercentage: e.target.value }))}
+                  placeholder={`Por defecto: ${minDepositPercentage}%`}
+                  data-testid="input-tour-min-deposit"
+                />
               </div>
               <div>
                 <Label>Imágenes (Ingresa URLs de imágenes)</Label>
