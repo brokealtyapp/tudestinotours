@@ -1,0 +1,205 @@
+EVALUACIÓN EXHAUSTIVA: PANEL ACTUAL VS DISEÑO OBJETIVO
+📊 1. DASHBOARD / INICIO
+Estado: NO EXISTE (0%)
+
+Lo que necesita:
+
+KPIs principales: GMV, Reservas por estado, Ocupación, Pagos pendientes, Vencimientos próximos
+Embudo visual (Recibida → Pagada)
+Tabla "Acciones urgentes" y "Vencen pronto"
+Gráfico de ocupación por salida
+Fuentes UTM/campañas
+Lo que tiene:
+
+Nada. El admin actual empieza directamente en tabs de Tours/Reservas/Config
+Gap crítico: Sin dashboard, el administrador no tiene visibilidad del negocio.
+
+🏝️ 2. TOURS
+Estado: BÁSICO (40%)
+
+Lo que necesita:
+
+✅ CRUD básico
+❌ Gestión de SEO (meta, keywords, schema.org)
+❌ Versionado/historial de cambios
+❌ Categorías y etiquetas
+❌ Folleto PDF descargable
+❌ Video embed
+❌ Mapa integrado
+❌ Itinerario estructurado (día por día)
+Lo que tiene:
+
+✅ Crear/editar/eliminar tours
+✅ Título, descripción, ubicación, precio, duración
+✅ Imágenes (URLs)
+✅ Cupos máximos
+✅ % depósito mínimo override
+Gap: Falta gestión de contenido rico (SEO, media, itinerarios detallados).
+
+📅 3. SALIDAS (DEPARTURES)
+Estado: NO EXISTE (0%)
+
+CRÍTICO: Este es el gap más grande. El sistema actual NO distingue entre "tour" y "salidas específicas con fechas".
+
+Lo que necesita:
+
+Calendario con fechas de salida
+Cupos disponibles POR FECHA
+Precios dinámicos por salida
+Suplementos por salida
+Políticas específicas por salida
+Gestión masiva (duplicar fechas)
+Vista de ocupación por salida
+Lo que tiene:
+
+NADA. El tour tiene "maxPassengers" pero no hay concepto de "salida el 15 de marzo con 20 cupos"
+Impacto: No puedes vender tours con fechas específicas. Solo puedes vender "el tour genérico".
+
+📋 4. RESERVAS
+Estado: INTERMEDIO (50%)
+
+Lo que necesita:
+
+✅ Bandejas por estado
+✅ Detalle con tabs (Resumen, Pasajeros, Documentos, Pagos, Timeline, Comunicaciones, Auditoría)
+❌ Tab de Pasajeros (ver datos de cada pasajero)
+❌ Tab de Documentos (ver/validar pasaportes)
+❌ Tab de Comunicaciones (historial de emails)
+❌ Tab de Auditoría (quién hizo qué)
+✅ Acciones: Aprobar, Confirmar pago, Cambiar estado
+❌ Solicitar corrección
+❌ Registrar pago offline con detalles
+❌ Emitir reembolso
+❌ Cancelar con motivo
+Lo que tiene:
+
+✅ Lista de reservas con estados
+✅ Confirmar pago manualmente
+✅ Cambiar estado
+✅ Ver cuotas de pago
+✅ Timeline de eventos
+✅ Descargar PDF (factura/itinerario)
+Gap: Falta gestión de pasajeros/documentos, comunicaciones y auditoría detallada.
+
+💳 5. PAGOS
+Estado: BÁSICO (35%)
+
+Lo que necesita:
+
+✅ Enlaces externos de pago
+✅ Gestión de cuotas parciales
+❌ Conciliación (marcar pagos recibidos)
+❌ Tipo de cambio
+❌ Aging de cuentas por cobrar
+❌ Calendario de cobros
+❌ Registrar pagos offline con método/comprobante
+❌ Reembolsos
+Lo que tiene:
+
+✅ Campo paymentLink en cuotas
+✅ Marcar cuota como pagada
+✅ Crear/editar/eliminar cuotas
+Gap: Falta conciliación avanzada y tracking financiero.
+
+👥 6. PASAJEROS & DOCUMENTOS
+Estado: NO EXISTE EN ADMIN (0%)
+
+Lo que necesita:
+
+Ver lista de pasajeros por reserva
+Datos completos (nombre, pasaporte, DOB, nacionalidad)
+Visualizar documentos (pasaportes subidos)
+Validación/verificación
+Solicitar correcciones
+Buscador de pasajeros frecuentes
+Lo que tiene:
+
+NADA en el panel admin
+(Los pasajeros se capturan en booking pero no se gestionan en admin)
+Gap crítico: No puedes verificar documentos ni gestionar pasajeros.
+
+🤖 7. AUTOMATIZACIONES
+Estado: PARCIAL (30%)
+
+Lo que necesita:
+
+✅ Cancelación automática (vencimiento)
+❌ Recordatorios programables (60/45/30/21/14/7/3/0 días)
+❌ Editor de plantillas de email
+❌ Variables dinámicas
+❌ WhatsApp opcional
+❌ Triggers por cambio de estado
+❌ Logs de envíos
+❌ A/B testing
+Lo que tiene:
+
+✅ Scheduler con cron jobs
+✅ Cancelación automática después de vencimiento
+✅ Sistema de emails (envío básico)
+Gap: Falta configuración flexible y editor de plantillas.
+
+📈 8. REPORTES
+Estado: NO EXISTE (0%)
+
+Lo que necesita:
+
+Ventas por período/tour/salida/moneda
+Ocupación por salida
+Aging de cuentas
+Conversión por campaña UTM
+Efectividad de recordatorios
+Exportación CSV/XLSX
+Lo que tiene:
+
+NADA
+Gap: No hay forma de analizar el negocio con datos.
+
+⚙️ 9. AJUSTES
+Estado: MÍNIMO (10%)
+
+Lo que necesita:
+
+Branding (logo, colores)
+Dominios
+Monedas/impuestos
+Políticas de cancelación
+Gestión de usuarios/roles
+Configuraciones globales
+Lo que tiene:
+
+✅ Solo % depósito mínimo global
+Gap: Falta configuración completa del sistema.
+
+📊 RESUMEN EJECUTIVO
+Módulo	Estado Actual	Completitud
+Dashboard	No existe	0%
+Tours	Básico	40%
+Salidas	No existe	0% ⚠️
+Reservas	Intermedio	50%
+Pagos	Básico	35%
+Pasajeros/Docs	No existe	0% ⚠️
+Automatizaciones	Parcial	30%
+Reportes	No existe	0%
+Ajustes	Mínimo	10%
+COMPLETITUD TOTAL: ~20-25%
+
+🎯 PRIORIZACIÓN PARA MVP ROBUSTO
+Para convertir esto en una plataforma operativa completa, necesitamos construir en este orden:
+
+FASE 1 - CRÍTICO (sin esto no funciona):
+
+✅ Dashboard con KPIs básicos
+✅ Módulo de Salidas (fechas, cupos, precios)
+✅ Gestión de Pasajeros en Admin
+✅ Gestión de Documentos (visualizar/validar)
+FASE 2 - ESENCIAL (mejora operación):
+5. ✅ Reportes básicos (ventas, ocupación)
+
+✅ Conciliación de pagos mejorada
+✅ Editor de plantillas de email
+✅ Configuración completa
+FASE 3 - OPTIMIZACIÓN:
+9. ✅ Auditoría completa
+
+✅ A/B testing emails
+✅ Gestión de roles/permisos

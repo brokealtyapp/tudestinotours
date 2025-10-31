@@ -1,0 +1,124 @@
+Mapa del panel (IA del administrador)
+
+Inicio / Dashboard
+	•	KPIs: GMV (ventas), Reservas (por estado), Ocupación por salida, Pagos pendientes (importe y conteo), Próximos vencimientos (Días a salida), Embudo (Recibida→Pagada), Fuentes UTM.
+	•	Listas rápidas: “Acciones urgentes”, “Salidas en 14 días”, “Reservas con saldo”.
+
+Tours
+	•	Listado / búsqueda
+	•	Crear/Editar tour (SEO, media, itinerario, folleto PDF)
+	•	Versionado de ficha (historial de cambios)
+
+Salidas (Departures)
+	•	Calendario y tabla (fecha, cupos, tarifa, suplementos)
+	•	Políticas por salida (cancelación, recargos)
+	•	Gestión masiva (duplicar, cambiar capacidad/precio)
+
+Reservas
+	•	Bandejas por estado: Recibida, En revisión, Aprobada/Pendiente, Parcial, Pagada, Vencida, Cancelada, Reembolsada, Completada.
+	•	Detalle de reserva con tabs: Resumen, Pasajeros, Documentos, Pagos, Línea de tiempo, Comunicaciones, Auditoría.
+	•	Acciones: Aprobar, Solicitar corrección, Enviar enlace de pago, Registrar pago offline, Emitir reembolso (nota), Cancelar, Reabrir.
+
+Pagos
+	•	Gestión de enlaces de pago (pegar/registrar URL externa de pasarela: Stripe/PayPal/dLocal/Azul…)
+	•	Conciliación (marcar pagos recibidos, parcialidades, tipo de cambio)
+	•	Reporte de cuentas por cobrar (aging) y calendario de cobros
+
+Pasajeros & Documentos
+	•	Buscador de pasajeros (frecuentes)
+	•	Verificación documental (visual y/o OCR básico)
+	•	Descargas y caducidad de enlaces
+
+Automatizaciones
+	•	Reglas de recordatorio (60/45/30/21/14/7/3/0 días)
+	•	Plantillas de email (variables) y WhatsApp opcional
+	•	Triggers por cambio de estado/fecha
+Reportes
+	•	Ventas (por tour/salida, canal, campaña)
+	•	Ocupación (por salida y rango)
+	•	Exportables (CSV/XLSX)
+
+Ajustes
+	•	Branding (colores/logo), dominios
+	•	Monedas/impuestos
+	•	Políticas
+Pantallas clave (wireframes descriptivos)
+Dashboard
+	•	Top KPIs (cards): GMV mes, Reservas confirmadas, % ocupación media próximas 8 semanas, Monto vencido.
+	•	Embudo (barra apilada): Recibida → En revisión → Aprobada/Pendiente → Parcial → Pagada.
+	•	Tabla “Vencen pronto”: reserva, salida (fecha), días restantes, saldo, botón “Enviar enlace”.
+	•	Gráfico “Ocupación por salida”: próximas 10 salidas.
+
+Detalle de Reserva
+
+Header con Estado (badge), Saldo, Salida (fecha), Fecha límite (= salida − 30 días).
+Tabs:
+	•	Resumen: comprador (contacto), tour/salida, extras, precios, desglose, términos aceptados.
+	•	Pasajeros: tabla con duplicar datos y validaciones.
+	•	Documentos: pasaportes (preview/descarga), estado de verificación, comentarios internos.
+	•	Pagos: cronograma, enlaces activos (URL externa), pagos registrados (importe, método, TC), saldo.
+	•	Timeline: eventos (creación, recordatorios enviados, aprobaciones, pagos, cambios de estado).
+	•	Comunicaciones: emails/WhatsApp enviados (plantilla, estado).
+	•	Auditoría: acciones del staff.
+
+Acciones rápidas (barra lateral):
+	•	Aprobar / Solicitar correcciones
+	•	Enviar enlace de pago (pegar URL de pasarela + monto objetivo + vencimiento)
+	•	Registrar pago offline
+	•	Emitir reembolso (nota)
+	•	Cancelar (motivo + plantillas)
+	•	Generar Itinerario (PDF/HTML) y programar envío
+	•	Descargar factura/recibo
+Salidas (Calendario + Tabla)
+	•	Vista calendario (mes/semana) con badges de ocupación y tarifas “from”.
+	•	Edición rápida (capacidad, precio, suplemento).
+	•	Duplicar salida a nuevas fechas.
+	•	Reglas específicas (política cancelación, fecha límite distinta si aplica).
+Automatizaciones
+	•	Recordatorios: matriz de días (checks 60/45/30/21/14/7/3/0) + horario de envío + canal.
+	•	Plantillas: editor tipo handlebars ({{buyer.name}}, {{booking.code}}, {{balance_due}}, {{deadline_date}}).
+	•	Pruebas A/B en correos de aprobación/recordatorio.
+	•	Logs de disparos y entregabilidad.
+
+Estados y reglas (motor de estado)
+
+Reserva
+Recibida → En revisión → Aprobada/Pendiente de pago → Parcialmente pagada → Pagada → Itinerario enviado → Completada
+Excepciones: Vencida (saldo > 0 al límite), Cancelada, Reembolsada.
+
+Reglas clave
+	•	Fecha límite de pago = fecha de salida − 30 días (configurable por salida).
+	•	Pagos parciales: mínimo configurable (p.ej. 20%).
+	•	Cancelación automática: si llega la fecha límite con saldo > 0 ⇒ pasa a Vencida y, tras X horas/días, Cancelada (emails automáticos).
+	•	Bloqueo de cupos al crear reserva; liberación al cancelar/vencer.
+	•	Documentos: formatos JPG/PNG/PDF, tamaño máx., OCR opcional para lectura de MRZ (solo validación no vinculante).
+	•	PCI: nunca almacenar tarjetas; el pago se completa en la URL externa registrada.
+
+Permisos (perfiles)
+	•	Cliente (fuera del panel; “Mi Cuenta”)
+	•	Administrador (panel) con sub-permisos configurables:
+	•	Owner: todo acceso.
+	•	Operaciones: reservas, pasajeros, documentos, salidas.
+	•	Finanzas: pagos, conciliación, reembolsos, reportes.
+Flujo operacional de pagos por enlace externo
+	1.	Admin aprueba y abre modal “Enviar enlace de pago”.
+	2.	Pega URL de la pasarela (Stripe/PayPal/dLocal/Azul…) + define monto objetivo (parcial o total) + vencimiento.
+	3.	Sistema envía email transaccional con botón “Pagar ahora” (apunta a la URL externa).
+	4.	Al confirmarse pago (por conciliación manual o webhook ligero si disponible), se registra Payment y se actualiza saldo y estado.
+	5.	Recordatorios se pausan/ajustan automáticamente.
+
+Reportes esenciales
+	•	Ventas por periodo / tour / salida / moneda
+	•	Ocupación (cups vendidos / cupos totales) por salida
+	•	Aging de cuentas por cobrar (0-7, 8-14, 15-30, >30)
+	•	Conversión por campaña UTM
+	•	Efectividad de recordatorios (tasa de pago posterior al envío)
+	•	Top motivos de cancelación y momento del ciclo
+Plantillas (variables disponibles)
+	•	Reserva recibida: {{booking.code}}, {{tour.name}}, {{departure.date}}
+	•	Aprobada + Enlace de pago: {{payment_link.url}}, {{balance_due}}, {{deadline_date}}
+	•	Recordatorio de pago: días restantes ({{days_to_deadline}})
+	•	Pago parcial confirmado: {{paid_amount}}, {{balance_due}}
+	•	Pago completado: recibo PDF + próximos pasos
+	•	Itinerario: adjunto o link seguro
+	•	Vencida/Cancelada: explicación y CTA para nueva fecha
