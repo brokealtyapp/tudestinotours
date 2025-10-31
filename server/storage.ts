@@ -16,6 +16,8 @@ import {
   type InsertPaymentInstallment,
   type SystemConfig,
   type InsertSystemConfig,
+  type ReservationTimelineEvent,
+  type InsertReservationTimelineEvent,
   users,
   tours,
   reservations,
@@ -24,6 +26,7 @@ import {
   reservationNotifications,
   paymentInstallments,
   systemConfig,
+  reservationTimelineEvents,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 
@@ -79,6 +82,10 @@ export interface IStorage {
   getSystemConfig(key: string): Promise<SystemConfig | undefined>;
   setSystemConfig(key: string, value: string, description?: string): Promise<SystemConfig>;
   getAllSystemConfigs(): Promise<SystemConfig[]>;
+  
+  // Timeline events methods
+  createTimelineEvent(event: InsertReservationTimelineEvent): Promise<ReservationTimelineEvent>;
+  getTimelineEvents(reservationId: string): Promise<ReservationTimelineEvent[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -361,6 +368,20 @@ export class DbStorage implements IStorage {
   
   async getAllSystemConfigs(): Promise<SystemConfig[]> {
     return await db.select().from(systemConfig);
+  }
+  
+  // Timeline events methods
+  async createTimelineEvent(event: InsertReservationTimelineEvent): Promise<ReservationTimelineEvent> {
+    const result = await db.insert(reservationTimelineEvents).values(event).returning();
+    return result[0];
+  }
+  
+  async getTimelineEvents(reservationId: string): Promise<ReservationTimelineEvent[]> {
+    return await db
+      .select()
+      .from(reservationTimelineEvents)
+      .where(eq(reservationTimelineEvents.reservationId, reservationId))
+      .orderBy(desc(reservationTimelineEvents.createdAt));
   }
 }
 
