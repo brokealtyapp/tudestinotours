@@ -66,11 +66,7 @@ export default function Booking() {
     enabled: !!tourId,
   });
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      setLocation("/signin");
-    }
-  }, [authLoading, user, setLocation]);
+  // Permitir reservas sin autenticación (reservas anónimas)
 
   useEffect(() => {
     setPassengers(
@@ -86,7 +82,7 @@ export default function Booking() {
     );
   }, [numPassengers]);
 
-  if (authLoading || tourLoading) {
+  if (tourLoading) {
     return (
       <div className="min-h-screen">
         <Header />
