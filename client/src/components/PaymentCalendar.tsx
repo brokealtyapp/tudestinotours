@@ -77,20 +77,20 @@ export function PaymentCalendar() {
           return (
             <Card 
               key={day.toISOString()} 
-              className={`min-h-24 p-2 ${isToday ? 'border-primary border-2' : ''}`}
+              className={`min-h-24 p-2 bg-white shadow-sm ${isToday ? 'border-blue-600 border-2' : ''}`}
               data-testid={`calendar-day-${format(day, 'yyyy-MM-dd')}`}
             >
-              <div className="text-right text-sm font-medium mb-1">
+              <div className="text-right text-sm font-medium text-gray-900 mb-1">
                 {format(day, 'd')}
               </div>
               
               {dayTotal > 0 && (
                 <div className="space-y-1">
-                  <div className="text-xs font-semibold text-primary" data-testid={`day-total-${format(day, 'yyyy-MM-dd')}`}>
+                  <div className="text-xs font-semibold text-blue-600" data-testid={`day-total-${format(day, 'yyyy-MM-dd')}`}>
                     ${dayTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </div>
                   {pendingCount > 0 && (
-                    <Badge variant="destructive" className="text-xs" data-testid={`day-pending-${format(day, 'yyyy-MM-dd')}`}>
+                    <Badge variant="destructive" className="text-xs rounded-full" data-testid={`day-pending-${format(day, 'yyyy-MM-dd')}`}>
                       {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
                     </Badge>
                   )}
@@ -108,7 +108,7 @@ export function PaymentCalendar() {
     
     if (allPayments.length === 0) {
       return (
-        <div className="text-center text-muted-foreground py-8">
+        <div className="text-center text-gray-600 py-8">
           No hay pagos pendientes este mes
         </div>
       );
@@ -133,39 +133,39 @@ export function PaymentCalendar() {
           const dayTotal = payments.reduce((sum, item) => sum + parseFloat(item.installment.amountDue || 0), 0);
           
           return (
-            <Card key={dateKey} data-testid={`details-${dateKey}`}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between gap-2">
+            <Card key={dateKey} className="bg-white shadow-sm" data-testid={`details-${dateKey}`}>
+              <CardHeader className="pb-3 p-4">
+                <CardTitle className="text-base font-semibold text-gray-900 flex items-center justify-between gap-2">
                   <span>{format(parseISO(dateKey), "EEEE d 'de' MMMM", { locale: es })}</span>
-                  <Badge variant="outline" className="font-normal">
+                  <Badge variant="outline" className="font-normal rounded-full">
                     ${dayTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0">
                 <div className="space-y-2">
                   {payments.map((item) => (
                     <div 
                       key={item.installment.id} 
-                      className="flex items-center justify-between p-2 border rounded-md hover-elevate"
+                      className="flex items-center justify-between p-3 border rounded-lg hover-elevate"
                       data-testid={`payment-item-${item.installment.id}`}
                     >
                       <div className="flex-1">
-                        <div className="font-medium text-sm">
+                        <div className="font-medium text-sm text-gray-900">
                           {item.tour?.name || 'Tour no especificado'}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-gray-600">
                           Reserva #{item.reservation?.id?.slice(0, 8)} • {item.buyer?.name || 'Cliente'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge 
-                          variant={item.installment.status === 'paid' ? 'default' : 'destructive'}
+                          className={`rounded-full ${item.installment.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
                           data-testid={`status-${item.installment.id}`}
                         >
                           {item.installment.status === 'paid' ? 'Pagado' : 'Pendiente'}
                         </Badge>
-                        <div className="text-sm font-semibold min-w-24 text-right" data-testid={`amount-${item.installment.id}`}>
+                        <div className="text-sm font-semibold text-gray-900 min-w-24 text-right" data-testid={`amount-${item.installment.id}`}>
                           ${parseFloat(item.installment.amountDue).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </div>
                       </div>
@@ -182,8 +182,8 @@ export function PaymentCalendar() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="bg-white rounded-2xl shadow-sm">
+        <CardHeader className="p-6">
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="outline"
@@ -194,7 +194,7 @@ export function PaymentCalendar() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <CardTitle className="text-2xl" data-testid="text-current-month">
+            <CardTitle className="text-xl font-semibold text-gray-900" data-testid="text-current-month">
               {format(currentDate, "MMMM yyyy", { locale: es })}
             </CardTitle>
             
@@ -208,7 +208,7 @@ export function PaymentCalendar() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-0">
           {isLoading ? (
             <div className="text-center py-12">Cargando calendario...</div>
           ) : (
@@ -217,14 +217,14 @@ export function PaymentCalendar() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="bg-white rounded-2xl shadow-sm">
+        <CardHeader className="p-6">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             <DollarSign className="h-5 w-5" />
             Detalle de Pagos
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-0">
           {isLoading ? (
             <div className="text-center py-8">Cargando detalles...</div>
           ) : (

@@ -132,13 +132,13 @@ export function Reconciliation() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Pagado</Badge>;
+        return <Badge className="rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Pagado</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">Pendiente</Badge>;
+        return <Badge className="rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">Pendiente</Badge>;
       case 'overdue':
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">Vencido</Badge>;
+        return <Badge className="rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">Vencido</Badge>;
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className="rounded-full">{status}</Badge>;
     }
   };
 
@@ -146,14 +146,14 @@ export function Reconciliation() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Conciliación de Pagos</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl font-semibold text-gray-900">Conciliación de Pagos</h2>
+          <p className="text-sm text-gray-600">
             Gestiona y concilia cuotas de pago pendientes
           </p>
         </div>
         <div className="flex gap-2">
           {selectedItems.size > 0 && (
-            <Button onClick={handleBulkMarkAsPaid} data-testid="button-bulk-mark-paid">
+            <Button onClick={handleBulkMarkAsPaid} className="bg-blue-600 hover:bg-blue-700" data-testid="button-bulk-mark-paid">
               <Check className="h-4 w-4 mr-2" />
               Marcar {selectedItems.size} como Pagadas
             </Button>
@@ -165,14 +165,14 @@ export function Reconciliation() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="bg-white rounded-2xl shadow-sm">
+        <CardHeader className="p-6">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             <Filter className="h-5 w-5" />
             Filtros
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="start-date-filter">Fecha Inicio</Label>
@@ -227,7 +227,7 @@ export function Reconciliation() {
       {isLoading && <div className="text-center py-8">Cargando datos...</div>}
 
       {reconciliationData && reconciliationData.length > 0 && (
-        <Card>
+        <Card className="bg-white rounded-2xl shadow-sm">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -289,9 +289,9 @@ export function Reconciliation() {
       )}
 
       {reconciliationData && reconciliationData.length === 0 && !isLoading && (
-        <Card>
+        <Card className="bg-white rounded-2xl shadow-sm">
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">
+            <p className="text-center text-gray-600">
               No se encontraron cuotas con los filtros aplicados
             </p>
           </CardContent>

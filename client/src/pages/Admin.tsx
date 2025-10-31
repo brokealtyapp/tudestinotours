@@ -693,9 +693,21 @@ export default function Admin() {
 
               {activeSection === "payments" && (
             <Tabs defaultValue="reconciliation" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="reconciliation" data-testid="subtab-reconciliation">Conciliación</TabsTrigger>
-                <TabsTrigger value="calendar" data-testid="subtab-calendar">Calendario</TabsTrigger>
+              <TabsList className="bg-white rounded-lg p-1 shadow-sm">
+                <TabsTrigger 
+                  value="reconciliation" 
+                  data-testid="subtab-reconciliation"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Conciliación
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="calendar" 
+                  data-testid="subtab-calendar"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Calendario
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="reconciliation">
@@ -930,69 +942,75 @@ export default function Admin() {
       </div>
 
       <Dialog open={showTourDialog} onOpenChange={setShowTourDialog}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle>{editingTour ? "Editar Tour" : "Crear Nuevo Tour"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Título</Label>
+                <Label className="text-sm font-medium text-gray-700">Título</Label>
                 <Input
                   value={tourForm.title}
                   onChange={(e) => setTourForm(prev => ({ ...prev, title: e.target.value }))}
                   data-testid="input-tour-title"
+                  className="rounded-lg border-gray-300 focus:border-blue-500"
                 />
               </div>
               <div>
-                <Label>Descripción</Label>
+                <Label className="text-sm font-medium text-gray-700">Descripción</Label>
                 <Textarea
                   value={tourForm.description}
                   onChange={(e) => setTourForm(prev => ({ ...prev, description: e.target.value }))}
                   data-testid="input-tour-description"
+                  className="rounded-lg border-gray-300 focus:border-blue-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Ubicación</Label>
+                  <Label className="text-sm font-medium text-gray-700">Ubicación</Label>
                   <Input
                     value={tourForm.location}
                     onChange={(e) => setTourForm(prev => ({ ...prev, location: e.target.value }))}
                     data-testid="input-tour-location"
+                    className="rounded-lg border-gray-300 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <Label>Precio</Label>
+                  <Label className="text-sm font-medium text-gray-700">Precio</Label>
                   <Input
                     type="number"
                     value={tourForm.price}
                     onChange={(e) => setTourForm(prev => ({ ...prev, price: e.target.value }))}
                     data-testid="input-tour-price"
+                    className="rounded-lg border-gray-300 focus:border-blue-500"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Duración</Label>
+                  <Label className="text-sm font-medium text-gray-700">Duración</Label>
                   <Input
                     value={tourForm.duration}
                     onChange={(e) => setTourForm(prev => ({ ...prev, duration: e.target.value }))}
                     placeholder="ej: 3 días"
                     data-testid="input-tour-duration"
+                    className="rounded-lg border-gray-300 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <Label>Máx. Pasajeros</Label>
+                  <Label className="text-sm font-medium text-gray-700">Máx. Pasajeros</Label>
                   <Input
                     type="number"
                     value={tourForm.maxPassengers}
                     onChange={(e) => setTourForm(prev => ({ ...prev, maxPassengers: e.target.value }))}
                     data-testid="input-tour-max-passengers"
+                    className="rounded-lg border-gray-300 focus:border-blue-500"
                   />
                 </div>
               </div>
               <div>
-                <Label>% Mínimo de Depósito (Opcional)</Label>
-                <p className="text-sm text-muted-foreground mb-2">
+                <Label className="text-sm font-medium text-gray-700">% Mínimo de Depósito (Opcional)</Label>
+                <p className="text-sm text-gray-600 mb-2">
                   Deja vacío para usar la configuración global. Ingresa un valor para anular el porcentaje global para este tour.
                 </p>
                 <Input
@@ -1003,18 +1021,20 @@ export default function Admin() {
                   onChange={(e) => setTourForm(prev => ({ ...prev, minDepositPercentage: e.target.value }))}
                   placeholder={`Por defecto: ${minDepositPercentage}%`}
                   data-testid="input-tour-min-deposit"
+                  className="rounded-lg border-gray-300 focus:border-blue-500"
                 />
               </div>
               <div>
-                <Label>Imágenes (Ingresa URLs de imágenes)</Label>
+                <Label className="text-sm font-medium text-gray-700">Imágenes (Ingresa URLs de imágenes)</Label>
                 <Input
                   placeholder="Pega la URL de la imagen y presiona Enter"
                   onKeyDown={handleImageUrlAdd}
                   data-testid="input-tour-image-url"
+                  className="rounded-lg border-gray-300 focus:border-blue-500"
                 />
                 {tourForm.images.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-gray-600 mb-2">
                       {tourForm.images.length} imagen(es) agregada(s):
                     </p>
                     <div className="space-y-1">
@@ -1042,10 +1062,10 @@ export default function Admin() {
                 )}
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowTourDialog(false)}>
+                <Button variant="outline" onClick={() => setShowTourDialog(false)} className="rounded-lg">
                   Cancelar
                 </Button>
-                <Button onClick={handleSaveTour} data-testid="button-save-tour">
+                <Button onClick={handleSaveTour} data-testid="button-save-tour" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
                   {editingTour ? "Actualizar" : "Crear"}
                 </Button>
               </div>
@@ -1054,12 +1074,12 @@ export default function Admin() {
         </Dialog>
 
         <Dialog open={showInstallmentsDialog} onOpenChange={setShowInstallmentsDialog}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
               <DialogTitle>
                 Gestión de Reserva
                 {selectedReservation && (
-                  <p className="text-sm text-muted-foreground font-normal mt-1">
+                  <p className="text-sm text-gray-600 font-normal mt-1">
                     Reserva #{selectedReservation.id.slice(0, 8)} - Total: ${selectedReservation.totalPrice}
                   </p>
                 )}
@@ -1067,11 +1087,35 @@ export default function Admin() {
             </DialogHeader>
             
             <Tabs defaultValue="installments" className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="installments" data-testid="tab-installments">Cuotas</TabsTrigger>
-                <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="communications" data-testid="tab-communications">Comunicaciones</TabsTrigger>
-                <TabsTrigger value="audit" data-testid="tab-audit">Auditoría</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 bg-white rounded-lg p-1 shadow-sm">
+                <TabsTrigger 
+                  value="installments" 
+                  data-testid="tab-installments"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Cuotas
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="timeline" 
+                  data-testid="tab-timeline"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Timeline
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="communications" 
+                  data-testid="tab-communications"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Comunicaciones
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="audit" 
+                  data-testid="tab-audit"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Auditoría
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="installments" className="space-y-6">
@@ -1140,41 +1184,45 @@ export default function Admin() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Monto</Label>
+                      <Label className="text-sm font-medium text-gray-700">Monto</Label>
                       <Input
                         type="number"
                         value={installmentForm.amount}
                         onChange={(e) => setInstallmentForm(prev => ({ ...prev, amount: e.target.value }))}
                         placeholder="0.00"
                         data-testid="input-installment-amount"
+                        className="rounded-lg border-gray-300 focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <Label>Fecha de Vencimiento</Label>
+                      <Label className="text-sm font-medium text-gray-700">Fecha de Vencimiento</Label>
                       <Input
                         type="date"
                         value={installmentForm.dueDate}
                         onChange={(e) => setInstallmentForm(prev => ({ ...prev, dueDate: e.target.value }))}
                         data-testid="input-installment-due-date"
+                        className="rounded-lg border-gray-300 focus:border-blue-500"
                       />
                     </div>
                   </div>
                   <div>
-                    <Label>Enlace de Pago (Mercado Pago, PayPal, etc.)</Label>
+                    <Label className="text-sm font-medium text-gray-700">Enlace de Pago (Mercado Pago, PayPal, etc.)</Label>
                     <Input
                       value={installmentForm.paymentLink}
                       onChange={(e) => setInstallmentForm(prev => ({ ...prev, paymentLink: e.target.value }))}
                       placeholder="https://..."
                       data-testid="input-installment-payment-link"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <Label>Descripción (Opcional)</Label>
+                    <Label className="text-sm font-medium text-gray-700">Descripción (Opcional)</Label>
                     <Input
                       value={installmentForm.description}
                       onChange={(e) => setInstallmentForm(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="ej: Depósito inicial, Segundo pago, etc."
                       data-testid="input-installment-description"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
                   <div className="flex gap-2 justify-end">
@@ -1182,6 +1230,7 @@ export default function Admin() {
                       onClick={handleAddInstallment}
                       data-testid="button-add-installment"
                       disabled={!installmentForm.amount || !installmentForm.dueDate}
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Agregar Cuota
@@ -1214,7 +1263,7 @@ export default function Admin() {
         </Dialog>
 
         <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogContent className="max-w-4xl max-h-[90vh] rounded-2xl">
             <DialogHeader>
               <DialogTitle>Verificación de Documento - {selectedPassenger?.fullName}</DialogTitle>
             </DialogHeader>
@@ -1222,25 +1271,25 @@ export default function Admin() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Pasaporte:</span>
+                    <span className="text-gray-600">Pasaporte:</span>
                     <span className="ml-2 font-mono">{selectedPassenger.passportNumber}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Nacionalidad:</span>
+                    <span className="text-gray-600">Nacionalidad:</span>
                     <span className="ml-2">{selectedPassenger.nationality}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Fecha de Nacimiento:</span>
+                    <span className="text-gray-600">Fecha de Nacimiento:</span>
                     <span className="ml-2">{new Date(selectedPassenger.dateOfBirth).toLocaleDateString('es-ES')}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Reserva:</span>
+                    <span className="text-gray-600">Reserva:</span>
                     <span className="ml-2 font-mono">{selectedPassenger.reservationId}</span>
                   </div>
                 </div>
 
                 {selectedPassenger.passportDocumentUrl && (
-                  <div className="border rounded-lg overflow-hidden bg-muted">
+                  <div className="border rounded-lg overflow-hidden bg-gray-50">
                     <img
                       src={selectedPassenger.passportDocumentUrl}
                       alt={`Pasaporte de ${selectedPassenger.fullName}`}
@@ -1251,7 +1300,7 @@ export default function Admin() {
 
                 <div className="space-y-4">
                   <div>
-                    <Label>Estado del Documento</Label>
+                    <Label className="text-sm font-medium text-gray-700">Estado del Documento</Label>
                     <div className="mt-2">
                       <span className={`px-3 py-1.5 rounded-md text-sm font-medium ${getDocumentStatusBadgeColor(selectedPassenger.documentStatus || 'pending')}`}>
                         {getDocumentStatusLabel(selectedPassenger.documentStatus || 'pending')}
@@ -1260,7 +1309,7 @@ export default function Admin() {
                   </div>
 
                   <div>
-                    <Label htmlFor="document-notes">Notas / Razón de Rechazo</Label>
+                    <Label htmlFor="document-notes" className="text-sm font-medium text-gray-700">Notas / Razón de Rechazo</Label>
                     <Textarea
                       id="document-notes"
                       value={documentNotes}
@@ -1268,6 +1317,7 @@ export default function Admin() {
                       placeholder="Ej: La foto está borrosa, no se pueden leer los datos..."
                       rows={3}
                       data-testid="input-document-notes"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
 
@@ -1276,6 +1326,7 @@ export default function Admin() {
                       variant="outline"
                       onClick={() => setShowDocumentModal(false)}
                       data-testid="button-cancel-document-verification"
+                      className="rounded-lg"
                     >
                       <X className="h-4 w-4 mr-2" />
                       Cancelar
@@ -1283,7 +1334,7 @@ export default function Admin() {
                     {selectedPassenger.documentStatus !== "approved" && (
                       <Button
                         variant="outline"
-                        className="border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                        className="border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950 rounded-lg"
                         onClick={() => handleUpdateDocumentStatus("approved")}
                         data-testid="button-approve-document"
                       >
@@ -1293,7 +1344,7 @@ export default function Admin() {
                     )}
                     <Button
                       variant="outline"
-                      className="border-red-500 text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      className="border-red-500 text-red-700 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg"
                       onClick={() => handleUpdateDocumentStatus("rejected", documentNotes)}
                       disabled={!documentNotes.trim()}
                       data-testid="button-reject-document"
@@ -1309,24 +1360,24 @@ export default function Admin() {
         </Dialog>
 
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl rounded-2xl">
             <DialogHeader>
               <DialogTitle>Registrar Pago Offline</DialogTitle>
             </DialogHeader>
             {selectedInstallment && (
               <div className="space-y-4">
-                <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Monto de la cuota:</span>
+                    <span className="text-gray-600">Monto de la cuota:</span>
                     <span className="font-bold text-lg">${selectedInstallment.amountDue}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Vencimiento:</span>
+                    <span className="text-gray-600">Vencimiento:</span>
                     <span>{new Date(selectedInstallment.dueDate).toLocaleDateString('es-ES')}</span>
                   </div>
                   {selectedInstallment.description && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Descripción:</span>
+                      <span className="text-gray-600">Descripción:</span>
                       <span>{selectedInstallment.description}</span>
                     </div>
                   )}
@@ -1334,12 +1385,12 @@ export default function Admin() {
 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="payment-method">Método de Pago</Label>
+                    <Label htmlFor="payment-method" className="text-sm font-medium text-gray-700">Método de Pago</Label>
                     <select
                       id="payment-method"
                       value={paymentForm.paymentMethod}
                       onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                      className="flex h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       data-testid="select-payment-method"
                     >
                       <option value="">Seleccionar método...</option>
@@ -1352,18 +1403,19 @@ export default function Admin() {
                   </div>
 
                   <div>
-                    <Label htmlFor="payment-reference">Referencia / # Transacción (Opcional)</Label>
+                    <Label htmlFor="payment-reference" className="text-sm font-medium text-gray-700">Referencia / # Transacción (Opcional)</Label>
                     <Input
                       id="payment-reference"
                       value={paymentForm.paymentReference}
                       onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentReference: e.target.value }))}
                       placeholder="Ej: REF-12345, #OP789"
                       data-testid="input-payment-reference"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="exchange-rate">Tipo de Cambio (Opcional)</Label>
+                    <Label htmlFor="exchange-rate" className="text-sm font-medium text-gray-700">Tipo de Cambio (Opcional)</Label>
                     <Input
                       id="exchange-rate"
                       type="number"
@@ -1372,23 +1424,25 @@ export default function Admin() {
                       onChange={(e) => setPaymentForm(prev => ({ ...prev, exchangeRate: e.target.value }))}
                       placeholder="Ej: 20.50"
                       data-testid="input-exchange-rate"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Si el pago se realizó en otra moneda</p>
+                    <p className="text-xs text-gray-600 mt-1">Si el pago se realizó en otra moneda</p>
                   </div>
 
                   <div>
-                    <Label htmlFor="paid-at">Fecha de Pago</Label>
+                    <Label htmlFor="paid-at" className="text-sm font-medium text-gray-700">Fecha de Pago</Label>
                     <Input
                       id="paid-at"
                       type="date"
                       value={paymentForm.paidAt}
                       onChange={(e) => setPaymentForm(prev => ({ ...prev, paidAt: e.target.value }))}
                       data-testid="input-paid-at"
+                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
 
                   <div className="border-t pt-4">
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-gray-600 mb-2">
                       <strong>Nota:</strong> El comprobante de pago (imagen/PDF) puede ser subido mediante la integración de object storage si está configurada.
                     </p>
                   </div>
@@ -1399,6 +1453,7 @@ export default function Admin() {
                     variant="outline"
                     onClick={() => setShowPaymentDialog(false)}
                     data-testid="button-cancel-payment"
+                    className="rounded-lg"
                   >
                     <X className="h-4 w-4 mr-2" />
                     Cancelar
@@ -1406,6 +1461,7 @@ export default function Admin() {
                   <Button
                     onClick={handleMarkInstallmentPaid}
                     data-testid="button-confirm-payment"
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
                   >
                     <Check className="h-4 w-4 mr-2" />
                     Confirmar Pago
