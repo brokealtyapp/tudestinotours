@@ -1,8 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star } from "lucide-react";
+import { Link } from "wouter";
 
 interface TourCardProps {
+  id?: string;
   image: string;
   title: string;
   location: string;
@@ -13,6 +15,7 @@ interface TourCardProps {
 }
 
 export default function TourCard({
+  id,
   image,
   title,
   location,
@@ -21,7 +24,7 @@ export default function TourCard({
   price,
   discount,
 }: TourCardProps) {
-  return (
+  const cardContent = (
     <Card className="overflow-hidden hover-elevate transition-shadow duration-200 cursor-pointer" data-testid={`card-tour-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <div className="relative aspect-[4/3]">
         <img
@@ -62,4 +65,14 @@ export default function TourCard({
       </CardContent>
     </Card>
   );
+
+  if (id) {
+    return (
+      <Link href={`/tours/${id}`}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }
