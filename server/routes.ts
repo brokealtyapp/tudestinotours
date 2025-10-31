@@ -246,6 +246,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => a.daysRemaining - b.daysRemaining)
         .slice(0, 10); // Top 10
 
+      // Funnel data - conversion flow
+      const funnel = {
+        received: reservations.filter(r => r.status === "pending").length,
+        underReview: reservations.filter(r => r.status === "approved" && r.paymentStatus === "pending").length,
+        approved: reservations.filter(r => r.status === "approved").length,
+        partialPaid: reservations.filter(r => r.paymentStatus === "partial").length,
+        paid: reservations.filter(r => r.paymentStatus === "completed" || r.status === "confirmed").length,
+      };
+
       res.json({
         gmv,
         reservationsByStatus,
@@ -255,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           count: pendingPaymentsCount,
         },
         upcomingDeadlinesCount: upcomingDeadlines.length,
+        funnel,
       });
     } catch (error: any) {
       console.error("Error fetching dashboard KPIs:", error);
