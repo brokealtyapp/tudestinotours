@@ -10,8 +10,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, role?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string, name: string, role?: string) => Promise<User>;
   logout: () => void;
   isAdmin: boolean;
   isLoading: boolean;
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -52,9 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
+    return data.user;
   };
 
-  const register = async (email: string, password: string, name: string, role: string = "client") => {
+  const register = async (email: string, password: string, name: string, role: string = "client"): Promise<User> => {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
+    return data.user;
   };
 
   const logout = () => {
