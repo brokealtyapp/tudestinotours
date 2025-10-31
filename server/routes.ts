@@ -1353,6 +1353,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reminder Rules routes
+  app.get("/api/reminder-rules", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const rules = await storage.getReminderRules();
+      res.json(rules);
+    } catch (error: any) {
+      console.error("Error obteniendo reglas de recordatorio:", error);
+      res.status(500).json({ error: "Error obteniendo reglas de recordatorio" });
+    }
+  });
+
+  app.get("/api/reminder-rules/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const rule = await storage.getReminderRule(req.params.id);
+      if (!rule) {
+        return res.status(404).json({ error: "Regla no encontrada" });
+      }
+      res.json(rule);
+    } catch (error: any) {
+      console.error("Error obteniendo regla:", error);
+      res.status(500).json({ error: "Error obteniendo regla" });
+    }
+  });
+
+  app.post("/api/reminder-rules", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const rule = await storage.createReminderRule(req.body);
+      res.status(201).json(rule);
+    } catch (error: any) {
+      console.error("Error creando regla:", error);
+      res.status(500).json({ error: "Error creando regla" });
+    }
+  });
+
+  app.put("/api/reminder-rules/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const rule = await storage.updateReminderRule(req.params.id, req.body);
+      if (!rule) {
+        return res.status(404).json({ error: "Regla no encontrada" });
+      }
+      res.json(rule);
+    } catch (error: any) {
+      console.error("Error actualizando regla:", error);
+      res.status(500).json({ error: "Error actualizando regla" });
+    }
+  });
+
+  app.delete("/api/reminder-rules/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteReminderRule(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error eliminando regla:", error);
+      res.status(500).json({ error: "Error eliminando regla" });
+    }
+  });
+
+  // Email Logs routes
+  app.get("/api/reservations/:id/communications", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const logs = await storage.getEmailLogsByReservation(req.params.id);
+      res.json(logs);
+    } catch (error: any) {
+      console.error("Error obteniendo comunicaciones:", error);
+      res.status(500).json({ error: "Error obteniendo comunicaciones" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
