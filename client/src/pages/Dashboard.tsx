@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
@@ -7,11 +7,13 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, CreditCard } from "lucide-react";
+import { Calendar, MapPin, Users, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [expandedReservations, setExpandedReservations] = useState<Record<string, boolean>>({});
 
   const { data: reservations, isLoading: reservationsLoading } = useQuery<any[]>({
     queryKey: ["/api/reservations"],
@@ -84,6 +86,134 @@ export default function Dashboard() {
       default:
         return status;
     }
+  };
+
+  const getInstallmentStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "paid":
+        return "Pagado";
+      case "overdue":
+        return "Vencido";
+      default:
+        return status;
+    }
+  };
+
+  const getInstallmentStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "paid":
+        return "bg-green-500/10 text-green-500 border-green-500/20";
+      case "overdue":
+        return "bg-red-500/10 text-red-500 border-red-500/20";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const toggleReservationExpanded = (reservationId: string) => {
+    setExpandedReservations(prev => ({
+      ...prev,
+      [reservationId]: !prev[reservationId]
+    }));
+  };
+
+  // Component to display payment installments
+  const ReservationPaymentSchedule = ({ reservation }: { reservation: any }) => {
+    const { data: installments, isLoading } = useQuery<any[]>({
+      queryKey: ["/api/reservations", reservation.id, "installments"],
+      enabled: !!reservation.id,
+    });
+
+    if (isLoading) {
+      return <div className="text-sm text-muted-foreground">Cargando cronograma...</div>;
+    }
+
+    if (!installments || installments.length === 0) {
+      return (
+        <div className="text-sm text-muted-foreground">
+          No hay un cronograma de pagos parciales configurado para esta reserva.
+        </div>
+      );
+    }
+
+    const totalPaid = installments
+      .filter((i: any) => i.status === "paid")
+      .reduce((sum: number, i: any) => sum + i.amount, 0);
+    
+    const pendingAmount = reservation.totalPrice - totalPaid;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <div>
+            <p className="text-sm text-muted-foreground">Total de la Reserva</p>
+            <p className="font-semibold text-lg">${reservation.totalPrice}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Pagado</p>
+            <p className="font-semibold text-lg text-green-600">${totalPaid}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Pendiente</p>
+            <p className="font-semibold text-lg text-yellow-600">${pendingAmount}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {installments.map((installment: any) => (
+            <div
+              key={installment.id}
+              className="p-4 border rounded-lg"
+              data-testid={`installment-${installment.id}`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="font-semibold">${installment.amount}</p>
+                    <Badge className={getInstallmentStatusColor(installment.status)}>
+                      {getInstallmentStatusLabel(installment.status)}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Fecha de vencimiento: {new Date(installment.dueDate).toLocaleDateString('es-ES')}
+                  </p>
+                  {installment.description && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {installment.description}
+                    </p>
+                  )}
+                  {installment.paidAt && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Pagado el: {new Date(installment.paidAt).toLocaleDateString('es-ES')}
+                    </p>
+                  )}
+                </div>
+                {installment.paymentLink && installment.status === "pending" && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    asChild
+                    data-testid={`button-pay-installment-${installment.id}`}
+                  >
+                    <a
+                      href={installment.paymentLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Pagar Ahora
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -225,6 +355,31 @@ export default function Dashboard() {
                       </div>
                     </div>
                   )}
+
+                  <div className="mt-6 pt-6 border-t">
+                    <Collapsible
+                      open={expandedReservations[reservation.id]}
+                      onOpenChange={() => toggleReservationExpanded(reservation.id)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full flex items-center justify-between p-0 hover:no-underline"
+                          data-testid={`button-toggle-installments-${reservation.id}`}
+                        >
+                          <span className="font-semibold">Cronograma de Pagos</span>
+                          {expandedReservations[reservation.id] ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <ReservationPaymentSchedule reservation={reservation} />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
                 </CardContent>
               </Card>
             ))}
