@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download } from "lucide-react";
+import ReservationTimeline from "@/components/ReservationTimeline";
 import {
   Dialog,
   DialogContent,
@@ -802,6 +803,13 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+
+              {/* Timeline Section */}
+              {selectedReservation && (
+                <div className="border-t pt-6">
+                  <ReservationTimeline reservationId={selectedReservation.id} />
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

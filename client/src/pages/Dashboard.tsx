@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, CreditCard, ChevronDown, ChevronUp, FileText, Download } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ReservationTimeline from "@/components/ReservationTimeline";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
@@ -386,7 +387,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <div className="mt-6 pt-6 border-t">
+                  <div className="mt-6 pt-6 border-t space-y-6">
                     <Collapsible
                       open={expandedReservations[reservation.id]}
                       onOpenChange={() => toggleReservationExpanded(reservation.id)}
@@ -409,6 +410,10 @@ export default function Dashboard() {
                         <ReservationPaymentSchedule reservation={reservation} />
                       </CollapsibleContent>
                     </Collapsible>
+
+                    <div>
+                      <ReservationTimeline reservationId={reservation.id} />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
