@@ -10,7 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 type BookingStep = 1 | 2 | 3 | 4;
 
@@ -22,6 +25,17 @@ interface PassengerData {
   passportImageUrl: string;
 }
 
+interface Departure {
+  id: string;
+  tourId: string;
+  departureDate: Date;
+  returnDate: Date | null;
+  totalSeats: number;
+  reservedSeats: number;
+  price: string;
+  status: string;
+}
+
 export default function Booking() {
   const { id: tourId } = useParams();
   const [, setLocation] = useLocation();
@@ -30,12 +44,25 @@ export default function Booking() {
 
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [numPassengers, setNumPassengers] = useState(1);
+  const [selectedDepartureId, setSelectedDepartureId] = useState<string>("");
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [paymentUrl, setPaymentUrl] = useState("");
 
   const { data: tour, isLoading: tourLoading } = useQuery<any>({
     queryKey: ["/api/tours", tourId],
     queryFn: () => apiRequest("GET", `/api/tours/${tourId}`),
+  });
+
+  const { data: departures, isLoading: departuresLoading } = useQuery<Departure[]>({
+    queryKey: ["/api/departures", tourId],
+    queryFn: async () => {
+      const allDepartures: Departure[] = await apiRequest("GET", "/api/departures");
+      return allDepartures
+        .filter(d => d.tourId === tourId && d.status === "active")
+        .filter(d => new Date(d.departureDate) > new Date())
+        .sort((a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime());
+    },
+    enabled: !!tourId,
   });
 
   useEffect(() => {
@@ -84,13 +111,35 @@ export default function Booking() {
   }
 
   const handleNext = () => {
-    if (currentStep === 1 && numPassengers < 1) {
-      toast({
-        title: "Error",
-        description: "Por favor selecciona al menos un pasajero",
-        variant: "destructive",
-      });
-      return;
+    if (currentStep === 1) {
+      if (!selectedDepartureId) {
+        toast({
+          title: "Error",
+          description: "Por favor selecciona una fecha de salida",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (numPassengers < 1) {
+        toast({
+          title: "Error",
+          description: "Por favor selecciona al menos un pasajero",
+          variant: "destructive",
+        });
+        return;
+      }
+      const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
+      if (selectedDeparture) {
+        const availableSeats = selectedDeparture.totalSeats - selectedDeparture.reservedSeats;
+        if (numPassengers > availableSeats) {
+          toast({
+            title: "Error",
+            description: `No hay suficientes cupos disponibles. Disponibles: ${availableSeats}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
     }
 
     if (currentStep === 2) {
@@ -194,10 +243,22 @@ export default function Booking() {
         return;
       }
 
+      const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
+      if (!selectedDeparture) {
+        toast({
+          title: "Error",
+          description: "Salida no encontrada",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reservationData = {
         tourId,
+        departureId: selectedDepartureId,
         userId: user?.id,
-        totalPrice: tour.price * numPassengers,
+        numberOfPassengers: numPassengers,
+        totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
         status: "pending",
       };
 
@@ -292,37 +353,138 @@ export default function Booking() {
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <Label htmlFor="num-passengers">
-                    Número de Pasajeros (Máx: {tour.maxPassengers})
+                  <Label className="text-base font-semibold mb-4 block">
+                    Selecciona una Fecha de Salida
                   </Label>
-                  <Input
-                    id="num-passengers"
-                    type="number"
-                    min={1}
-                    max={tour.maxPassengers}
-                    value={numPassengers}
-                    onChange={(e) =>
-                      setNumPassengers(Math.max(1, parseInt(e.target.value) || 1))
-                    }
-                    data-testid="input-num-passengers"
-                  />
+                  {departuresLoading ? (
+                    <div className="text-muted-foreground text-center py-8">
+                      Cargando salidas disponibles...
+                    </div>
+                  ) : !departures || departures.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">
+                        No hay salidas disponibles para este tour en este momento.
+                      </p>
+                      <Button onClick={() => setLocation("/tours")} variant="outline">
+                        Volver a Tours
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {departures.map((departure) => {
+                        const availableSeats = departure.totalSeats - departure.reservedSeats;
+                        const occupationPercent = (departure.reservedSeats / departure.totalSeats) * 100;
+                        const isSelected = selectedDepartureId === departure.id;
+                        
+                        return (
+                          <Card
+                            key={departure.id}
+                            className={`cursor-pointer hover-elevate transition-all ${
+                              isSelected ? "ring-2 ring-primary" : ""
+                            }`}
+                            onClick={() => setSelectedDepartureId(departure.id)}
+                            data-testid={`card-departure-${departure.id}`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-semibold">
+                                      {format(new Date(departure.departureDate), "PPP", { locale: es })}
+                                    </span>
+                                    {departure.returnDate && (
+                                      <span className="text-sm text-muted-foreground">
+                                        → {format(new Date(departure.returnDate), "PPP", { locale: es })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                      <span>
+                                        {availableSeats} / {departure.totalSeats} disponibles
+                                      </span>
+                                    </div>
+                                    <Badge
+                                      variant={
+                                        occupationPercent >= 80
+                                          ? "destructive"
+                                          : occupationPercent >= 50
+                                          ? "default"
+                                          : "secondary"
+                                      }
+                                    >
+                                      {occupationPercent.toFixed(0)}% ocupado
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-2xl font-bold text-primary">
+                                    ${departure.price}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    por persona
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between mb-2">
-                    <span>Precio por persona:</span>
-                    <span className="font-semibold">${tour.price}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Número de pasajeros:</span>
-                    <span className="font-semibold">{numPassengers}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>Total:</span>
-                    <span className="text-primary">
-                      ${tour.price * numPassengers}
-                    </span>
-                  </div>
-                </div>
+
+                {selectedDepartureId && departures && (
+                  <>
+                    <div>
+                      <Label htmlFor="num-passengers">
+                        Número de Pasajeros
+                      </Label>
+                      <Input
+                        id="num-passengers"
+                        type="number"
+                        min={1}
+                        max={
+                          departures.find(d => d.id === selectedDepartureId)
+                            ? departures.find(d => d.id === selectedDepartureId)!.totalSeats -
+                              departures.find(d => d.id === selectedDepartureId)!.reservedSeats
+                            : 1
+                        }
+                        value={numPassengers}
+                        onChange={(e) =>
+                          setNumPassengers(Math.max(1, parseInt(e.target.value) || 1))
+                        }
+                        data-testid="input-num-passengers"
+                      />
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      {(() => {
+                        const selectedDeparture = departures.find(d => d.id === selectedDepartureId);
+                        const price = selectedDeparture ? parseFloat(selectedDeparture.price) : 0;
+                        return (
+                          <>
+                            <div className="flex justify-between mb-2">
+                              <span>Precio por persona:</span>
+                              <span className="font-semibold">${price}</span>
+                            </div>
+                            <div className="flex justify-between mb-2">
+                              <span>Número de pasajeros:</span>
+                              <span className="font-semibold">{numPassengers}</span>
+                            </div>
+                            <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                              <span>Total:</span>
+                              <span className="text-primary">
+                                ${(price * numPassengers).toFixed(2)}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
