@@ -4,6 +4,8 @@ import {
   type InsertUser,
   type Tour,
   type InsertTour,
+  type Departure,
+  type InsertDeparture,
   type Reservation,
   type InsertReservation,
   type Passenger,
@@ -20,6 +22,7 @@ import {
   type InsertReservationTimelineEvent,
   users,
   tours,
+  departures,
   reservations,
   passengers,
   payments,
@@ -43,6 +46,14 @@ export interface IStorage {
   createTour(tour: InsertTour): Promise<Tour>;
   updateTour(id: string, tour: Partial<InsertTour>): Promise<Tour | undefined>;
   deleteTour(id: string): Promise<void>;
+  
+  // Departure methods
+  getDepartures(tourId?: string): Promise<Departure[]>;
+  getDeparture(id: string): Promise<Departure | undefined>;
+  createDeparture(departure: InsertDeparture): Promise<Departure>;
+  updateDeparture(id: string, departure: Partial<InsertDeparture>): Promise<Departure | undefined>;
+  deleteDeparture(id: string): Promise<void>;
+  updateDepartureSeats(id: string, seatsChange: number): Promise<void>;
   
   // Reservation methods
   getReservations(userId?: string): Promise<Reservation[]>;
@@ -142,6 +153,58 @@ export class DbStorage implements IStorage {
 
   async deleteTour(id: string): Promise<void> {
     await db.delete(tours).where(eq(tours.id, id));
+  }
+
+  // Departure methods
+  async getDepartures(tourId?: string): Promise<Departure[]> {
+    if (tourId) {
+      return await db
+        .select()
+        .from(departures)
+        .where(eq(departures.tourId, tourId))
+        .orderBy(desc(departures.departureDate));
+    }
+    return await db.select().from(departures).orderBy(desc(departures.departureDate));
+  }
+
+  async getDeparture(id: string): Promise<Departure | undefined> {
+    const result = await db.select().from(departures).where(eq(departures.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createDeparture(departure: InsertDeparture): Promise<Departure> {
+    const result = await db.insert(departures).values(departure).returning();
+    return result[0];
+  }
+
+  async updateDeparture(id: string, departure: Partial<InsertDeparture>): Promise<Departure | undefined> {
+    const result = await db
+      .update(departures)
+      .set(departure)
+      .where(eq(departures.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDeparture(id: string): Promise<void> {
+    await db.delete(departures).where(eq(departures.id, id));
+  }
+
+  async updateDepartureSeats(id: string, seatsChange: number): Promise<void> {
+    const departure = await this.getDeparture(id);
+    if (!departure) {
+      throw new Error("Departure not found");
+    }
+    
+    const newReservedSeats = departure.reservedSeats + seatsChange;
+    if (newReservedSeats < 0 || newReservedSeats > departure.totalSeats) {
+      throw new Error("Invalid seats change: would exceed capacity or go below zero");
+    }
+
+    await db
+      .update(departures)
+      .set({ reservedSeats: newReservedSeats })
+      .where(eq(departures.id, id));
   }
 
   // Reservation methods
