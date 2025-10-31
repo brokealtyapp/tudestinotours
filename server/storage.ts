@@ -26,6 +26,8 @@ import {
   type InsertReminderRule,
   type EmailLog,
   type InsertEmailLog,
+  type AuditLog,
+  type InsertAuditLog,
   users,
   tours,
   departures,
@@ -39,6 +41,7 @@ import {
   emailTemplates,
   reminderRules,
   emailLogs,
+  auditLogs,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -139,6 +142,11 @@ export interface IStorage {
   createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
   getEmailLogsByReservation(reservationId: string): Promise<EmailLog[]>;
   getEmailLog(id: string): Promise<EmailLog | undefined>;
+  
+  // Audit logs methods
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogsByReservation(reservationId: string): Promise<AuditLog[]>;
+  getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]>;
 }
 
 export interface SalesReport {
@@ -913,6 +921,27 @@ export class DbStorage implements IStorage {
   async getEmailLog(id: string): Promise<EmailLog | undefined> {
     const result = await db.select().from(emailLogs).where(eq(emailLogs.id, id)).limit(1);
     return result[0];
+  }
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const result = await db.insert(auditLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getAuditLogsByReservation(reservationId: string): Promise<AuditLog[]> {
+    return await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.reservationId, reservationId))
+      .orderBy(desc(auditLogs.timestamp));
+  }
+
+  async getAuditLogsByEntity(entityType: string, entityId: string): Promise<AuditLog[]> {
+    return await db
+      .select()
+      .from(auditLogs)
+      .where(and(eq(auditLogs.entityType, entityType), eq(auditLogs.entityId, entityId)))
+      .orderBy(desc(auditLogs.timestamp));
   }
 }
 
