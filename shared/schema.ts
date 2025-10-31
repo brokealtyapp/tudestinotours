@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -170,6 +170,10 @@ export const paymentInstallments = pgTable("payment_installments", {
   paymentLink: text("payment_link"),
   paidAt: timestamp("paid_at"),
   paidBy: varchar("paid_by").references(() => users.id),
+  paymentMethod: text("payment_method"),
+  paymentReference: text("payment_reference"),
+  exchangeRate: real("exchange_rate"),
+  receiptUrl: text("receipt_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

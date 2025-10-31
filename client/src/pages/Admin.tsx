@@ -51,6 +51,14 @@ export default function Admin() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentStatus, setDocumentStatus] = useState("");
   const [documentNotes, setDocumentNotes] = useState("");
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
+  const [paymentForm, setPaymentForm] = useState({
+    paymentMethod: "",
+    paymentReference: "",
+    exchangeRate: "",
+    paidAt: new Date().toISOString().split('T')[0],
+  });
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
@@ -302,11 +310,31 @@ export default function Admin() {
     }
   };
 
-  const handleMarkInstallmentPaid = async (installmentId: string) => {
+  const handleOpenPaymentDialog = (installment: any) => {
+    setSelectedInstallment(installment);
+    setPaymentForm({
+      paymentMethod: "",
+      paymentReference: "",
+      exchangeRate: "",
+      paidAt: new Date().toISOString().split('T')[0],
+    });
+    setShowPaymentDialog(true);
+  };
+
+  const handleMarkInstallmentPaid = async () => {
+    if (!selectedInstallment) return;
+    
     try {
-      await apiRequest("PUT", `/api/installments/${installmentId}/pay`, {});
+      await apiRequest("PUT", `/api/installments/${selectedInstallment.id}/pay`, {
+        paymentMethod: paymentForm.paymentMethod || undefined,
+        paymentReference: paymentForm.paymentReference || undefined,
+        exchangeRate: paymentForm.exchangeRate ? parseFloat(paymentForm.exchangeRate) : undefined,
+        paidAt: paymentForm.paidAt || undefined,
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/reservations", selectedReservation.id, "installments"] });
-      toast({ title: "Éxito", description: "Cuota marcada como pagada" });
+      setShowPaymentDialog(false);
+      setSelectedInstallment(null);
+      toast({ title: "Éxito", description: "Pago registrado exitosamente" });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -946,11 +974,11 @@ export default function Admin() {
                           {installment.status === 'pending' && (
                             <Button
                               size="sm"
-                              onClick={() => handleMarkInstallmentPaid(installment.id)}
+                              onClick={() => handleOpenPaymentDialog(installment)}
                               data-testid={`button-mark-paid-${installment.id}`}
                             >
-                              <Check className="h-4 w-4 mr-2" />
-                              Marcar Pagado
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Registrar Pago
                             </Button>
                           )}
                           <Button
@@ -1124,6 +1152,114 @@ export default function Admin() {
                       Rechazar y Solicitar Corrección
                     </Button>
                   </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Registrar Pago Offline</DialogTitle>
+            </DialogHeader>
+            {selectedInstallment && (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Monto de la cuota:</span>
+                    <span className="font-bold text-lg">${selectedInstallment.amountDue}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Vencimiento:</span>
+                    <span>{new Date(selectedInstallment.dueDate).toLocaleDateString('es-ES')}</span>
+                  </div>
+                  {selectedInstallment.description && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Descripción:</span>
+                      <span>{selectedInstallment.description}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="payment-method">Método de Pago</Label>
+                    <select
+                      id="payment-method"
+                      value={paymentForm.paymentMethod}
+                      onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                      data-testid="select-payment-method"
+                    >
+                      <option value="">Seleccionar método...</option>
+                      <option value="transfer">Transferencia Bancaria</option>
+                      <option value="cash">Efectivo</option>
+                      <option value="check">Cheque</option>
+                      <option value="wire">Wire Transfer</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="payment-reference">Referencia / # Transacción (Opcional)</Label>
+                    <Input
+                      id="payment-reference"
+                      value={paymentForm.paymentReference}
+                      onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentReference: e.target.value }))}
+                      placeholder="Ej: REF-12345, #OP789"
+                      data-testid="input-payment-reference"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="exchange-rate">Tipo de Cambio (Opcional)</Label>
+                    <Input
+                      id="exchange-rate"
+                      type="number"
+                      step="0.01"
+                      value={paymentForm.exchangeRate}
+                      onChange={(e) => setPaymentForm(prev => ({ ...prev, exchangeRate: e.target.value }))}
+                      placeholder="Ej: 20.50"
+                      data-testid="input-exchange-rate"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Si el pago se realizó en otra moneda</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="paid-at">Fecha de Pago</Label>
+                    <Input
+                      id="paid-at"
+                      type="date"
+                      value={paymentForm.paidAt}
+                      onChange={(e) => setPaymentForm(prev => ({ ...prev, paidAt: e.target.value }))}
+                      data-testid="input-paid-at"
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <strong>Nota:</strong> El comprobante de pago (imagen/PDF) puede ser subido mediante la integración de object storage si está configurada.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPaymentDialog(false)}
+                    data-testid="button-cancel-payment"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleMarkInstallmentPaid}
+                    data-testid="button-confirm-payment"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Confirmar Pago
+                  </Button>
                 </div>
               </div>
             )}

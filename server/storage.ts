@@ -31,7 +31,7 @@ import {
   systemConfig,
   reservationTimelineEvents,
 } from "@shared/schema";
-import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -642,6 +642,47 @@ export class DbStorage implements IStorage {
       reservedSeats: r.reservedSeats,
       occupationPercentage: r.totalSeats > 0 ? (r.reservedSeats / r.totalSeats) * 100 : 0,
     }));
+  }
+
+  async getReconciliationData(filters?: { startDate?: string; endDate?: string; status?: string; minAmount?: number }): Promise<any[]> {
+    let query = db
+      .select({
+        installment: paymentInstallments,
+        reservation: reservations,
+        tour: tours,
+        departure: departures,
+        buyer: users,
+      })
+      .from(paymentInstallments)
+      .leftJoin(reservations, eq(paymentInstallments.reservationId, reservations.id))
+      .leftJoin(tours, eq(reservations.tourId, tours.id))
+      .leftJoin(departures, eq(reservations.departureId, departures.id))
+      .leftJoin(users, eq(reservations.userId, users.id));
+
+    const conditions = [];
+
+    if (filters?.status) {
+      conditions.push(eq(paymentInstallments.status, filters.status));
+    }
+
+    if (filters?.startDate) {
+      conditions.push(gte(paymentInstallments.dueDate, new Date(filters.startDate)));
+    }
+
+    if (filters?.endDate) {
+      conditions.push(lte(paymentInstallments.dueDate, new Date(filters.endDate)));
+    }
+
+    if (filters?.minAmount) {
+      conditions.push(gte(sql`CAST(${paymentInstallments.amountDue} AS DECIMAL)`, filters.minAmount));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    const result = await query.orderBy(paymentInstallments.dueDate);
+    return result;
   }
 
   async getAgingReport(): Promise<AgingReport> {

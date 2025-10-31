@@ -941,20 +941,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/installments/:id/pay", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
-      const installment = await storage.markInstallmentAsPaid(req.params.id, req.user!.userId);
+      const { paymentMethod, paymentReference, exchangeRate, receiptUrl, paidAt } = req.body;
+      
+      const installment = await storage.updatePaymentInstallment(req.params.id, {
+        status: 'paid',
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        paidBy: req.user!.userId,
+        paymentMethod,
+        paymentReference,
+        exchangeRate,
+        receiptUrl,
+      });
+
       if (!installment) {
         return res.status(404).json({ error: "Cuota no encontrada" });
       }
 
       // Log timeline event
+      const paymentDetails = [];
+      if (paymentMethod) paymentDetails.push(`Método: ${paymentMethod}`);
+      if (paymentReference) paymentDetails.push(`Ref: ${paymentReference}`);
+      if (exchangeRate) paymentDetails.push(`TC: ${exchangeRate}`);
+
       await storage.createTimelineEvent({
         reservationId: installment.reservationId,
         eventType: "installment_paid",
-        description: `Cuota ${installment.installmentNumber} marcada como pagada: $${installment.amountDue}`,
+        description: `Cuota ${installment.installmentNumber} marcada como pagada: $${installment.amountDue}${paymentDetails.length ? ' (' + paymentDetails.join(', ') + ')' : ''}`,
         performedBy: req.user!.userId,
         metadata: JSON.stringify({ 
           amountDue: installment.amountDue,
           installmentNumber: installment.installmentNumber,
+          paymentMethod,
+          paymentReference,
+          exchangeRate,
+          receiptUrl,
         }),
       });
 
@@ -1197,6 +1217,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error generando reporte de aging:", error);
       res.status(500).json({ error: "Error generando reporte" });
+    }
+  });
+
+  app.get("/api/payments/reconciliation", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate, status, minAmount } = req.query;
+      const filters: any = {};
+      
+      if (startDate) filters.startDate = startDate as string;
+      if (endDate) filters.endDate = endDate as string;
+      if (status) filters.status = status as string;
+      if (minAmount) filters.minAmount = parseFloat(minAmount as string);
+      
+      const data = await storage.getReconciliationData(filters);
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error obteniendo datos de conciliación:", error);
+      res.status(500).json({ error: "Error obteniendo datos de conciliación" });
     }
   });
 
