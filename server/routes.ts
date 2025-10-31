@@ -561,38 +561,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.userId,
       });
 
-      // Get tour to validate seats and calculate dates
-      const tour = await storage.getTour(validatedData.tourId);
+      // Require departureId
+      if (!validatedData.departureId) {
+        return res.status(400).json({ error: "Debe seleccionar una salida específica" });
+      }
+
+      // Get departure to validate seats and get details
+      const departure = await storage.getDeparture(validatedData.departureId);
+      if (!departure) {
+        return res.status(404).json({ error: "Salida no encontrada" });
+      }
+
+      // Get tour for details
+      const tour = await storage.getTour(departure.tourId);
       if (!tour) {
         return res.status(404).json({ error: "Tour no encontrado" });
       }
 
-      // Validate available seats
-      const availableSeats = tour.maxPassengers - (tour.reservedSeats || 0);
+      // Validate available seats against departure capacity
+      const availableSeats = departure.totalSeats - departure.reservedSeats;
       if (validatedData.numberOfPassengers > availableSeats) {
         return res.status(400).json({ 
-          error: `No hay suficientes cupos disponibles. Cupos disponibles: ${availableSeats}` 
+          error: `No hay suficientes cupos disponibles en esta salida. Cupos disponibles: ${availableSeats}` 
         });
       }
 
-      // Calculate payment due date (30 days before departure)
-      const departureDate = new Date(validatedData.departureDate);
+      // Calculate total price using departure price
+      const totalPrice = parseFloat(departure.price) * validatedData.numberOfPassengers;
+
+      // Calculate payment due date using departure's deadline days
+      const departureDate = new Date(departure.departureDate);
       const paymentDueDate = new Date(departureDate);
-      paymentDueDate.setDate(paymentDueDate.getDate() - 30);
+      paymentDueDate.setDate(paymentDueDate.getDate() - (departure.paymentDeadlineDays || 30));
 
       // Calculate auto-cancel date (24 hours after payment due date)
       const autoCancelAt = new Date(paymentDueDate);
       autoCancelAt.setHours(autoCancelAt.getHours() + 24);
 
-      // Create reservation with calculated dates
+      // Create reservation with calculated dates and departure details
       const reservation = await storage.createReservation({
         ...validatedData,
+        tourId: departure.tourId,
+        departureDate: departure.departureDate,
+        totalPrice: totalPrice.toString(),
         paymentDueDate,
         autoCancelAt,
       });
 
-      // Increment reserved seats
-      await storage.incrementReservedSeats(tour.id, validatedData.numberOfPassengers);
+      // Increment reserved seats for the departure
+      await storage.updateDepartureSeats(departure.id, validatedData.numberOfPassengers);
+
+      // Also increment tour seats for backward compatibility
+      await storage.incrementReservedSeats(departure.tourId, validatedData.numberOfPassengers);
 
       // Log timeline event
       await storage.createTimelineEvent({
@@ -602,8 +622,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         performedBy: req.user!.userId,
         metadata: JSON.stringify({ 
           tourTitle: tour.title,
+          departureDate: departure.departureDate.toISOString(),
           passengers: validatedData.numberOfPassengers,
-          totalPrice: validatedData.totalPrice,
+          totalPrice: totalPrice,
         }),
       });
 
@@ -641,6 +662,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If cancelling or status is vencida/cancelada, release seats
       if (status === "cancelled" || status === "cancelada" || status === "vencida") {
+        // Release seats from departure if it has one
+        if (currentReservation.departureId) {
+          await storage.updateDepartureSeats(
+            currentReservation.departureId,
+            -currentReservation.numberOfPassengers
+          );
+        }
+        
+        // Also release from tour for backward compatibility
         await storage.decrementReservedSeats(
           currentReservation.tourId,
           currentReservation.numberOfPassengers
