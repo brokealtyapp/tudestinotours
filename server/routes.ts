@@ -191,6 +191,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard routes
+  app.get("/api/dashboard/kpis", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const reservations = await storage.getReservations();
+      const tours = await storage.searchTours();
+
+      // Calculate GMV (Gross Merchandise Value) - suma de reservas confirmadas y pagadas
+      const gmv = reservations
+        .filter(r => r.status === "confirmed" || r.status === "completed" || r.paymentStatus === "completed")
+        .reduce((sum, r) => sum + parseFloat(r.totalPrice.toString()), 0);
+
+      // Count reservations by status
+      const reservationsByStatus = {
+        pending: reservations.filter(r => r.status === "pending").length,
+        approved: reservations.filter(r => r.status === "approved").length,
+        confirmed: reservations.filter(r => r.status === "confirmed").length,
+        completed: reservations.filter(r => r.status === "completed").length,
+        cancelled: reservations.filter(r => r.status === "cancelled").length,
+        overdue: reservations.filter(r => r.status === "overdue").length,
+      };
+
+      // Calculate average occupation
+      const totalSeats = tours.reduce((sum, t) => sum + (t.maxPassengers || 0), 0);
+      const reservedSeats = tours.reduce((sum, t) => sum + (t.reservedSeats || 0), 0);
+      const averageOccupation = totalSeats > 0 ? (reservedSeats / totalSeats) * 100 : 0;
+
+      // Calculate pending payments
+      const pendingPayments = reservations
+        .filter(r => r.paymentStatus === "pending" || r.paymentStatus === "partial")
+        .reduce((sum, r) => sum + parseFloat(r.totalPrice.toString()), 0);
+      const pendingPaymentsCount = reservations.filter(r => r.paymentStatus === "pending" || r.paymentStatus === "partial").length;
+
+      // Find upcoming deadlines (next 30 days)
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now);
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+      const upcomingDeadlines = reservations
+        .filter(r => {
+          if (!r.paymentDueDate) return false;
+          const dueDate = new Date(r.paymentDueDate);
+          return dueDate >= now && dueDate <= thirtyDaysFromNow && (r.paymentStatus === "pending" || r.paymentStatus === "partial");
+        })
+        .map(r => {
+          const dueDate = new Date(r.paymentDueDate!);
+          const daysRemaining = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return {
+            reservationId: r.id,
+            daysRemaining,
+            dueDate: r.paymentDueDate,
+          };
+        })
+        .sort((a, b) => a.daysRemaining - b.daysRemaining)
+        .slice(0, 10); // Top 10
+
+      res.json({
+        gmv,
+        reservationsByStatus,
+        averageOccupation: Math.round(averageOccupation * 10) / 10, // Round to 1 decimal
+        pendingPayments: {
+          amount: pendingPayments,
+          count: pendingPaymentsCount,
+        },
+        upcomingDeadlinesCount: upcomingDeadlines.length,
+      });
+    } catch (error: any) {
+      console.error("Error fetching dashboard KPIs:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Tour routes
   app.get("/api/tours", async (req, res) => {
     try {
