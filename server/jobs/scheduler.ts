@@ -51,13 +51,16 @@ async function processPaymentReminders() {
           // Check if we're within the configured send time window (60 minutes tolerance)
           const [ruleHour, ruleMinute] = rule.sendTime.split(':').map(Number);
           
-          // Calculate absolute difference in minutes
+          // Calculate absolute difference in minutes with midnight wraparound
           const currentTotalMinutes = currentHour * 60 + currentMinute;
           const ruleTotalMinutes = ruleHour * 60 + ruleMinute;
-          const minutesDiff = Math.abs(currentTotalMinutes - ruleTotalMinutes);
+          
+          // Calculate circular distance (handles midnight wraparound)
+          const rawDiff = Math.abs(currentTotalMinutes - ruleTotalMinutes);
+          const minutesDiff = Math.min(rawDiff, 1440 - rawDiff);
           
           // Only send if we're within 60 minutes of the configured time
-          // This prevents sending multiple times per day
+          // This prevents sending multiple times per day and handles midnight correctly
           if (minutesDiff > 60) {
             return false;
           }
