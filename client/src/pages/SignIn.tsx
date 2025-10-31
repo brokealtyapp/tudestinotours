@@ -27,11 +27,11 @@ export default function SignIn() {
         description: "Has iniciado sesión correctamente.",
       });
       
-      // Redirigir según el rol del usuario
+      // Redirigir según el rol del usuario (forzando navegación real del navegador)
       if (user.role === "admin") {
-        setLocation("/admin");
+        window.location.href = "/admin";
       } else {
-        setLocation("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast({
