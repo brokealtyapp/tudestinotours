@@ -142,9 +142,9 @@ export default function Dashboard() {
 
     const totalPaid = installments
       .filter((i: any) => i.status === "paid")
-      .reduce((sum: number, i: any) => sum + i.amount, 0);
+      .reduce((sum: number, i: any) => sum + Number(i.amount), 0);
     
-    const pendingAmount = reservation.totalPrice - totalPaid;
+    const pendingAmount = Number(reservation.totalPrice) - totalPaid;
 
     return (
       <div className="space-y-4">
