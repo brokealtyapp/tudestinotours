@@ -15,6 +15,7 @@ import { PaymentCalendar } from "@/components/PaymentCalendar";
 import { EmailTemplates } from "@/components/EmailTemplates";
 import ReminderConfig from "@/components/ReminderConfig";
 import EmailCommunications from "@/components/EmailCommunications";
+import AuditLog from "@/components/AuditLog";
 import {
   Dialog,
   DialogContent,
@@ -979,10 +980,11 @@ export default function Admin() {
             </DialogHeader>
             
             <Tabs defaultValue="installments" className="mt-4">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="installments" data-testid="tab-installments">Cuotas</TabsTrigger>
                 <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="communications" data-testid="tab-communications">Comunicaciones</TabsTrigger>
+                <TabsTrigger value="audit" data-testid="tab-audit">Auditoría</TabsTrigger>
               </TabsList>
               
               <TabsContent value="installments" className="space-y-6">
@@ -1112,6 +1114,12 @@ export default function Admin() {
               <TabsContent value="communications">
                 {selectedReservation && (
                   <EmailCommunications reservationId={selectedReservation.id} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="audit">
+                {selectedReservation && (
+                  <AuditLog reservationId={selectedReservation.id} />
                 )}
               </TabsContent>
             </Tabs>
