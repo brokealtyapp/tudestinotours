@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useEffect, useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -158,7 +158,7 @@ export default function Tours() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTours.map((tour: any) => (
-                    <div key={tour.id} onClick={() => navigate(`/tours/${tour.id}`)} className="cursor-pointer">
+                    <Link key={tour.id} href={`/tours/${tour.id}`}>
                       <TourCard
                         image={tour.images?.[0] || "/placeholder-tour.jpg"}
                         title={tour.title}
@@ -167,7 +167,7 @@ export default function Tours() {
                         reviews={tour.reviewCount?.toString() || "0"}
                         price={parseFloat(tour.price)}
                       />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </>
