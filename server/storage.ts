@@ -12,12 +12,18 @@ import {
   type InsertPayment,
   type ReservationNotification,
   type InsertReservationNotification,
+  type PaymentInstallment,
+  type InsertPaymentInstallment,
+  type SystemConfig,
+  type InsertSystemConfig,
   users,
   tours,
   reservations,
   passengers,
   payments,
   reservationNotifications,
+  paymentInstallments,
+  systemConfig,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
 
@@ -61,6 +67,18 @@ export interface IStorage {
   getReservationsForReminders(): Promise<Reservation[]>;
   getReservationsForCancellation(): Promise<Reservation[]>;
   updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>): Promise<Reservation | undefined>;
+  
+  // Payment installments methods
+  getPaymentInstallments(reservationId: string): Promise<PaymentInstallment[]>;
+  createPaymentInstallment(installment: InsertPaymentInstallment): Promise<PaymentInstallment>;
+  updatePaymentInstallment(id: string, data: Partial<InsertPaymentInstallment>): Promise<PaymentInstallment | undefined>;
+  markInstallmentAsPaid(id: string, paidBy: string): Promise<PaymentInstallment | undefined>;
+  deletePaymentInstallment(id: string): Promise<void>;
+  
+  // System config methods
+  getSystemConfig(key: string): Promise<SystemConfig | undefined>;
+  setSystemConfig(key: string, value: string, description?: string): Promise<SystemConfig>;
+  getAllSystemConfigs(): Promise<SystemConfig[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -270,6 +288,79 @@ export class DbStorage implements IStorage {
       .where(eq(reservations.id, id))
       .returning();
     return result[0];
+  }
+  
+  // Payment installments methods
+  async getPaymentInstallments(reservationId: string): Promise<PaymentInstallment[]> {
+    return await db
+      .select()
+      .from(paymentInstallments)
+      .where(eq(paymentInstallments.reservationId, reservationId))
+      .orderBy(paymentInstallments.installmentNumber);
+  }
+  
+  async createPaymentInstallment(installment: InsertPaymentInstallment): Promise<PaymentInstallment> {
+    const result = await db.insert(paymentInstallments).values(installment).returning();
+    return result[0];
+  }
+  
+  async updatePaymentInstallment(id: string, data: Partial<InsertPaymentInstallment>): Promise<PaymentInstallment | undefined> {
+    const result = await db
+      .update(paymentInstallments)
+      .set(data)
+      .where(eq(paymentInstallments.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async markInstallmentAsPaid(id: string, paidBy: string): Promise<PaymentInstallment | undefined> {
+    const result = await db
+      .update(paymentInstallments)
+      .set({
+        status: 'paid',
+        paidAt: new Date(),
+        paidBy,
+      })
+      .where(eq(paymentInstallments.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deletePaymentInstallment(id: string): Promise<void> {
+    await db.delete(paymentInstallments).where(eq(paymentInstallments.id, id));
+  }
+  
+  // System config methods
+  async getSystemConfig(key: string): Promise<SystemConfig | undefined> {
+    const result = await db
+      .select()
+      .from(systemConfig)
+      .where(eq(systemConfig.key, key))
+      .limit(1);
+    return result[0];
+  }
+  
+  async setSystemConfig(key: string, value: string, description?: string): Promise<SystemConfig> {
+    const existing = await this.getSystemConfig(key);
+    
+    if (existing) {
+      const result = await db
+        .update(systemConfig)
+        .set({ value, description, updatedAt: new Date() })
+        .where(eq(systemConfig.key, key))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db
+        .insert(systemConfig)
+        .values({ key, value, description })
+        .returning();
+      return result[0];
+    }
+  }
+  
+  async getAllSystemConfigs(): Promise<SystemConfig[]> {
+    return await db.select().from(systemConfig);
   }
 }
 

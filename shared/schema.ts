@@ -29,6 +29,7 @@ export const tours = pgTable("tours", {
   duration: text("duration").notNull(),
   maxPassengers: integer("max_passengers").notNull(),
   reservedSeats: integer("reserved_seats").notNull().default(0),
+  minDepositPercentage: integer("min_deposit_percentage"),
   images: text("images").array().notNull().default(sql`ARRAY[]::text[]`),
   featured: boolean("featured").notNull().default(false),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
@@ -126,3 +127,44 @@ export const insertReservationNotificationSchema = createInsertSchema(reservatio
 
 export type InsertReservationNotification = z.infer<typeof insertReservationNotificationSchema>;
 export type ReservationNotification = typeof reservationNotifications.$inferSelect;
+
+export const paymentInstallments = pgTable("payment_installments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reservationId: varchar("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
+  installmentNumber: integer("installment_number").notNull(),
+  description: text("description").notNull(),
+  amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
+  percentageDue: integer("percentage_due").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  status: text("status").notNull().default("pending"),
+  paymentLink: text("payment_link"),
+  paidAt: timestamp("paid_at"),
+  paidBy: varchar("paid_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPaymentInstallmentSchema = createInsertSchema(paymentInstallments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPaymentInstallment = z.infer<typeof insertPaymentInstallmentSchema>;
+export type PaymentInstallment = typeof paymentInstallments.$inferSelect;
+
+export const systemConfig = pgTable("system_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
+export type SystemConfig = typeof systemConfig.$inferSelect;
