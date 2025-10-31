@@ -11,6 +11,7 @@ import SignUp from "@/pages/SignUp";
 import Tours from "@/pages/Tours";
 import TourDetail from "@/pages/TourDetail";
 import Booking from "@/pages/Booking";
+import BookingConfirmation from "@/pages/BookingConfirmation";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/tours" component={Tours} />
       <Route path="/tours/:id" component={TourDetail} />
       <Route path="/booking/:id" component={Booking} />
+      <Route path="/booking-confirmation" component={BookingConfirmation} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
