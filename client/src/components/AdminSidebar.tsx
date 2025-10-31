@@ -83,31 +83,40 @@ const menuItems = [
 
 export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
-        <div className="flex flex-col gap-2">
+    <Sidebar className="bg-white border-r border-gray-200">
+      <SidebarHeader className="border-b border-gray-100 px-6 py-6">
+        <div className="flex flex-col gap-3">
           <img 
             src={logoUrl} 
             alt="Tu Destino Tours" 
-            className="h-12 w-auto object-contain"
+            className="h-10 w-auto object-contain"
           />
-          <p className="text-xs text-muted-foreground text-center">Panel de Administración</p>
+          <p className="text-xs text-gray-500 text-center font-medium">Panel de Administración</p>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+          <SidebarGroupLabel className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            Navegación
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="mt-2">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton
                     onClick={() => onSectionChange(item.value)}
                     isActive={activeSection === item.value}
                     data-testid={`sidebar-${item.value}`}
+                    className={`
+                      rounded-lg px-3 py-2.5 transition-all duration-200
+                      ${activeSection === item.value 
+                        ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-600 pl-2' 
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <item.icon className="h-5 w-5" />
+                    <span className="text-sm">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

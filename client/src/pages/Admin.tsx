@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminHeader } from "@/components/AdminHeader";
 import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
@@ -431,15 +432,16 @@ export default function Admin() {
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-      <div className="flex h-screen w-full">
+      <div className="flex h-screen w-full bg-[#FAFBFC]">
         <AdminSidebar 
           activeSection={activeSection} 
           onSectionChange={setActiveSection} 
         />
         
         <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto bg-muted/30 p-8">
-            <div className="max-w-7xl mx-auto">
+          <AdminHeader />
+          <main className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
               {activeSection === "dashboard" && <DashboardAdmin />}
 
               {activeSection === "departures" && <DeparturesManagement />}
