@@ -62,6 +62,7 @@ export interface IStorage {
   updateReservationStatus(id: string, status: string, paymentStatus?: string): Promise<Reservation | undefined>;
   
   // Passenger methods
+  getAllPassengers(): Promise<Passenger[]>;
   getPassengersByReservation(reservationId: string): Promise<Passenger[]>;
   createPassenger(passenger: InsertPassenger): Promise<Passenger>;
   updatePassengerDocumentStatus(id: string, status: string, notes?: string): Promise<Passenger | undefined>;
@@ -248,6 +249,13 @@ export class DbStorage implements IStorage {
   }
 
   // Passenger methods
+  async getAllPassengers(): Promise<Passenger[]> {
+    return await db
+      .select()
+      .from(passengers)
+      .orderBy(desc(passengers.createdAt));
+  }
+
   async getPassengersByReservation(reservationId: string): Promise<Passenger[]> {
     return await db
       .select()

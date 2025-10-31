@@ -729,6 +729,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Passenger routes
+  app.get("/api/passengers", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const passengers = await storage.getAllPassengers();
+      res.json(passengers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/reservations/:reservationId/passengers", authenticateToken, async (req: AuthRequest, res) => {
     try {
       // Verify the user has access to this reservation

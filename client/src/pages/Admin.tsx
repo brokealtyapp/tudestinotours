@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download } from "lucide-react";
+import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
 import DeparturesManagement from "@/components/DeparturesManagement";
@@ -46,6 +46,10 @@ export default function Admin() {
     paymentLink: "",
     description: "",
   });
+  const [selectedPassenger, setSelectedPassenger] = useState<any>(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentStatus, setDocumentStatus] = useState("");
+  const [documentNotes, setDocumentNotes] = useState("");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
@@ -54,6 +58,7 @@ export default function Admin() {
     queryKey: ["/api/reservations", selectedReservation?.id, "installments"],
     enabled: !!selectedReservation,
   });
+  const { data: allPassengers } = useQuery<any[]>({ queryKey: ["/api/passengers"] });
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
@@ -324,6 +329,62 @@ export default function Admin() {
     }
   };
 
+  const handleViewDocument = (passenger: any) => {
+    setSelectedPassenger(passenger);
+    setDocumentStatus(passenger.documentStatus || "pending");
+    setDocumentNotes(passenger.documentNotes || "");
+    setShowDocumentModal(true);
+  };
+
+  const handleUpdateDocumentStatus = async (status: string, notes?: string) => {
+    if (!selectedPassenger) return;
+    
+    try {
+      await apiRequest("PUT", `/api/passengers/${selectedPassenger.id}/document-status`, {
+        status,
+        notes: notes || documentNotes,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/passengers"] });
+      setShowDocumentModal(false);
+      setSelectedPassenger(null);
+      setDocumentNotes("");
+      
+      const statusLabel = status === "approved" ? "aprobado" : status === "rejected" ? "rechazado" : "marcado como pendiente";
+      toast({ title: "Éxito", description: `Documento ${statusLabel} exitosamente` });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getDocumentStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100";
+      case "rejected":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
+      case "pending":
+      default:
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
+    }
+  };
+
+  const getDocumentStatusLabel = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "Aprobado";
+      case "rejected":
+        return "Rechazado";
+      case "pending":
+      default:
+        return "Pendiente";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 p-8">
       <div className="max-w-7xl mx-auto">
@@ -335,6 +396,8 @@ export default function Admin() {
             <TabsTrigger value="tours" data-testid="tab-tours">Tours</TabsTrigger>
             <TabsTrigger value="departures" data-testid="tab-departures">Salidas</TabsTrigger>
             <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
+            <TabsTrigger value="passengers" data-testid="tab-passengers">Pasajeros</TabsTrigger>
+            <TabsTrigger value="documents" data-testid="tab-documents">Documentos</TabsTrigger>
             <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
           </TabsList>
 
@@ -557,6 +620,146 @@ export default function Admin() {
                       <li>Los clientes deberán pagar al menos este porcentaje del total al hacer la reserva</li>
                     </ul>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="passengers">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Todos los Pasajeros
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {!allPassengers || allPassengers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No hay pasajeros registrados</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-3 font-semibold">Nombre Completo</th>
+                            <th className="text-left p-3 font-semibold">Pasaporte</th>
+                            <th className="text-left p-3 font-semibold">Nacionalidad</th>
+                            <th className="text-left p-3 font-semibold">Fecha Nac.</th>
+                            <th className="text-left p-3 font-semibold">Reserva ID</th>
+                            <th className="text-left p-3 font-semibold">Estado Doc.</th>
+                            <th className="text-left p-3 font-semibold">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allPassengers.map((passenger: any) => (
+                            <tr key={passenger.id} className="border-b hover-elevate" data-testid={`row-passenger-${passenger.id}`}>
+                              <td className="p-3">{passenger.fullName}</td>
+                              <td className="p-3 font-mono text-sm">{passenger.passportNumber}</td>
+                              <td className="p-3">{passenger.nationality}</td>
+                              <td className="p-3">{new Date(passenger.dateOfBirth).toLocaleDateString('es-ES')}</td>
+                              <td className="p-3 font-mono text-sm">{passenger.reservationId}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
+                                  {getDocumentStatusLabel(passenger.documentStatus || 'pending')}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                {passenger.passportDocumentUrl && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleViewDocument(passenger)}
+                                    data-testid={`button-view-document-${passenger.id}`}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver Documento
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Verificación de Documentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {!allPassengers || allPassengers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No hay documentos para verificar</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {allPassengers
+                        .filter((p: any) => p.passportDocumentUrl)
+                        .map((passenger: any) => (
+                          <div
+                            key={passenger.id}
+                            className="border rounded-lg p-4 space-y-3 hover-elevate"
+                            data-testid={`card-document-${passenger.id}`}
+                          >
+                            <div className="aspect-video bg-muted rounded-md overflow-hidden relative">
+                              <img
+                                src={passenger.passportDocumentUrl}
+                                alt={`Pasaporte de ${passenger.fullName}`}
+                                className="w-full h-full object-cover cursor-pointer"
+                                onClick={() => handleViewDocument(passenger)}
+                              />
+                              <div className="absolute top-2 right-2">
+                                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
+                                  {getDocumentStatusLabel(passenger.documentStatus || 'pending')}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{passenger.fullName}</h3>
+                              <p className="text-sm text-muted-foreground">Pasaporte: {passenger.passportNumber}</p>
+                              <p className="text-sm text-muted-foreground">Reserva: {passenger.reservationId}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => handleViewDocument(passenger)}
+                                data-testid={`button-view-fullscreen-${passenger.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver
+                              </Button>
+                              {passenger.documentStatus !== "approved" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setSelectedPassenger(passenger);
+                                    setDocumentNotes("");
+                                    handleUpdateDocumentStatus("approved");
+                                  }}
+                                  data-testid={`button-approve-${passenger.id}`}
+                                >
+                                  <ThumbsUp className="h-4 w-4 mr-2" />
+                                  Aprobar
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -823,6 +1026,101 @@ export default function Admin() {
                 </div>
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Verificación de Documento - {selectedPassenger?.fullName}</DialogTitle>
+            </DialogHeader>
+            {selectedPassenger && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Pasaporte:</span>
+                    <span className="ml-2 font-mono">{selectedPassenger.passportNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Nacionalidad:</span>
+                    <span className="ml-2">{selectedPassenger.nationality}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Fecha de Nacimiento:</span>
+                    <span className="ml-2">{new Date(selectedPassenger.dateOfBirth).toLocaleDateString('es-ES')}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Reserva:</span>
+                    <span className="ml-2 font-mono">{selectedPassenger.reservationId}</span>
+                  </div>
+                </div>
+
+                {selectedPassenger.passportDocumentUrl && (
+                  <div className="border rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={selectedPassenger.passportDocumentUrl}
+                      alt={`Pasaporte de ${selectedPassenger.fullName}`}
+                      className="w-full h-auto max-h-[50vh] object-contain"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <Label>Estado del Documento</Label>
+                    <div className="mt-2">
+                      <span className={`px-3 py-1.5 rounded-md text-sm font-medium ${getDocumentStatusBadgeColor(selectedPassenger.documentStatus || 'pending')}`}>
+                        {getDocumentStatusLabel(selectedPassenger.documentStatus || 'pending')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="document-notes">Notas / Razón de Rechazo</Label>
+                    <Textarea
+                      id="document-notes"
+                      value={documentNotes}
+                      onChange={(e) => setDocumentNotes(e.target.value)}
+                      placeholder="Ej: La foto está borrosa, no se pueden leer los datos..."
+                      rows={3}
+                      data-testid="input-document-notes"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDocumentModal(false)}
+                      data-testid="button-cancel-document-verification"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    {selectedPassenger.documentStatus !== "approved" && (
+                      <Button
+                        variant="outline"
+                        className="border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                        onClick={() => handleUpdateDocumentStatus("approved")}
+                        data-testid="button-approve-document"
+                      >
+                        <ThumbsUp className="h-4 w-4 mr-2" />
+                        Aprobar Documento
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="border-red-500 text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      onClick={() => handleUpdateDocumentStatus("rejected", documentNotes)}
+                      disabled={!documentNotes.trim()}
+                      data-testid="button-reject-document"
+                    >
+                      <ThumbsDown className="h-4 w-4 mr-2" />
+                      Rechazar y Solicitar Corrección
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
