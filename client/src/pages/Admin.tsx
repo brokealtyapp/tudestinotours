@@ -5,6 +5,8 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
@@ -34,6 +36,7 @@ export default function Admin() {
   const { user, isAdmin, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [showTourDialog, setShowTourDialog] = useState(false);
   const [editingTour, setEditingTour] = useState<any>(null);
   const [tourForm, setTourForm] = useState({
@@ -422,35 +425,27 @@ export default function Admin() {
     }
   };
 
+  const sidebarStyle = {
+    "--sidebar-width": "16rem",
+  };
+
   return (
-    <div className="min-h-screen bg-muted/30 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8" data-testid="text-admin-title">Panel de Administración</h1>
+    <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AdminSidebar 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection} 
+        />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 overflow-y-auto bg-muted/30 p-8">
+            <div className="max-w-7xl mx-auto">
+              {activeSection === "dashboard" && <DashboardAdmin />}
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="tours" data-testid="tab-tours">Tours</TabsTrigger>
-            <TabsTrigger value="departures" data-testid="tab-departures">Salidas</TabsTrigger>
-            <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">Pagos</TabsTrigger>
-            <TabsTrigger value="passengers" data-testid="tab-passengers">Pasajeros</TabsTrigger>
-            <TabsTrigger value="documents" data-testid="tab-documents">Documentos</TabsTrigger>
-            <TabsTrigger value="reports" data-testid="tab-reports">Reportes</TabsTrigger>
-            <TabsTrigger value="templates" data-testid="tab-templates">Plantillas</TabsTrigger>
-            <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
-          </TabsList>
+              {activeSection === "departures" && <DeparturesManagement />}
 
-          <TabsContent value="dashboard">
-            <DashboardAdmin />
-          </TabsContent>
-
-          <TabsContent value="departures">
-            <DeparturesManagement />
-          </TabsContent>
-
-          <TabsContent value="tours">
-            <Card>
+              {activeSection === "tours" && (
+                <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Gestión de Tours</CardTitle>
                 <Button
@@ -514,9 +509,9 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+              )}
 
-          <TabsContent value="reservations">
+              {activeSection === "reservations" && (
             <Card>
               <CardHeader>
                 <CardTitle>Gestión de Reservas</CardTitle>
@@ -619,9 +614,9 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+              )}
 
-          <TabsContent value="payments">
+              {activeSection === "payments" && (
             <Tabs defaultValue="reconciliation" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="reconciliation" data-testid="subtab-reconciliation">Conciliación</TabsTrigger>
@@ -636,13 +631,11 @@ export default function Admin() {
                 <PaymentCalendar />
               </TabsContent>
             </Tabs>
-          </TabsContent>
+              )}
 
-          <TabsContent value="reports">
-            <Reports />
-          </TabsContent>
+              {activeSection === "reports" && <Reports />}
 
-          <TabsContent value="templates">
+              {activeSection === "templates" && (
             <Tabs defaultValue="email-templates" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="email-templates" data-testid="subtab-email-templates">Plantillas</TabsTrigger>
@@ -657,9 +650,9 @@ export default function Admin() {
                 <ReminderConfig />
               </TabsContent>
             </Tabs>
-          </TabsContent>
+              )}
 
-          <TabsContent value="config">
+              {activeSection === "config" && (
             <Tabs defaultValue="payments" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="payments" data-testid="subtab-payments">Pagos</TabsTrigger>
@@ -719,9 +712,9 @@ export default function Admin() {
                 <SystemSettings />
               </TabsContent>
             </Tabs>
-          </TabsContent>
+              )}
 
-          <TabsContent value="passengers">
+              {activeSection === "passengers" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -782,9 +775,9 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+              )}
 
-          <TabsContent value="documents">
+              {activeSection === "documents" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -859,10 +852,13 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
 
-        <Dialog open={showTourDialog} onOpenChange={setShowTourDialog}>
+      <Dialog open={showTourDialog} onOpenChange={setShowTourDialog}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingTour ? "Editar Tour" : "Crear Nuevo Tour"}</DialogTitle>
@@ -1348,7 +1344,6 @@ export default function Admin() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-    </div>
+    </SidebarProvider>
   );
 }
