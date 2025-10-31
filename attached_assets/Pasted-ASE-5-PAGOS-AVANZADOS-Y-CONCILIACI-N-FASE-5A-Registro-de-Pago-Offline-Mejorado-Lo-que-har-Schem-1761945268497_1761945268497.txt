@@ -1,0 +1,85 @@
+ASE 5: PAGOS AVANZADOS Y CONCILIACIÓN
+FASE 5A: Registro de Pago Offline Mejorado
+Lo que haré:
+
+Schema - Modificar tabla payment_installments:
+paymentMethod: text("payment_method"), // transfer, cash, check, wire
+paymentReference: text("payment_reference"), // # transacción
+exchangeRate: real("exchange_rate"), // si pago en otra moneda
+receiptUrl: text("receipt_url"), // comprobante PDF/imagen
+
+Backend:
+Modificar PUT /api/reservations/:reservationId/installments/:installmentId
+Aceptar nuevos campos en body
+Si se marca como paid, registrar método, referencia, TC, etc.
+Frontend - Modal "Registrar Pago Offline":
+Form con:
+Monto recibido (pre-filled con monto de cuota)
+Select Método de pago
+Input Referencia/# Transacción
+Input Tipo de cambio (si aplica)
+File upload Comprobante (opcional)
+DatePicker Fecha de pago
+Al guardar → PUT endpoint + cerrar modal + refresh
+Resultado: Tracking completo de pagos offline.
+
+FASE 5B: Vista de Conciliación
+Lo que haré:
+
+Backend - Endpoint /api/payments/reconciliation:
+Listar todas las cuotas con status "pending"
+Mostrar enlaces enviados vs pagos registrados
+Filtros por fecha, estado, monto
+Frontend - Nueva sub-sección en tab Pagos:
+Tabla con:
+Reserva
+Cuota # / Monto
+Enlace enviado (fecha)
+Estado (Pendiente/Parcial/Pagado)
+Acción: Marcar como recibido
+Filtros y búsqueda
+Botón bulk "Marcar seleccionados como pagados"
+Resultado: Proceso eficiente de conciliación.
+
+FASE 5C: Calendario de Cobros
+Lo que haré:
+
+Backend:
+Endpoint /api/payments/calendar?month=2025-03
+Agrupar cuotas por dueDate
+Retornar: fecha, array de cuotas venciendo ese día
+Frontend - Vista Calendario:
+Calendario mensual
+Cada día muestra:
+de cobros esperados
+Monto total del día
+Click en día → drawer con lista de cuotas
+Colores: verde si todo pagado, amarillo si parcial, rojo si vencido
+Resultado: Visibilidad de flujo de caja esperado.
+
+FASE 6: AUTOMATIZACIONES Y COMUNICACIONES
+FASE 6A: Editor de Plantillas de Email
+Lo que haré:
+
+Schema - Nueva tabla email_templates:
+id, key (unique), name, subject, body, variables[], status, createdAt, updatedAt
+
+Backend:
+CRUD endpoints para templates
+Función renderTemplate(templateKey, variables) que reemplaza {{var}}
+Frontend - Nueva tab "Automatizaciones" > "Plantillas":
+Lista de plantillas predefinidas:
+reservation_received
+reservation_approved
+payment_reminder
+payment_confirmed
+itinerary_sent
+reservation_expired
+Click en plantilla → Editor:
+Input Subject
+Textarea Body (con syntax highlighting para {{variables}})
+Lista de variables disponibles a la derecha
+Preview en tiempo real
+Botón "Enviar prueba" (a email del admin)
+Guardar
+Resultado: Admin puede personalizar todos los emails.
