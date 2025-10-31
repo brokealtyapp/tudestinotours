@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, MapPin, Users, CreditCard, ChevronDown, ChevronUp, FileText, Download } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function Dashboard() {
@@ -300,6 +300,36 @@ export default function Dashboard() {
                           ${reservation.totalPrice}
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-3">Documentos</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
+                        }}
+                        data-testid={`button-download-invoice-${reservation.id}`}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Descargar Factura
+                      </Button>
+                      {(reservation.status === "confirmed" || reservation.status === "completed") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
+                          }}
+                          data-testid={`button-download-itinerary-${reservation.id}`}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Descargar Itinerario
+                        </Button>
+                      )}
                     </div>
                   </div>
 
