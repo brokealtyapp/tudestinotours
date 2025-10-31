@@ -405,12 +405,12 @@ export default function Admin() {
   const getDocumentStatusBadgeColor = (status: string) => {
     switch (status) {
       case "approved":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100";
+        return "bg-green-100 text-green-700";
       case "rejected":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
+        return "bg-red-100 text-red-700";
       case "pending":
       default:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
+        return "bg-yellow-100 text-yellow-700";
     }
   };
 
@@ -536,108 +536,159 @@ export default function Admin() {
               )}
 
               {activeSection === "reservations" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Reservas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {reservations?.map((reservation: any) => {
-                    const departureDate = reservation.departureDate ? new Date(reservation.departureDate) : null;
-                    const paymentDueDate = reservation.paymentDueDate ? new Date(reservation.paymentDueDate) : null;
-                    const now = new Date();
-                    const daysUntilDue = paymentDueDate ? Math.ceil((paymentDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
-                    const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
-                    const isNearDue = daysUntilDue !== null && daysUntilDue > 0 && daysUntilDue <= 7;
-                    
-                    return (
-                      <div
-                        key={reservation.id}
-                        className="p-4 border rounded-lg"
-                        data-testid={`reservation-item-${reservation.id}`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="font-semibold">Reserva #{reservation.id.slice(0, 8)}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Estado: <span className={`font-medium ${reservation.status === 'vencida' || reservation.status === 'cancelada' ? 'text-red-600' : ''}`}>
-                                {getStatusLabel(reservation.status)}
-                              </span> | Pago: {getPaymentStatusLabel(reservation.paymentStatus)}
-                            </p>
-                            <p className="text-sm">Total: ${reservation.totalPrice} | Pasajeros: {reservation.numberOfPassengers}</p>
-                            {departureDate && (
-                              <p className="text-sm">
-                                <span className="font-medium">Salida:</span> {departureDate.toLocaleDateString('es-ES')}
-                              </p>
-                            )}
-                            {paymentDueDate && reservation.paymentStatus === 'pending' && (
-                              <p className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : isNearDue ? 'text-yellow-600 font-medium' : ''}`}>
-                                <span className="font-medium">Fecha límite de pago:</span> {paymentDueDate.toLocaleDateString('es-ES')}
-                                {daysUntilDue !== null && (
-                                  <span className="ml-2">
-                                    {isOverdue ? `(${Math.abs(daysUntilDue)} días vencido)` : `(${daysUntilDue} días restantes)`}
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900">Gestión de Reservas</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    {reservations?.map((reservation: any) => {
+                      const departureDate = reservation.departureDate ? new Date(reservation.departureDate) : null;
+                      const paymentDueDate = reservation.paymentDueDate ? new Date(reservation.paymentDueDate) : null;
+                      const now = new Date();
+                      const daysUntilDue = paymentDueDate ? Math.ceil((paymentDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                      const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
+                      const isNearDue = daysUntilDue !== null && daysUntilDue > 0 && daysUntilDue <= 7;
+                      
+                      const getStatusBadgeClass = (status: string) => {
+                        switch (status) {
+                          case "confirmed":
+                            return "bg-green-100 text-green-700";
+                          case "completed":
+                            return "bg-blue-100 text-blue-700";
+                          case "cancelled":
+                          case "cancelada":
+                          case "vencida":
+                            return "bg-red-100 text-red-700";
+                          case "pending":
+                          case "approved":
+                          default:
+                            return "bg-yellow-100 text-yellow-700";
+                        }
+                      };
+
+                      const getPaymentStatusBadgeClass = (status: string) => {
+                        switch (status) {
+                          case "completed":
+                            return "bg-green-100 text-green-700";
+                          case "failed":
+                          case "refunded":
+                            return "bg-red-100 text-red-700";
+                          case "pending":
+                          default:
+                            return "bg-yellow-100 text-yellow-700";
+                        }
+                      };
+                      
+                      return (
+                        <div
+                          key={reservation.id}
+                          className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6"
+                          data-testid={`reservation-item-${reservation.id}`}
+                        >
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                  Reserva #{reservation.id.slice(0, 8)}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(reservation.status)}`}>
+                                    {getStatusLabel(reservation.status)}
                                   </span>
-                                )}
-                              </p>
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusBadgeClass(reservation.paymentStatus)}`}>
+                                    Pago: {getPaymentStatusLabel(reservation.paymentStatus)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 border-t border-gray-100">
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Total</p>
+                                <p className="text-lg font-semibold text-gray-900">${reservation.totalPrice}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Pasajeros</p>
+                                <p className="text-lg font-semibold text-gray-900">{reservation.numberOfPassengers}</p>
+                              </div>
+                              {departureDate && (
+                                <div>
+                                  <p className="text-sm text-gray-600 mb-1">Fecha de salida</p>
+                                  <p className="text-lg font-semibold text-gray-900">{departureDate.toLocaleDateString('es-ES')}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {paymentDueDate && reservation.paymentStatus === 'pending' && (
+                              <div className={`p-3 rounded-lg ${isOverdue ? 'bg-red-50' : isNearDue ? 'bg-yellow-50' : 'bg-gray-50'}`}>
+                                <p className={`text-sm font-medium ${isOverdue ? 'text-red-900' : isNearDue ? 'text-yellow-900' : 'text-gray-900'}`}>
+                                  Fecha límite de pago: {paymentDueDate.toLocaleDateString('es-ES')}
+                                  {daysUntilDue !== null && (
+                                    <span className="ml-2">
+                                      {isOverdue ? `(${Math.abs(daysUntilDue)} días vencido)` : `(${daysUntilDue} días restantes)`}
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
                             )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const token = localStorage.getItem('token');
-                                window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
-                              }}
-                              data-testid={`button-download-invoice-${reservation.id}`}
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Factura
-                            </Button>
-                            {(reservation.status === "confirmed" || reservation.status === "completed") && (
+
+                            <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
                                   const token = localStorage.getItem('token');
-                                  window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
+                                  window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
                                 }}
-                                data-testid={`button-download-itinerary-${reservation.id}`}
+                                data-testid={`button-download-invoice-${reservation.id}`}
                               >
-                                <Download className="h-4 w-4 mr-2" />
-                                Itinerario
+                                <FileText className="h-4 w-4 mr-2" />
+                                Factura
                               </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleManageInstallments(reservation)}
-                              data-testid={`button-manage-installments-${reservation.id}`}
-                            >
-                              <DollarSign className="h-4 w-4 mr-2" />
-                              Gestionar Pagos
-                            </Button>
-                            {reservation.paymentStatus === "pending" && 
-                             reservation.status !== "vencida" && 
-                             reservation.status !== "cancelada" && 
-                             reservation.status !== "cancelled" && (
+                              {(reservation.status === "confirmed" || reservation.status === "completed") && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const token = localStorage.getItem('token');
+                                    window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
+                                  }}
+                                  data-testid={`button-download-itinerary-${reservation.id}`}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Itinerario
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
-                                onClick={() => handleConfirmPayment(reservation.id)}
-                                data-testid={`button-confirm-payment-${reservation.id}`}
+                                variant="outline"
+                                onClick={() => handleManageInstallments(reservation)}
+                                data-testid={`button-manage-installments-${reservation.id}`}
                               >
-                                <Check className="h-4 w-4 mr-2" />
-                                Confirmar Pago
+                                <DollarSign className="h-4 w-4 mr-2" />
+                                Gestionar Pagos
                               </Button>
-                            )}
+                              {reservation.paymentStatus === "pending" && 
+                               reservation.status !== "vencida" && 
+                               reservation.status !== "cancelada" && 
+                               reservation.status !== "cancelled" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleConfirmPayment(reservation.id)}
+                                  data-testid={`button-confirm-payment-${reservation.id}`}
+                                >
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Confirmar Pago
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
               )}
 
               {activeSection === "payments" && (
@@ -739,80 +790,79 @@ export default function Admin() {
               )}
 
               {activeSection === "passengers" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Todos los Pasajeros
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900">Todos los Pasajeros</h2>
+                  </div>
+
                   {!allPassengers || allPassengers.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No hay pasajeros registrados</p>
+                    <p className="text-gray-600 text-center py-8">No hay pasajeros registrados</p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-3 font-semibold">Nombre Completo</th>
-                            <th className="text-left p-3 font-semibold">Pasaporte</th>
-                            <th className="text-left p-3 font-semibold">Nacionalidad</th>
-                            <th className="text-left p-3 font-semibold">Fecha Nac.</th>
-                            <th className="text-left p-3 font-semibold">Reserva ID</th>
-                            <th className="text-left p-3 font-semibold">Estado Doc.</th>
-                            <th className="text-left p-3 font-semibold">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {allPassengers.map((passenger: any) => (
-                            <tr key={passenger.id} className="border-b hover-elevate" data-testid={`row-passenger-${passenger.id}`}>
-                              <td className="p-3">{passenger.fullName}</td>
-                              <td className="p-3 font-mono text-sm">{passenger.passportNumber}</td>
-                              <td className="p-3">{passenger.nationality}</td>
-                              <td className="p-3">{new Date(passenger.dateOfBirth).toLocaleDateString('es-ES')}</td>
-                              <td className="p-3 font-mono text-sm">{passenger.reservationId}</td>
-                              <td className="p-3">
-                                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
+                    <div className="space-y-4">
+                      {allPassengers.map((passenger: any) => (
+                        <div
+                          key={passenger.id}
+                          className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6"
+                          data-testid={`row-passenger-${passenger.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Nombre Completo</p>
+                                <p className="text-gray-900 font-semibold">{passenger.fullName}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Pasaporte</p>
+                                <p className="text-gray-900 font-mono text-sm">{passenger.passportNumber}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Nacionalidad</p>
+                                <p className="text-gray-900">{passenger.nationality}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Fecha de Nacimiento</p>
+                                <p className="text-gray-900">{new Date(passenger.dateOfBirth).toLocaleDateString('es-ES')}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Reserva ID</p>
+                                <p className="text-gray-900 font-mono text-sm">{passenger.reservationId}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Estado Documento</p>
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
                                   {getDocumentStatusLabel(passenger.documentStatus || 'pending')}
                                 </span>
-                              </td>
-                              <td className="p-3">
-                                {passenger.passportDocumentUrl && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleViewDocument(passenger)}
-                                    data-testid={`button-view-document-${passenger.id}`}
-                                  >
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Ver Documento
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                              {passenger.passportDocumentUrl && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleViewDocument(passenger)}
+                                  data-testid={`button-view-document-${passenger.id}`}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Ver Documento
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
               )}
 
               {activeSection === "documents" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Verificación de Documentos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900">Verificación de Documentos</h2>
+                  </div>
+
                   {!allPassengers || allPassengers.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No hay documentos para verificar</p>
+                    <p className="text-gray-600 text-center py-8">No hay documentos para verificar</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {allPassengers
@@ -820,28 +870,28 @@ export default function Admin() {
                         .map((passenger: any) => (
                           <div
                             key={passenger.id}
-                            className="border rounded-lg p-4 space-y-3 hover-elevate"
+                            className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6 space-y-4"
                             data-testid={`card-document-${passenger.id}`}
                           >
-                            <div className="aspect-video bg-muted rounded-md overflow-hidden relative">
+                            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden relative">
                               <img
                                 src={passenger.passportDocumentUrl}
                                 alt={`Pasaporte de ${passenger.fullName}`}
                                 className="w-full h-full object-cover cursor-pointer"
                                 onClick={() => handleViewDocument(passenger)}
                               />
-                              <div className="absolute top-2 right-2">
-                                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
+                              <div className="absolute top-3 right-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
                                   {getDocumentStatusLabel(passenger.documentStatus || 'pending')}
                                 </span>
                               </div>
                             </div>
                             <div>
-                              <h3 className="font-semibold">{passenger.fullName}</h3>
-                              <p className="text-sm text-muted-foreground">Pasaporte: {passenger.passportNumber}</p>
-                              <p className="text-sm text-muted-foreground">Reserva: {passenger.reservationId}</p>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{passenger.fullName}</h3>
+                              <p className="text-sm text-gray-600">Pasaporte: {passenger.passportNumber}</p>
+                              <p className="text-sm text-gray-600">Reserva: {passenger.reservationId}</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 pt-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -855,8 +905,7 @@ export default function Admin() {
                               {passenger.documentStatus !== "approved" && (
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="flex-1"
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                                   onClick={() => {
                                     setSelectedPassenger(passenger);
                                     setDocumentNotes("");
@@ -874,8 +923,6 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
               )}
             </div>
           </main>
