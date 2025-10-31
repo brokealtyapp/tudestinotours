@@ -13,6 +13,8 @@ import { Reports } from "@/components/Reports";
 import { Reconciliation } from "@/components/Reconciliation";
 import { PaymentCalendar } from "@/components/PaymentCalendar";
 import { EmailTemplates } from "@/components/EmailTemplates";
+import ReminderConfig from "@/components/ReminderConfig";
+import EmailCommunications from "@/components/EmailCommunications";
 import {
   Dialog,
   DialogContent,
@@ -638,7 +640,20 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="templates">
-            <EmailTemplates />
+            <Tabs defaultValue="email-templates" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="email-templates" data-testid="subtab-email-templates">Plantillas</TabsTrigger>
+                <TabsTrigger value="reminders" data-testid="subtab-reminders">Recordatorios</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="email-templates">
+                <EmailTemplates />
+              </TabsContent>
+              
+              <TabsContent value="reminders">
+                <ReminderConfig />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="config">
@@ -954,7 +969,7 @@ export default function Admin() {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Gestión de Cronograma de Pagos
+                Gestión de Reserva
                 {selectedReservation && (
                   <p className="text-sm text-muted-foreground font-normal mt-1">
                     Reserva #{selectedReservation.id.slice(0, 8)} - Total: ${selectedReservation.totalPrice}
@@ -963,9 +978,16 @@ export default function Admin() {
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold mb-3">Cuotas de Pago Programadas</h3>
+            <Tabs defaultValue="installments" className="mt-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="installments" data-testid="tab-installments">Cuotas</TabsTrigger>
+                <TabsTrigger value="timeline" data-testid="tab-timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="communications" data-testid="tab-communications">Comunicaciones</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="installments" className="space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-3">Cuotas de Pago Programadas</h3>
                 {installments && installments.length > 0 ? (
                   <div className="space-y-2">
                     {installments.map((installment: any) => (
@@ -1079,13 +1101,20 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Timeline Section */}
-              {selectedReservation && (
-                <div className="border-t pt-6">
+              </TabsContent>
+              
+              <TabsContent value="timeline">
+                {selectedReservation && (
                   <ReservationTimeline reservationId={selectedReservation.id} />
-                </div>
-              )}
-            </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="communications">
+                {selectedReservation && (
+                  <EmailCommunications reservationId={selectedReservation.id} />
+                )}
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
 
