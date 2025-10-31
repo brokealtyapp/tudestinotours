@@ -1254,6 +1254,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/email-templates", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const templates = await storage.getEmailTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      console.error("Error obteniendo plantillas:", error);
+      res.status(500).json({ error: "Error obteniendo plantillas" });
+    }
+  });
+
+  app.get("/api/email-templates/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error obteniendo plantilla:", error);
+      res.status(500).json({ error: "Error obteniendo plantilla" });
+    }
+  });
+
+  app.get("/api/email-templates/by-type/:type", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const template = await storage.getEmailTemplateByType(req.params.type);
+      if (!template) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error obteniendo plantilla:", error);
+      res.status(500).json({ error: "Error obteniendo plantilla" });
+    }
+  });
+
+  app.post("/api/email-templates", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const template = await storage.createEmailTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error: any) {
+      console.error("Error creando plantilla:", error);
+      res.status(500).json({ error: "Error creando plantilla" });
+    }
+  });
+
+  app.put("/api/email-templates/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const template = await storage.updateEmailTemplate(req.params.id, req.body);
+      if (!template) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error actualizando plantilla:", error);
+      res.status(500).json({ error: "Error actualizando plantilla" });
+    }
+  });
+
+  app.delete("/api/email-templates/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteEmailTemplate(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error eliminando plantilla:", error);
+      res.status(500).json({ error: "Error eliminando plantilla" });
+    }
+  });
+
+  app.post("/api/email-templates/:id/render", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      
+      const { variables } = req.body;
+      
+      let renderedSubject = template.subject;
+      let renderedBody = template.body;
+      
+      if (variables) {
+        for (const [key, value] of Object.entries(variables)) {
+          const regex = new RegExp(`{{${key}}}`, 'g');
+          renderedSubject = renderedSubject.replace(regex, value as string);
+          renderedBody = renderedBody.replace(regex, value as string);
+        }
+      }
+      
+      res.json({
+        subject: renderedSubject,
+        body: renderedBody,
+      });
+    } catch (error: any) {
+      console.error("Error renderizando plantilla:", error);
+      res.status(500).json({ error: "Error renderizando plantilla" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

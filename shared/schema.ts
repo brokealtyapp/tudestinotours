@@ -220,3 +220,23 @@ export const insertReservationTimelineEventSchema = createInsertSchema(reservati
 
 export type InsertReservationTimelineEvent = z.infer<typeof insertReservationTimelineEventSchema>;
 export type ReservationTimelineEvent = typeof reservationTimelineEvents.$inferSelect;
+
+export const emailTemplates = pgTable("email_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateType: text("template_type").notNull().unique(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  variables: jsonb("variables"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;

@@ -20,6 +20,8 @@ import {
   type InsertSystemConfig,
   type ReservationTimelineEvent,
   type InsertReservationTimelineEvent,
+  type EmailTemplate,
+  type InsertEmailTemplate,
   users,
   tours,
   departures,
@@ -30,6 +32,7 @@ import {
   paymentInstallments,
   systemConfig,
   reservationTimelineEvents,
+  emailTemplates,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -110,6 +113,14 @@ export interface IStorage {
   
   // Payment calendar methods
   getPaymentCalendar(startDate: string, endDate: string): Promise<any[]>;
+  
+  // Email template methods
+  getEmailTemplates(): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
+  getEmailTemplateByType(templateType: string): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: string): Promise<void>;
 }
 
 export interface SalesReport {
@@ -807,6 +818,38 @@ export class DbStorage implements IStorage {
       buckets,
       reservations: reservationsWithBalance,
     };
+  }
+
+  async getEmailTemplates(): Promise<EmailTemplate[]> {
+    return await db.select().from(emailTemplates).orderBy(emailTemplates.templateType);
+  }
+
+  async getEmailTemplate(id: string): Promise<EmailTemplate | undefined> {
+    const result = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getEmailTemplateByType(templateType: string): Promise<EmailTemplate | undefined> {
+    const result = await db.select().from(emailTemplates).where(eq(emailTemplates.templateType, templateType)).limit(1);
+    return result[0];
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const result = await db.insert(emailTemplates).values(template).returning();
+    return result[0];
+  }
+
+  async updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+    const result = await db
+      .update(emailTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(emailTemplates.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteEmailTemplate(id: string): Promise<void> {
+    await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
   }
 }
 
