@@ -16,6 +16,8 @@ import { EmailTemplates } from "@/components/EmailTemplates";
 import ReminderConfig from "@/components/ReminderConfig";
 import EmailCommunications from "@/components/EmailCommunications";
 import AuditLog from "@/components/AuditLog";
+import UserManagement from "@/components/UserManagement";
+import SystemSettings from "@/components/SystemSettings";
 import {
   Dialog,
   DialogContent,
@@ -658,47 +660,65 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="config">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración de Pagos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="min-deposit">Porcentaje Mínimo de Depósito Global (%)</Label>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Este es el porcentaje mínimo que los clientes deben pagar como depósito inicial para cualquier reserva. Puedes configurar excepciones por tour individual.
-                    </p>
-                    <div className="flex gap-4 items-end">
-                      <div className="flex-1 max-w-xs">
-                        <Input
-                          id="min-deposit"
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={minDepositPercentage}
-                          onChange={(e) => setMinDepositPercentage(e.target.value)}
-                          data-testid="input-min-deposit-percentage"
-                        />
+            <Tabs defaultValue="payments" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="payments" data-testid="subtab-payments">Pagos</TabsTrigger>
+                <TabsTrigger value="users" data-testid="subtab-users">Usuarios</TabsTrigger>
+                <TabsTrigger value="system" data-testid="subtab-system">Sistema</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="payments">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Configuración de Pagos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div>
+                        <Label htmlFor="min-deposit">Porcentaje Mínimo de Depósito Global (%)</Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Este es el porcentaje mínimo que los clientes deben pagar como depósito inicial para cualquier reserva. Puedes configurar excepciones por tour individual.
+                        </p>
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1 max-w-xs">
+                            <Input
+                              id="min-deposit"
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={minDepositPercentage}
+                              onChange={(e) => setMinDepositPercentage(e.target.value)}
+                              data-testid="input-min-deposit-percentage"
+                            />
+                          </div>
+                          <Button onClick={handleSaveConfig} data-testid="button-save-config">
+                            Guardar Configuración
+                          </Button>
+                        </div>
                       </div>
-                      <Button onClick={handleSaveConfig} data-testid="button-save-config">
-                        Guardar Configuración
-                      </Button>
+                      
+                      <div className="border-t pt-6">
+                        <h3 className="text-lg font-semibold mb-2">Información Adicional</h3>
+                        <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                          <li>Este porcentaje aplica por defecto a todos los tours nuevos</li>
+                          <li>Puedes configurar un porcentaje diferente para tours específicos en la sección "Tours"</li>
+                          <li>Si un tour tiene un porcentaje configurado, ese valor anula el global</li>
+                          <li>Los clientes deberán pagar al menos este porcentaje del total al hacer la reserva</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold mb-2">Información Adicional</h3>
-                    <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>Este porcentaje aplica por defecto a todos los tours nuevos</li>
-                      <li>Puedes configurar un porcentaje diferente para tours específicos en la sección "Tours"</li>
-                      <li>Si un tour tiene un porcentaje configurado, ese valor anula el global</li>
-                      <li>Los clientes deberán pagar al menos este porcentaje del total al hacer la reserva</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="users">
+                <UserManagement />
+              </TabsContent>
+
+              <TabsContent value="system">
+                <SystemSettings />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="passengers">

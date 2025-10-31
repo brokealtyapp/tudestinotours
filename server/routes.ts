@@ -717,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If payment is confirmed, send itinerary
-      if (paymentStatus === "confirmed" && reservation) {
+      if (paymentStatus === "confirmed" && reservation && reservation.userId) {
         const user = await storage.getUser(reservation.userId);
         const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
         const passengers = await storage.getPassengersByReservation(reservation!.id);
@@ -1430,8 +1430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-logs/:id/resend", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const log = await storage.getEmailLog(req.params.id);
-      if (!log) {
-        return res.status(404).json({ error: "Log de email no encontrado" });
+      if (!log || !log.reservationId) {
+        return res.status(404).json({ error: "Log de email no encontrado o sin reserva asociada" });
       }
 
       // Get reservation to find recipient
