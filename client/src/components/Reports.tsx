@@ -126,22 +126,22 @@ function SalesReport() {
 
   const [startDate, setStartDate] = useState(format(defaultStart, 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(defaultEnd, 'yyyy-MM-dd'));
-  const [selectedTour, setSelectedTour] = useState<string>("");
-  const [selectedDeparture, setSelectedDeparture] = useState<string>("");
+  const [selectedTour, setSelectedTour] = useState<string>("all");
+  const [selectedDeparture, setSelectedDeparture] = useState<string>("all");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ['/api/tours'] });
 
   const { data: departures } = useQuery<any[]>({
-    queryKey: ['/api/departures', { tourId: selectedTour }],
-    enabled: !!selectedTour,
+    queryKey: ['/api/departures', { tourId: selectedTour !== "all" ? selectedTour : undefined }],
+    enabled: selectedTour !== "all",
   });
 
   const { data: report, isLoading } = useQuery<SalesReport>({
     queryKey: ['/api/reports/sales', { 
       startDate, 
       endDate, 
-      tourId: selectedTour || undefined,
-      departureId: selectedDeparture || undefined
+      tourId: selectedTour !== "all" ? selectedTour : undefined,
+      departureId: selectedDeparture !== "all" ? selectedDeparture : undefined
     }],
     enabled: !!startDate && !!endDate,
   });
@@ -191,13 +191,13 @@ function SalesReport() {
               <Label htmlFor="tour-filter">Tour (Opcional)</Label>
               <Select value={selectedTour} onValueChange={(value) => {
                 setSelectedTour(value);
-                setSelectedDeparture("");
+                setSelectedDeparture("all");
               }}>
                 <SelectTrigger id="tour-filter" data-testid="select-tour-filter">
                   <SelectValue placeholder="Todos los tours" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tours</SelectItem>
+                  <SelectItem value="all">Todos los tours</SelectItem>
                   {tours?.map((tour) => (
                     <SelectItem key={tour.id} value={tour.id}>
                       {tour.title}
@@ -211,13 +211,13 @@ function SalesReport() {
               <Select 
                 value={selectedDeparture} 
                 onValueChange={setSelectedDeparture}
-                disabled={!selectedTour}
+                disabled={selectedTour === "all"}
               >
                 <SelectTrigger id="departure-filter" data-testid="select-departure-filter">
                   <SelectValue placeholder="Todas las salidas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las salidas</SelectItem>
+                  <SelectItem value="all">Todas las salidas</SelectItem>
                   {departures?.map((departure) => (
                     <SelectItem key={departure.id} value={departure.id}>
                       {format(new Date(departure.departureDate), 'dd MMM yyyy', { locale: es })}
@@ -342,12 +342,12 @@ function OccupationReport() {
 
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
-  const [selectedTour, setSelectedTour] = useState<string>("");
+  const [selectedTour, setSelectedTour] = useState<string>("all");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ['/api/tours'] });
 
   const { data: report, isLoading } = useQuery<OccupationReportItem[]>({
-    queryKey: ['/api/reports/occupation', { startDate, endDate, tourId: selectedTour || undefined }],
+    queryKey: ['/api/reports/occupation', { startDate, endDate, tourId: selectedTour !== "all" ? selectedTour : undefined }],
     enabled: !!startDate && !!endDate,
   });
 
@@ -406,7 +406,7 @@ function OccupationReport() {
                   <SelectValue placeholder="Todos los tours" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tours</SelectItem>
+                  <SelectItem value="all">Todos los tours</SelectItem>
                   {tours?.map((tour) => (
                     <SelectItem key={tour.id} value={tour.id}>
                       {tour.title}
