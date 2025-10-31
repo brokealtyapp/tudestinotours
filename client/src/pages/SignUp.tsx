@@ -33,12 +33,18 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      await register(email, password, name);
+      const user = await register(email, password, name);
       toast({
         title: "Éxito",
         description: "Tu cuenta ha sido creada exitosamente.",
       });
-      setLocation("/");
+      
+      // Redirigir según el rol del usuario (normalmente será cliente)
+      if (user.role === "admin") {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (error: any) {
       toast({
         title: "Error",

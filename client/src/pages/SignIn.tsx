@@ -21,12 +21,18 @@ export default function SignIn() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const user = await login(email, password);
       toast({
         title: "Éxito",
         description: "Has iniciado sesión correctamente.",
       });
-      setLocation("/");
+      
+      // Redirigir según el rol del usuario
+      if (user.role === "admin") {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (error: any) {
       toast({
         title: "Error",
