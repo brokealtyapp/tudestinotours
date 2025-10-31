@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Ey
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
 import DeparturesManagement from "@/components/DeparturesManagement";
+import { Reports } from "@/components/Reports";
 import {
   Dialog,
   DialogContent,
@@ -398,6 +399,7 @@ export default function Admin() {
             <TabsTrigger value="reservations" data-testid="tab-reservations">Reservas</TabsTrigger>
             <TabsTrigger value="passengers" data-testid="tab-passengers">Pasajeros</TabsTrigger>
             <TabsTrigger value="documents" data-testid="tab-documents">Documentos</TabsTrigger>
+            <TabsTrigger value="reports" data-testid="tab-reports">Reportes</TabsTrigger>
             <TabsTrigger value="config" data-testid="tab-config">Configuración</TabsTrigger>
           </TabsList>
 
@@ -579,6 +581,10 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <Reports />
           </TabsContent>
 
           <TabsContent value="config">
