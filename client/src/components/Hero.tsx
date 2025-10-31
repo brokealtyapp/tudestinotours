@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Calendar as CalendarIcon, MapPin, Search, Users, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -209,25 +210,33 @@ export default function Hero() {
     }));
   };
 
+  const [, setLocation] = useLocation();
+
   const handleSearch = () => {
-    if (!selectedTour) {
-      console.log("Por favor selecciona un destino");
-      return;
+    // Construir query params para la búsqueda
+    const params = new URLSearchParams();
+    
+    if (selectedTour) {
+      params.append("tourId", selectedTour);
     }
     
-    console.log("Búsqueda:", {
-      tour: selectedTour,
-      checkIn: checkIn ? format(checkIn, "yyyy-MM-dd") : null,
-      checkOut: checkOut ? format(checkOut, "yyyy-MM-dd") : null,
-      guests: guestCounts,
-      totalGuests,
-    });
-    
-    // Navegar a la sección de tours con filtros aplicados
-    const toursSection = document.getElementById("tours");
-    if (toursSection) {
-      toursSection.scrollIntoView({ behavior: "smooth" });
+    if (checkIn) {
+      params.append("checkIn", format(checkIn, "yyyy-MM-dd"));
     }
+    
+    if (checkOut) {
+      params.append("checkOut", format(checkOut, "yyyy-MM-dd"));
+    }
+    
+    if (totalGuests > 0) {
+      params.append("adults", guestCounts.adults.toString());
+      params.append("youth", guestCounts.youth.toString());
+      params.append("children", guestCounts.children.toString());
+      params.append("babies", guestCounts.babies.toString());
+    }
+    
+    // Navegar a /tours con los parámetros de búsqueda
+    setLocation(`/tours?${params.toString()}`);
   };
 
   return (
