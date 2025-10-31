@@ -107,6 +107,9 @@ export interface IStorage {
   
   // Reconciliation methods
   getReconciliationData(filters?: { startDate?: string; endDate?: string; status?: string; minAmount?: number }): Promise<any[]>;
+  
+  // Payment calendar methods
+  getPaymentCalendar(startDate: string, endDate: string): Promise<any[]>;
 }
 
 export interface SalesReport {
@@ -685,6 +688,31 @@ export class DbStorage implements IStorage {
     }
 
     const result = await query.orderBy(paymentInstallments.dueDate);
+    return result;
+  }
+
+  async getPaymentCalendar(startDate: string, endDate: string): Promise<any[]> {
+    const result = await db
+      .select({
+        installment: paymentInstallments,
+        reservation: reservations,
+        tour: tours,
+        departure: departures,
+        buyer: users,
+      })
+      .from(paymentInstallments)
+      .leftJoin(reservations, eq(paymentInstallments.reservationId, reservations.id))
+      .leftJoin(tours, eq(reservations.tourId, tours.id))
+      .leftJoin(departures, eq(reservations.departureId, departures.id))
+      .leftJoin(users, eq(reservations.userId, users.id))
+      .where(
+        and(
+          gte(paymentInstallments.dueDate, new Date(startDate)),
+          lte(paymentInstallments.dueDate, new Date(endDate))
+        )
+      )
+      .orderBy(paymentInstallments.dueDate);
+    
     return result;
   }
 

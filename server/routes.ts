@@ -1238,6 +1238,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/payments/calendar", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Se requieren startDate y endDate" });
+      }
+      
+      const data = await storage.getPaymentCalendar(startDate as string, endDate as string);
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error obteniendo calendario de pagos:", error);
+      res.status(500).json({ error: "Error obteniendo calendario de pagos" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

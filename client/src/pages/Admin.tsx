@@ -11,6 +11,7 @@ import DashboardAdmin from "@/components/DashboardAdmin";
 import DeparturesManagement from "@/components/DeparturesManagement";
 import { Reports } from "@/components/Reports";
 import { Reconciliation } from "@/components/Reconciliation";
+import { PaymentCalendar } from "@/components/PaymentCalendar";
 import {
   Dialog,
   DialogContent,
@@ -614,7 +615,20 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="payments">
-            <Reconciliation />
+            <Tabs defaultValue="reconciliation" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="reconciliation" data-testid="subtab-reconciliation">Conciliación</TabsTrigger>
+                <TabsTrigger value="calendar" data-testid="subtab-calendar">Calendario</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="reconciliation">
+                <Reconciliation />
+              </TabsContent>
+              
+              <TabsContent value="calendar">
+                <PaymentCalendar />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="reports">
