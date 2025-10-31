@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,18 +39,34 @@ export default function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-home">
-              Inicio
-            </Link>
-            <Link href="/tours" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-tours">
+            <button
+              onClick={() => scrollToSection("populares")}
+              className="text-sm font-medium hover-elevate px-3 py-2 rounded-md cursor-pointer"
+              data-testid="link-nav-populares"
+            >
+              Populares
+            </button>
+            <button
+              onClick={() => scrollToSection("tours")}
+              className="text-sm font-medium hover-elevate px-3 py-2 rounded-md cursor-pointer"
+              data-testid="link-nav-tours"
+            >
               Tours
-            </Link>
-            <Link href="/explore" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-explore">
-              Explorar
-            </Link>
-            <Link href="/activity" className="text-sm font-medium hover-elevate px-3 py-2 rounded-md" data-testid="link-nav-activity">
-              Actividades
-            </Link>
+            </button>
+            <button
+              onClick={() => scrollToSection("clientes")}
+              className="text-sm font-medium hover-elevate px-3 py-2 rounded-md cursor-pointer"
+              data-testid="link-nav-clientes"
+            >
+              Clientes
+            </button>
+            <button
+              onClick={() => scrollToSection("contactanos")}
+              className="text-sm font-medium hover-elevate px-3 py-2 rounded-md cursor-pointer"
+              data-testid="link-nav-contactanos"
+            >
+              Contáctanos
+            </button>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -97,18 +120,34 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <nav className="flex flex-col p-4 gap-2">
-            <Link href="/" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-home">
-              Inicio
-            </Link>
-            <Link href="/tours" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-tours">
+            <button
+              onClick={() => { scrollToSection("populares"); setMobileMenuOpen(false); }}
+              className="px-4 py-2 hover-elevate rounded-md text-left"
+              data-testid="link-mobile-populares"
+            >
+              Populares
+            </button>
+            <button
+              onClick={() => { scrollToSection("tours"); setMobileMenuOpen(false); }}
+              className="px-4 py-2 hover-elevate rounded-md text-left"
+              data-testid="link-mobile-tours"
+            >
               Tours
-            </Link>
-            <Link href="/explore" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-explore">
-              Explorar
-            </Link>
-            <Link href="/activity" className="px-4 py-2 hover-elevate rounded-md" data-testid="link-mobile-activity">
-              Actividades
-            </Link>
+            </button>
+            <button
+              onClick={() => { scrollToSection("clientes"); setMobileMenuOpen(false); }}
+              className="px-4 py-2 hover-elevate rounded-md text-left"
+              data-testid="link-mobile-clientes"
+            >
+              Clientes
+            </button>
+            <button
+              onClick={() => { scrollToSection("contactanos"); setMobileMenuOpen(false); }}
+              className="px-4 py-2 hover-elevate rounded-md text-left"
+              data-testid="link-mobile-contactanos"
+            >
+              Contáctanos
+            </button>
             <div className="flex flex-col gap-2 mt-4">
               {user ? (
                 <>
