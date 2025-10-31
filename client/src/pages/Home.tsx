@@ -5,6 +5,7 @@ import PopularTours from "@/components/PopularTours";
 import WhyChooseUs from "@/components/WhyChooseUs";
 import ExploreDestinations from "@/components/ExploreDestinations";
 import Testimonials from "@/components/Testimonials";
+import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -14,10 +15,19 @@ export default function Home() {
       <main>
         <Hero />
         <StatsSection />
-        <PopularTours />
+        <section id="populares">
+          <PopularTours />
+        </section>
         <WhyChooseUs />
-        <ExploreDestinations />
-        <Testimonials />
+        <section id="tours">
+          <ExploreDestinations />
+        </section>
+        <section id="clientes">
+          <Testimonials />
+        </section>
+        <section id="contactanos">
+          <ContactSection />
+        </section>
       </main>
       <Footer />
     </div>
