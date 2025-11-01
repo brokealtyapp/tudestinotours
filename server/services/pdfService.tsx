@@ -1,3 +1,4 @@
+import React from 'react';
 import ReactPDF, { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 import type { Reservation, Tour, Passenger, PaymentInstallment, User } from '@shared/schema';
 
