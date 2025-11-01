@@ -381,10 +381,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tours", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
+      console.log("[DEBUG] POST /api/tours - req.body:", JSON.stringify(req.body, null, 2));
       const validatedData = insertTourSchema.parse(req.body);
+      console.log("[DEBUG] POST /api/tours - validatedData:", JSON.stringify(validatedData, null, 2));
       const tour = await storage.createTour(validatedData);
+      console.log("[DEBUG] POST /api/tours - created tour:", JSON.stringify(tour, null, 2));
       res.status(201).json(tour);
     } catch (error: any) {
+      console.error("[ERROR] POST /api/tours:", error);
       res.status(400).json({ error: error.message });
     }
   });
