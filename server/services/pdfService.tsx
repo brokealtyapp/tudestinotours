@@ -480,3 +480,160 @@ export async function generateItineraryPDF(data: ItineraryData): Promise<Buffer>
     stream.on('error', reject);
   });
 }
+
+// Tour Brochure PDF (Marketing Material)
+interface TourBrochureData {
+  tour: Tour;
+}
+
+const TourBrochureDocument = ({ tour }: TourBrochureData) => {
+  const faqs = tour.faqs as Array<{question: string; answer: string}> | null;
+  
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.companyName}>Tu Destino Tours</Text>
+          <Text style={styles.companyTagline}>Tu próxima aventura comienza aquí</Text>
+          <Text style={styles.documentTitle}>{tour.title}</Text>
+          <Text style={styles.documentSubtitle}>{tour.location}</Text>
+        </View>
+
+        {/* Overview */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Descripción</Text>
+          <Text style={{ fontSize: 9, lineHeight: 1.6, color: '#475569' }}>
+            {tour.description}
+          </Text>
+        </View>
+
+        {/* Key Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Detalles del Tour</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Duración:</Text>
+            <Text style={styles.value}>{tour.duration}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Ubicación:</Text>
+            <Text style={styles.value}>{tour.location}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Precio desde:</Text>
+            <Text style={{ ...styles.value, color: '#dc2626', fontWeight: 'bold' }}>
+              ${parseFloat(tour.price).toFixed(2)} por persona
+            </Text>
+          </View>
+        </View>
+
+        {/* Itinerary */}
+        {tour.itinerary && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Itinerario</Text>
+            <Text style={{ fontSize: 9, lineHeight: 1.6, color: '#475569' }}>
+              {tour.itinerary}
+            </Text>
+          </View>
+        )}
+
+        {/* What's Included */}
+        {tour.includes && tour.includes.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Qué Incluye</Text>
+            {tour.includes.map((item, index) => (
+              <View key={index} style={{ flexDirection: 'row', marginBottom: 3 }}>
+                <Text style={{ fontSize: 9, color: '#059669', marginRight: 5 }}>✓</Text>
+                <Text style={{ fontSize: 9, color: '#475569', flex: 1 }}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* What's NOT Included */}
+        {tour.excludes && tour.excludes.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Qué NO Incluye</Text>
+            {tour.excludes.map((item, index) => (
+              <View key={index} style={{ flexDirection: 'row', marginBottom: 3 }}>
+                <Text style={{ fontSize: 9, color: '#dc2626', marginRight: 5 }}>✗</Text>
+                <Text style={{ fontSize: 9, color: '#475569', flex: 1 }}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Cancellation Policy */}
+        {tour.cancellationPolicy && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Política de Cancelación</Text>
+            <Text style={{ fontSize: 9, lineHeight: 1.5, color: '#475569' }}>
+              {tour.cancellationPolicy}
+            </Text>
+          </View>
+        )}
+
+        {/* Requirements */}
+        {tour.requirements && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Requisitos</Text>
+            <Text style={{ fontSize: 9, lineHeight: 1.5, color: '#475569' }}>
+              {tour.requirements}
+            </Text>
+          </View>
+        )}
+
+        {/* FAQs */}
+        {faqs && faqs.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Preguntas Frecuentes</Text>
+            {faqs.map((faq, index) => (
+              <View key={index} style={{ marginBottom: 10 }}>
+                <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1e293b', marginBottom: 3 }}>
+                  {faq.question}
+                </Text>
+                <Text style={{ fontSize: 9, color: '#475569', lineHeight: 1.4 }}>
+                  {faq.answer}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Call to Action */}
+        <View style={styles.highlight}>
+          <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#92400e', marginBottom: 4 }}>
+            ¿Listo para reservar?
+          </Text>
+          <Text style={{ fontSize: 9, color: '#92400e' }}>
+            Visita nuestro sitio web o contáctanos para más información y disponibilidad de fechas.
+          </Text>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text>Tu Destino Tours | www.tudestinotours.com</Text>
+          <Text>Email: info@tudestinotours.com | Tel: +1 (555) 123-4567</Text>
+          <Text style={{ marginTop: 4, fontSize: 7 }}>
+            Documento generado el {new Date().toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export async function generateTourBrochurePDF(data: TourBrochureData): Promise<Buffer> {
+  const stream = await ReactPDF.renderToStream(<TourBrochureDocument {...data} />);
+  const chunks: Uint8Array[] = [];
+  
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+}

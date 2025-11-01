@@ -23,10 +23,13 @@ import {
   AlertCircle,
   Star,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Tour, Departure } from "@shared/schema";
+import SEOHead from "@/components/SEOHead";
+import TourSchemaOrg from "@/components/TourSchemaOrg";
 
 export default function TourDetail() {
   const [, params] = useRoute("/tours/:id");
@@ -113,6 +116,10 @@ export default function TourDetail() {
     }
   };
 
+  const handleDownloadBrochure = () => {
+    window.open(`/api/tours/${tourId}/brochure`, '_blank');
+  };
+
   const getOccupationColor = (percentage: number) => {
     if (percentage >= 90) return "text-destructive";
     if (percentage >= 70) return "text-orange-500";
@@ -132,8 +139,29 @@ export default function TourDetail() {
     return <Badge className="bg-green-600 text-white">Disponible</Badge>;
   };
 
+  const selectedDeparture = selectedDepartureId && departures 
+    ? departures.find(d => d.id === selectedDepartureId) 
+    : undefined;
+
+  const seoDescription = tour.description 
+    ? tour.description.substring(0, 155) + (tour.description.length > 155 ? '...' : '')
+    : `Descubre ${tour.title} - ${tour.duration} de viaje inolvidable con Tu Destino Tours.`;
+
+  const seoImage = tour.images && tour.images.length > 0 
+    ? tour.images[0] 
+    : undefined;
+
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={tour.title}
+        description={seoDescription}
+        ogType="website"
+        ogImage={seoImage}
+        ogUrl={window.location.href}
+      />
+      <TourSchemaOrg tour={tour} departure={selectedDeparture} />
+      
       <Header />
       
       {/* Hero Section with Image Gallery */}
@@ -436,6 +464,16 @@ export default function TourDetail() {
                   data-testid="button-book-now"
                 >
                   {selectedDepartureId ? "Reservar esta salida" : "Reservar ahora"}
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleDownloadBrochure}
+                  data-testid="button-download-brochure"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar Folleto PDF
                 </Button>
                 {selectedDepartureId && departures && departures.length > 0 && (
                   <p className="text-xs text-center text-muted-foreground">

@@ -22,7 +22,7 @@ import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
-import { generateInvoicePDF, generateItineraryPDF } from "./services/pdfService";
+import { generateInvoicePDF, generateItineraryPDF, generateTourBrochurePDF } from "./services/pdfService";
 import { captureBeforeState, createAuditLog } from "./middleware/auditMiddleware";
 import { smtpService } from "./services/smtpService";
 import { PERMISSIONS, getPermissionsForRole } from "./permissions";
@@ -379,6 +379,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate and download tour brochure PDF (public endpoint)
+  app.get("/api/tours/:id/brochure", async (req, res) => {
+    try {
+      const tour = await storage.getTour(req.params.id);
+      if (!tour) {
+        return res.status(404).json({ error: "Tour no encontrado" });
+      }
+
+      const pdfBuffer = await generateTourBrochurePDF({ tour });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="folleto-${tour.title.replace(/\s+/g, '-')}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Error generando folleto PDF:", error);
+      res.status(500).json({ error: "Error generando folleto" });
+    }
+  });
+
   app.post("/api/tours", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       console.log("[DEBUG] POST /api/tours - req.body:", JSON.stringify(req.body, null, 2));
@@ -717,6 +736,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(reservation);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Bulk import reservations from CSV (ATOMIC: all-or-nothing)
+  app.post("/api/reservations/bulk", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { emailService } = await import("./services/emailService");
+      const bulkReservations = req.body as Array<{
+        buyer: {
+          name: string;
+          email: string;
+          phone: string;
+          passportNumber?: string;
+          nationality?: string;
+          departureAirport?: string;
+        };
+        departureId: string;
+        passengers: Array<{
+          fullName: string;
+          passportNumber: string;
+          nationality: string;
+          dateOfBirth: string;
+        }>;
+      }>;
+
+      if (!Array.isArray(bulkReservations) || bulkReservations.length === 0) {
+        return res.status(400).json({ error: "Se requiere un array de reservas" });
+      }
+
+      // Pre-validate and prepare all reservations data
+      const reservationsToCreate: Array<{
+        reservation: any;
+        departureId: string;
+        passengers: Array<any>;
+        tour: any;
+        departure: any;
+        totalPrice: number;
+        paymentDueDate: Date;
+      }> = [];
+
+      for (const bulkRes of bulkReservations) {
+        // Validate departure exists
+        const departure = await storage.getDeparture(bulkRes.departureId);
+        if (!departure) {
+          return res.status(400).json({ 
+            error: `Salida ${bulkRes.departureId} no encontrada para reserva de ${bulkRes.buyer.email}` 
+          });
+        }
+
+        // Get tour
+        const tour = await storage.getTour(departure.tourId);
+        if (!tour) {
+          return res.status(400).json({ 
+            error: `Tour no encontrado para salida ${bulkRes.departureId}` 
+          });
+        }
+
+        // Calculate prices and dates
+        const totalPrice = parseFloat(departure.price) * bulkRes.passengers.length;
+        const departureDate = new Date(departure.departureDate);
+        const paymentDueDate = new Date(departureDate);
+        paymentDueDate.setDate(paymentDueDate.getDate() - (departure.paymentDeadlineDays || 30));
+        const autoCancelAt = new Date(paymentDueDate);
+        autoCancelAt.setHours(autoCancelAt.getHours() + 24);
+
+        reservationsToCreate.push({
+          reservation: {
+            tourId: departure.tourId,
+            departureId: bulkRes.departureId,
+            userId: null,
+            buyerEmail: bulkRes.buyer.email,
+            buyerPhone: bulkRes.buyer.phone,
+            buyerName: bulkRes.buyer.name,
+            buyerPassportNumber: bulkRes.buyer.passportNumber || null,
+            buyerDepartureAirport: bulkRes.buyer.departureAirport || null,
+            buyerNationality: bulkRes.buyer.nationality || null,
+            reservationDate: new Date(),
+            departureDate: departure.departureDate,
+            totalPrice: totalPrice.toString(),
+            numberOfPassengers: bulkRes.passengers.length,
+            paymentDueDate,
+            autoCancelAt,
+            status: "pending",
+            paymentStatus: "pending",
+            paymentLink: null,
+            lastReminderSent: null,
+          },
+          departureId: bulkRes.departureId,
+          passengers: bulkRes.passengers.map(p => ({
+            fullName: p.fullName,
+            passportNumber: p.passportNumber,
+            nationality: p.nationality,
+            dateOfBirth: new Date(p.dateOfBirth),
+            passportImageUrl: null,
+            documentStatus: "pending",
+            documentNotes: null,
+          })),
+          tour,
+          departure,
+          totalPrice,
+          paymentDueDate,
+        });
+      }
+
+      // CRITICAL: Create ALL reservations atomically (all-or-nothing)
+      const createdReservations = await storage.createReservationsInBulkAtomic(
+        reservationsToCreate.map(r => ({
+          reservation: r.reservation,
+          departureId: r.departureId,
+          passengers: r.passengers,
+        }))
+      );
+
+      // Post-creation processing (timeline events, installments, emails)
+      for (let i = 0; i < createdReservations.length; i++) {
+        const reservation = createdReservations[i];
+        const { tour, departure, totalPrice, paymentDueDate } = reservationsToCreate[i];
+
+        // Log timeline event
+        await storage.createTimelineEvent({
+          reservationId: reservation.id,
+          eventType: "reservation_created",
+          description: `Reserva creada mediante importación CSV por administrador`,
+          performedBy: req.user!.userId,
+          metadata: JSON.stringify({
+            tourTitle: tour.title,
+            departureDate: departure.departureDate.toISOString(),
+            passengers: reservation.numberOfPassengers,
+            totalPrice: totalPrice,
+            buyerEmail: reservation.buyerEmail,
+            importedViaCSV: true,
+          }),
+        });
+
+        // Generate payment installments
+        try {
+          const defaultInstallmentsSetting = await storage.getSetting('DEFAULT_INSTALLMENTS');
+          const numberOfInstallments = defaultInstallmentsSetting 
+            ? parseInt(defaultInstallmentsSetting.value) 
+            : 3;
+
+          const installments = await storage.generatePaymentInstallments(
+            reservation.id,
+            totalPrice,
+            paymentDueDate,
+            numberOfInstallments
+          );
+
+          await storage.createTimelineEvent({
+            reservationId: reservation.id,
+            eventType: "installment_created",
+            description: `${installments.length} cuotas generadas automáticamente`,
+            performedBy: req.user!.userId,
+            metadata: JSON.stringify({
+              installmentsGenerated: installments.length,
+              depositAmount: installments[0].amountDue,
+              totalAmount: totalPrice,
+            }),
+          });
+        } catch (error: any) {
+          console.error("Error generando cuotas:", error);
+        }
+
+        // Get passengers for email
+        const passengers = await storage.getPassengersByReservation(reservation.id);
+
+        // Send confirmation email
+        const emailRecipient = {
+          email: reservation.buyerEmail,
+          name: reservation.buyerName,
+        };
+
+        emailService.sendReservationConfirmation(emailRecipient, reservation, tour, passengers)
+          .catch(error => console.error("Error enviando email:", error));
+      }
+
+      res.status(201).json({
+        created: createdReservations.length,
+        message: `Se importaron ${createdReservations.length} reservas exitosamente`,
+        reservations: createdReservations.map(r => ({
+          id: r.id,
+          buyer: r.buyerEmail,
+          passengers: r.numberOfPassengers,
+        })),
+      });
+    } catch (error: any) {
+      console.error("Error en importación masiva:", error);
+      res.status(500).json({ 
+        error: error.message || "Error al importar reservas. Ninguna reserva fue creada (rollback completo)."
+      });
     }
   });
 

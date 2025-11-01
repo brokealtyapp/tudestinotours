@@ -9,6 +9,7 @@ import {
   FileCheck,
   Mail,
   Plane,
+  Upload,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,11 @@ const menuItems = [
     title: "Reservas",
     icon: Calendar,
     value: "reservations",
+  },
+  {
+    title: "Importar CSV",
+    icon: Upload,
+    value: "import-csv",
   },
   {
     title: "Pagos",

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, X, Calendar, Users } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
 
 export default function Tours() {
   const [location, navigate] = useLocation();
@@ -71,6 +72,12 @@ export default function Tours() {
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title="Explora Nuestros Tours"
+        description="Descubre una amplia selección de tours y experiencias inolvidables. Desde aventuras exóticas hasta escapadas relajantes, encuentra el viaje perfecto para ti con Tu Destino Tours."
+        ogType="website"
+      />
+      
       <Header />
       <main>
         <section className="py-16 bg-muted/30">

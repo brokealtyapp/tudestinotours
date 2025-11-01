@@ -23,6 +23,7 @@ import AuditLog from "@/components/AuditLog";
 import UserManagement from "@/components/UserManagement";
 import SystemSettings from "@/components/SystemSettings";
 import { DocumentVerification } from "@/components/DocumentVerification";
+import CSVImport from "@/components/CSVImport";
 import {
   Dialog,
   DialogContent,
@@ -735,6 +736,16 @@ export default function Admin() {
                     })}
                   </div>
                   )}
+                </div>
+              )}
+
+              {activeSection === "import-csv" && (
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-900">Importación Masiva de Reservas</h2>
+                    <p className="text-gray-600 mt-2">Carga múltiples reservas desde un archivo CSV. Ideal para grupos grandes.</p>
+                  </div>
+                  <CSVImport />
                 </div>
               )}
 

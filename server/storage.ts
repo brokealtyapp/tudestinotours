@@ -77,6 +77,11 @@ export interface IStorage {
   getReservations(userId?: string): Promise<Reservation[]>;
   getReservation(id: string): Promise<Reservation | undefined>;
   createReservationAtomic(reservation: InsertReservation, departureId: string, numberOfPassengers: number): Promise<Reservation>;
+  createReservationsInBulkAtomic(reservationsData: Array<{
+    reservation: InsertReservation;
+    departureId: string;
+    passengers: Array<InsertPassenger>;
+  }>): Promise<Reservation[]>;
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservationStatus(id: string, status: string, paymentStatus?: string): Promise<Reservation | undefined>;
   cancelReservationAtomic(reservationId: string, newStatus: string, newPaymentStatus?: string): Promise<Reservation>;
@@ -430,6 +435,96 @@ export class DbStorage implements IStorage {
       }
 
       return newReservation;
+    });
+  }
+
+  async createReservationsInBulkAtomic(reservationsData: Array<{
+    reservation: InsertReservation;
+    departureId: string;
+    passengers: Array<InsertPassenger>;
+  }>): Promise<Reservation[]> {
+    return await db.transaction(async (tx) => {
+      const createdReservations: Reservation[] = [];
+      
+      // Group reservations by departureId for seat validation
+      const departureSeatsNeeded = new Map<string, number>();
+      for (const { departureId, reservation } of reservationsData) {
+        const current = departureSeatsNeeded.get(departureId) || 0;
+        departureSeatsNeeded.set(departureId, current + reservation.numberOfPassengers);
+      }
+      
+      // 1. Lock and validate all departures first
+      const departureLocks = new Map<string, any>();
+      for (const [departureId, seatsNeeded] of Array.from(departureSeatsNeeded.entries())) {
+        const departureResult = await tx
+          .select()
+          .from(departures)
+          .where(eq(departures.id, departureId))
+          .for('update');
+        
+        const departure = departureResult[0];
+        if (!departure) {
+          throw new Error(`Salida ${departureId} no encontrada`);
+        }
+        
+        const availableSeats = departure.totalSeats - departure.reservedSeats;
+        if (seatsNeeded > availableSeats) {
+          throw new Error(
+            `No hay suficientes cupos en salida ${departureId}. Disponibles: ${availableSeats}, Solicitados: ${seatsNeeded}`
+          );
+        }
+        
+        departureLocks.set(departureId, departure);
+      }
+      
+      // 2. Create all reservations
+      for (const { reservation, departureId, passengers: passengersList } of reservationsData) {
+        // Create reservation
+        const newReservationResult = await tx
+          .insert(reservations)
+          .values(reservation)
+          .returning();
+        
+        const newReservation = newReservationResult[0];
+        createdReservations.push(newReservation);
+        
+        // Create passengers for this reservation
+        if (passengersList.length > 0) {
+          await tx.insert(passengers).values(
+            passengersList.map(p => ({
+              ...p,
+              reservationId: newReservation.id,
+            }))
+          );
+        }
+        
+        // Update departure seats
+        const departure = departureLocks.get(departureId)!;
+        await tx
+          .update(departures)
+          .set({ reservedSeats: departure.reservedSeats + reservation.numberOfPassengers })
+          .where(eq(departures.id, departureId));
+        
+        // Update cached departure
+        departure.reservedSeats += reservation.numberOfPassengers;
+        
+        // Update tour seats
+        const tourResult = await tx
+          .select()
+          .from(tours)
+          .where(eq(tours.id, reservation.tourId))
+          .for('update');
+        
+        const tour = tourResult[0];
+        if (tour) {
+          await tx
+            .update(tours)
+            .set({ reservedSeats: tour.reservedSeats + reservation.numberOfPassengers })
+            .where(eq(tours.id, reservation.tourId));
+        }
+      }
+      
+      return createdReservations;
     });
   }
 
