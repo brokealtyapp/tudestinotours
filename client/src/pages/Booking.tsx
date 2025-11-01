@@ -132,6 +132,7 @@ export default function Booking() {
     // Skip if user is already logged in or email is empty
     if (user || !buyerEmail || buyerEmail.trim() === "") {
       setEmailExists(false);
+      setCheckingEmail(false);
       return;
     }
 
@@ -139,27 +140,44 @@ export default function Booking() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(buyerEmail)) {
       setEmailExists(false);
+      setCheckingEmail(false);
       return;
     }
 
     setCheckingEmail(true);
     
+    // Create AbortController to cancel in-flight requests
+    const abortController = new AbortController();
+    const currentEmail = buyerEmail; // Capture current email value
+    
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/users/check-email?email=${encodeURIComponent(buyerEmail)}`);
+        const response = await fetch(
+          `/api/users/check-email?email=${encodeURIComponent(currentEmail)}`,
+          { signal: abortController.signal }
+        );
         const data = await response.json();
-        setEmailExists(data.exists);
-      } catch (error) {
-        console.error("Error checking email:", error);
-        setEmailExists(false);
-      } finally {
-        setCheckingEmail(false);
+        
+        // Only update state if email hasn't changed
+        if (currentEmail === buyerEmail) {
+          setEmailExists(data.exists);
+          setCheckingEmail(false);
+        }
+      } catch (error: any) {
+        // Ignore abort errors (user is typing)
+        if (error.name !== 'AbortError') {
+          console.error("Error checking email:", error);
+          if (currentEmail === buyerEmail) {
+            setEmailExists(false);
+            setCheckingEmail(false);
+          }
+        }
       }
     }, 500); // 500ms debounce
 
     return () => {
       clearTimeout(timeoutId);
-      setCheckingEmail(false);
+      abortController.abort(); // Cancel in-flight request
     };
   }, [buyerEmail, user]);
 
