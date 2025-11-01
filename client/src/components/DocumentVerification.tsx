@@ -46,7 +46,7 @@ export function DocumentVerification() {
 
   // Filter passengers with documents
   const passengersWithDocuments = useMemo(() => {
-    return passengersWithDetails.filter(p => p.passportDocumentUrl);
+    return passengersWithDetails.filter(p => p.passportImageUrl);
   }, [passengersWithDetails]);
 
   // Apply filters and search
@@ -248,7 +248,7 @@ export function DocumentVerification() {
                 >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                     <img
-                      src={passenger.passportDocumentUrl}
+                      src={passenger.passportImageUrl}
                       alt={`Pasaporte de ${passenger.fullName}`}
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
                       onClick={() => handleViewDocument(passenger)}
@@ -344,10 +344,10 @@ export function DocumentVerification() {
                 )}
               </div>
 
-              {selectedPassenger.passportDocumentUrl && (
+              {selectedPassenger.passportImageUrl && (
                 <div className="border rounded-lg overflow-hidden bg-muted/30">
                   <img
-                    src={selectedPassenger.passportDocumentUrl}
+                    src={selectedPassenger.passportImageUrl}
                     alt={`Pasaporte de ${selectedPassenger.fullName}`}
                     className="w-full h-auto max-h-[50vh] object-contain"
                   />
