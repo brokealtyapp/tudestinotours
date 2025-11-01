@@ -640,6 +640,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // IMPORTANTE: Generar cuotas de pago automáticamente
+      try {
+        const defaultInstallmentsSetting = await storage.getSetting('DEFAULT_INSTALLMENTS');
+        const numberOfInstallments = defaultInstallmentsSetting 
+          ? parseInt(defaultInstallmentsSetting.value) 
+          : 3;
+
+        const installments = await storage.generatePaymentInstallments(
+          reservation.id,
+          totalPrice,
+          paymentDueDate,
+          numberOfInstallments
+        );
+
+        // Log evento de creación de cuotas
+        await storage.createTimelineEvent({
+          reservationId: reservation.id,
+          eventType: "installment_created",
+          description: `${installments.length} cuotas generadas automáticamente (depósito inicial + ${numberOfInstallments} cuotas)`,
+          performedBy: validatedData.userId || null,
+          metadata: JSON.stringify({ 
+            installmentsGenerated: installments.length,
+            depositAmount: installments[0].amountDue,
+            totalAmount: totalPrice,
+          }),
+        });
+      } catch (error: any) {
+        console.error("Error generando cuotas de pago:", error);
+        // No fallar la reserva si hay error generando cuotas
+      }
+
       // Get user for email (if authenticated)
       const user = validatedData.userId ? await storage.getUser(validatedData.userId) : null;
       

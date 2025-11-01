@@ -792,11 +792,15 @@ export class DbStorage implements IStorage {
       reservationId,
       installmentNumber: 0,
       amountDue: depositAmount.toFixed(2),
+      percentageDue: minDepositPercentage,
       dueDate: paymentDueDate,
       status: 'pending',
       description: 'Depósito inicial',
     });
     installments.push(depositInstallment);
+
+    // Calcular porcentaje de cada cuota
+    const installmentPercentage = Math.round(((remainingAmount / numberOfInstallments) / totalAmount) * 100);
 
     // Crear cuotas restantes
     for (let i = 1; i <= numberOfInstallments; i++) {
@@ -808,6 +812,7 @@ export class DbStorage implements IStorage {
         reservationId,
         installmentNumber: i,
         amountDue: installmentAmount.toFixed(2),
+        percentageDue: installmentPercentage,
         dueDate: installmentDueDate,
         status: 'pending',
         description: `Cuota ${i} de ${numberOfInstallments}`,
