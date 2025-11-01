@@ -1322,6 +1322,61 @@ export class DbStorage implements IStorage {
   async deleteSetting(key: string): Promise<void> {
     await db.delete(systemSettings).where(eq(systemSettings.key, key));
   }
+
+  // Initialize default system settings
+  async initializeDefaultSettings(): Promise<void> {
+    const existingSettings = await this.getSettings();
+    
+    // Si ya hay configuraciones, no hacer nada
+    if (existingSettings.length > 0) {
+      return;
+    }
+
+    const defaultSettings: InsertSystemSetting[] = [
+      // Configuraciones de pagos
+      {
+        key: 'MIN_DEPOSIT_PERCENTAGE',
+        value: '30',
+        category: 'payments',
+        description: 'Porcentaje mínimo de depósito inicial requerido',
+        dataType: 'number',
+      },
+      {
+        key: 'MAX_INSTALLMENTS_ALLOWED',
+        value: '12',
+        category: 'payments',
+        description: 'Número máximo de cuotas permitidas',
+        dataType: 'number',
+      },
+      {
+        key: 'DEFAULT_INSTALLMENTS',
+        value: '3',
+        category: 'payments',
+        description: 'Número de cuotas por defecto para nuevas reservas',
+        dataType: 'number',
+      },
+      {
+        key: 'GRACE_DAYS_BEFORE_CANCELLATION',
+        value: '1',
+        category: 'payments',
+        description: 'Días de gracia antes de cancelación automática',
+        dataType: 'number',
+      },
+      {
+        key: 'LATE_PAYMENT_SURCHARGE',
+        value: '0',
+        category: 'payments',
+        description: 'Recargo por pago tardío (%)',
+        dataType: 'number',
+      },
+    ];
+
+    for (const setting of defaultSettings) {
+      await this.createSetting(setting);
+    }
+
+    console.log('[INIT] Configuraciones por defecto inicializadas correctamente');
+  }
 }
 
 export const storage = new DbStorage();
