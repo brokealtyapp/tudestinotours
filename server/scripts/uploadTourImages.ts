@@ -75,12 +75,11 @@ async function uploadTourImages() {
 
       // Subir a Object Storage
       console.log(`   ⬆️  Subiendo imagen a Object Storage...`);
-      const publicURL = await objectStorageService.uploadTourImage(fileName, imageBuffer);
-      console.log(`   ✅ Imagen subida: ${publicURL}`);
+      const imageUrl = await objectStorageService.uploadTourImage(fileName, imageBuffer);
+      console.log(`   ✅ Imagen subida: ${imageUrl}`);
 
-      // Actualizar el tour con la nueva imagen
-      const currentImages = tour.images || [];
-      const updatedImages = [publicURL, ...currentImages];
+      // Actualizar el tour con la nueva imagen (reemplazar todas las imágenes existentes)
+      const updatedImages = [imageUrl];
 
       await db
         .update(tours)

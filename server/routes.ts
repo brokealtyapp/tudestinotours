@@ -75,6 +75,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tours/images/:filename", async (req, res) => {
+    const filename = req.params.filename;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(`tours/${filename}`);
+      if (!file) {
+        return res.status(404).json({ error: "Imagen no encontrada" });
+      }
+      objectStorageService.downloadObject(file, res, 86400); // Cache por 24 horas
+    } catch (error: any) {
+      console.error("Error buscando imagen de tour:", error);
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
   app.post("/api/tours/upload-url", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { filename } = req.body;

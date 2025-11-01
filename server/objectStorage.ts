@@ -159,8 +159,9 @@ export class ObjectStorageService {
       },
     });
     
-    const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
-    return publicURL;
+    // Return relative path to be served through backend endpoint
+    const relativePath = `/api/tours/images/${uniqueFilename}`;
+    return relativePath;
   }
 
   async getObjectEntityFile(objectPath: string): Promise<File> {
