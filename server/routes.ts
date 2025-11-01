@@ -872,43 +872,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes
-  app.post("/api/payments", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const validatedData = insertPaymentSchema.parse(req.body);
-      
-      // Verify the user has access to this reservation
-      const reservation = await storage.getReservation(validatedData.reservationId);
-      if (!reservation) {
-        return res.status(404).json({ error: "Reserva no encontrada" });
-      }
+  // Payment routes - LEGACY (ya no se usan, el sistema actual usa payment_installments)
+  // app.post("/api/payments", authenticateToken, async (req: AuthRequest, res) => {
+  //   try {
+  //     const validatedData = insertPaymentSchema.parse(req.body);
+  //     
+  //     // Verify the user has access to this reservation
+  //     const reservation = await storage.getReservation(validatedData.reservationId);
+  //     if (!reservation) {
+  //       return res.status(404).json({ error: "Reserva no encontrada" });
+  //     }
 
-      if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
-        return res.status(403).json({ error: "Acceso denegado" });
-      }
+  //     if (req.user!.role !== "admin" && reservation.userId !== req.user!.userId) {
+  //       return res.status(403).json({ error: "Acceso denegado" });
+  //     }
 
-      const payment = await storage.createPayment(validatedData);
-      res.status(201).json(payment);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
+  //     const payment = await storage.createPayment(validatedData);
+  //     res.status(201).json(payment);
+  //   } catch (error: any) {
+  //     res.status(400).json({ error: error.message });
+  //   }
+  // });
 
-  app.put("/api/payments/:id/confirm", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
-    try {
-      const payment = await storage.updatePaymentStatus(
-        req.params.id,
-        "confirmed",
-        req.user!.userId
-      );
-      if (!payment) {
-        return res.status(404).json({ error: "Pago no encontrado" });
-      }
-      res.json(payment);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
-    }
-  });
+  // app.put("/api/payments/:id/confirm", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  //   try {
+  //     const payment = await storage.updatePaymentStatus(
+  //       req.params.id,
+  //       "confirmed",
+  //       req.user!.userId
+  //     );
+  //     if (!payment) {
+  //       return res.status(404).json({ error: "Pago no encontrado" });
+  //     }
+  //     res.json(payment);
+  //   } catch (error: any) {
+  //     res.status(400).json({ error: error.message });
+  //   }
+  // });
 
   // Payment Installments routes
   app.get("/api/reservations/:reservationId/installments", authenticateToken, async (req: AuthRequest, res) => {

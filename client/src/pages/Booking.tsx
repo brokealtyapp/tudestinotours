@@ -295,13 +295,8 @@ export default function Booking() {
       );
       await Promise.all(passengersPromises);
 
-      await apiRequest("POST", "/api/payments", {
-        reservationId: reservation.id,
-        amount: reservationData.totalPrice,
-        paymentMethod: "external",
-        externalPaymentUrl: paymentUrl,
-        status: "pending",
-      });
+      // Las cuotas de pago ya se generan automáticamente en el backend al crear la reserva
+      // ya no es necesario crear un payment manual aquí
 
       queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
 
