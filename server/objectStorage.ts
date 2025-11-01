@@ -138,6 +138,32 @@ export class ObjectStorageService {
     return { uploadURL, publicURL };
   }
 
+  async uploadTourImage(filename: string, buffer: Buffer): Promise<string> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+    
+    const publicPath = publicSearchPaths[0];
+    const ext = filename.split('.').pop() || 'jpg';
+    const uniqueFilename = `tour-${randomUUID()}.${ext}`;
+    const fullPath = `${publicPath}/tours/${uniqueFilename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    
+    await file.save(buffer, {
+      metadata: {
+        contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+      },
+      public: true,
+    });
+    
+    const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+    return publicURL;
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
