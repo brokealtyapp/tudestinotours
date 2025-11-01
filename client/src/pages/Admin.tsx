@@ -76,6 +76,12 @@ export default function Admin() {
     paidAt: new Date().toISOString().split('T')[0],
   });
 
+  // Filtros de reservas
+  const [tourFilter, setTourFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
   const { data: systemConfig } = useQuery<any[]>({ queryKey: ["/api/config"] });
@@ -463,6 +469,39 @@ export default function Admin() {
     }
   };
 
+  // Filtrar reservas
+  const filteredReservations = reservations?.filter((reservation: any) => {
+    // Filtro por tour
+    if (tourFilter !== "all" && reservation.tourId !== tourFilter) {
+      return false;
+    }
+
+    // Filtro por estado
+    if (statusFilter !== "all" && reservation.status !== statusFilter) {
+      return false;
+    }
+
+    // Filtro por estado de pago
+    if (paymentStatusFilter !== "all" && reservation.paymentStatus !== paymentStatusFilter) {
+      return false;
+    }
+
+    // Filtro por búsqueda (nombre del comprador, email, o código de reserva)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesId = reservation.id.toLowerCase().includes(query);
+      const matchesBuyerName = reservation.buyerName?.toLowerCase().includes(query);
+      const matchesBuyerEmail = reservation.buyerEmail?.toLowerCase().includes(query);
+      const matchesTourTitle = reservation.tourTitle?.toLowerCase().includes(query);
+
+      if (!matchesId && !matchesBuyerName && !matchesBuyerEmail && !matchesTourTitle) {
+        return false;
+      }
+    }
+
+    return true;
+  }) || [];
+
   const sidebarStyle = {
     "--sidebar-width": "16rem",
   };
@@ -575,11 +614,110 @@ export default function Admin() {
               {activeSection === "reservations" && (
                 <div>
                   <div className="mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-900">Gestión de Reservas</h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold text-gray-900">Gestión de Reservas</h2>
+                      <div className="text-sm text-gray-600">
+                        Mostrando {filteredReservations.length} de {reservations?.length || 0} reservas
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Buscar</Label>
+                          <Input
+                            placeholder="Nombre, email, tour, código..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            data-testid="input-search-reservations"
+                            className="rounded-lg"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Tour</Label>
+                          <select
+                            value={tourFilter}
+                            onChange={(e) => setTourFilter(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                            data-testid="select-tour-filter"
+                          >
+                            <option value="all">Todos los tours</option>
+                            {tours?.map((tour: any) => (
+                              <option key={tour.id} value={tour.id}>
+                                {tour.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Estado</Label>
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                            data-testid="select-status-filter"
+                          >
+                            <option value="all">Todos los estados</option>
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="completed">Completado</option>
+                            <option value="cancelled">Cancelado</option>
+                            <option value="vencida">Vencida</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Estado de Pago</Label>
+                          <select
+                            value={paymentStatusFilter}
+                            onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                            data-testid="select-payment-status-filter"
+                          >
+                            <option value="all">Todos los pagos</option>
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="completed">Completado</option>
+                            <option value="failed">Fallido</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {reservations?.map((reservation: any) => {
+                  {filteredReservations.length === 0 ? (
+                    <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                      <div className="max-w-md mx-auto">
+                        <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                          <FileText className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No se encontraron reservas</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          {searchQuery || tourFilter !== "all" || statusFilter !== "all" || paymentStatusFilter !== "all"
+                            ? "Intenta ajustar los filtros de búsqueda"
+                            : "Aún no hay reservas en el sistema"}
+                        </p>
+                        {(searchQuery || tourFilter !== "all" || statusFilter !== "all" || paymentStatusFilter !== "all") && (
+                          <Button
+                            onClick={() => {
+                              setSearchQuery("");
+                              setTourFilter("all");
+                              setStatusFilter("all");
+                              setPaymentStatusFilter("all");
+                            }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Limpiar filtros
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredReservations.map((reservation: any) => {
                       const departureDate = reservation.departureDate ? new Date(reservation.departureDate) : null;
                       const paymentDueDate = reservation.paymentDueDate ? new Date(reservation.paymentDueDate) : null;
                       const now = new Date();
@@ -626,9 +764,14 @@ export default function Admin() {
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                                   Reserva #{reservation.id.slice(0, 8)}
                                 </h3>
+                                {reservation.tourTitle && (
+                                  <p className="text-sm font-medium text-blue-600 mb-3">
+                                    {reservation.tourTitle}
+                                  </p>
+                                )}
                                 <div className="flex items-center gap-2 mb-3">
                                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(reservation.status)}`}>
                                     {getStatusLabel(reservation.status)}
@@ -640,21 +783,33 @@ export default function Admin() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 border-t border-gray-100">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 border-t border-gray-100 bg-gray-50 rounded-lg p-4">
                               <div>
-                                <p className="text-sm text-gray-600 mb-1">Total</p>
-                                <p className="text-lg font-semibold text-gray-900">${reservation.totalPrice}</p>
+                                <p className="text-xs text-gray-600 mb-1">Comprador</p>
+                                <p className="text-sm font-semibold text-gray-900">{reservation.buyerName || 'No especificado'}</p>
+                                {reservation.buyerEmail && (
+                                  <p className="text-xs text-gray-600 mt-1">{reservation.buyerEmail}</p>
+                                )}
+                                {reservation.buyerPhone && (
+                                  <p className="text-xs text-gray-600">{reservation.buyerPhone}</p>
+                                )}
                               </div>
-                              <div>
-                                <p className="text-sm text-gray-600 mb-1">Pasajeros</p>
-                                <p className="text-lg font-semibold text-gray-900">{reservation.numberOfPassengers}</p>
-                              </div>
-                              {departureDate && (
+                              <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <p className="text-sm text-gray-600 mb-1">Fecha de salida</p>
-                                  <p className="text-lg font-semibold text-gray-900">{departureDate.toLocaleDateString('es-ES')}</p>
+                                  <p className="text-xs text-gray-600 mb-1">Total</p>
+                                  <p className="text-base font-semibold text-gray-900">${reservation.totalPrice}</p>
                                 </div>
-                              )}
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">Pasajeros</p>
+                                  <p className="text-base font-semibold text-gray-900">{reservation.numberOfPassengers}</p>
+                                </div>
+                                {departureDate && (
+                                  <div className="col-span-2">
+                                    <p className="text-xs text-gray-600 mb-1">Fecha de salida</p>
+                                    <p className="text-sm font-semibold text-gray-900">{departureDate.toLocaleDateString('es-ES')}</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
                             {paymentDueDate && reservation.paymentStatus === 'pending' && (
@@ -725,6 +880,7 @@ export default function Admin() {
                       );
                     })}
                   </div>
+                  )}
                 </div>
               )}
 
