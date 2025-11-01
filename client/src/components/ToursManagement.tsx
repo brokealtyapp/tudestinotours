@@ -34,6 +34,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Eye, ExternalLink, MapPin, Users, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import imageCompression from "browser-image-compression";
 
 interface Tour {
   id: string;
@@ -355,34 +356,51 @@ export default function ToursManagement() {
       return;
     }
 
-    // Validar tamaño (máx 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "El archivo no debe superar 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setUploadingImage(true);
       setUploadProgress(0);
 
-      // Paso 1: Obtener URL de subida
+      // Paso 1: Comprimir imagen en el navegador
+      const options = {
+        maxSizeMB: 2, // Tamaño máximo 2MB
+        maxWidthOrHeight: 1920, // Máximo 1920px de ancho/alto
+        useWebWorker: true,
+        fileType: file.type,
+      };
+
+      let compressedFile = file;
+      
+      // Solo comprimir si es mayor a 1MB
+      if (file.size > 1024 * 1024) {
+        toast({
+          title: "Optimizando imagen...",
+          description: "Comprimiendo para mejorar el rendimiento",
+        });
+        
+        compressedFile = await imageCompression(file, options);
+        
+        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
+        const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
+        
+        console.log(`Imagen comprimida: ${originalSizeMB}MB → ${compressedSizeMB}MB`);
+      }
+
+      setUploadProgress(20);
+
+      // Paso 2: Obtener URL de subida
       const { uploadURL, publicURL } = await apiRequest("POST", "/api/tours/upload-url", {
         filename: file.name,
       });
 
-      setUploadProgress(30);
+      setUploadProgress(40);
 
-      // Paso 2: Subir archivo a Object Storage
+      // Paso 3: Subir archivo comprimido a Object Storage
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
         headers: {
-          "Content-Type": file.type,
+          "Content-Type": compressedFile.type,
         },
-        body: file,
+        body: compressedFile,
       });
 
       if (!uploadResponse.ok) {
@@ -391,7 +409,7 @@ export default function ToursManagement() {
 
       setUploadProgress(90);
 
-      // Paso 3: Agregar URL pública a la lista de imágenes
+      // Paso 4: Agregar URL pública a la lista de imágenes
       setTourForm(prev => ({
         ...prev,
         images: [...prev.images, publicURL],
@@ -401,7 +419,7 @@ export default function ToursManagement() {
 
       toast({
         title: "Éxito",
-        description: "Imagen subida correctamente",
+        description: "Imagen subida y optimizada correctamente",
       });
 
       // Resetear input
