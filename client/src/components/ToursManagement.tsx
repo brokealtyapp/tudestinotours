@@ -33,7 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Eye, ExternalLink, MapPin, Users, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, ExternalLink, MapPin, Users, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2, Star } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import imageCompression from "browser-image-compression";
 
 interface Tour {
@@ -48,6 +49,7 @@ interface Tour {
   minDepositPercentage: number | null;
   images: string[];
   featured: boolean;
+  discount: number | null;
   rating: string | null;
   reviewCount: number | null;
   createdAt: Date;
@@ -81,6 +83,8 @@ export default function ToursManagement() {
     maxPassengers: "",
     minDepositPercentage: "",
     images: [] as string[],
+    featured: false,
+    discount: "",
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -89,6 +93,10 @@ export default function ToursManagement() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const { data: allTours } = useQuery<Tour[]>({ queryKey: ["/api/tours"] });
+  const { data: configData } = useQuery<any[]>({ queryKey: ["/api/config"] });
+  
+  const availableCities = configData?.find(c => c.key === 'AVAILABLE_CITIES');
+  const cities = availableCities ? JSON.parse(availableCities.value) : [];
 
   const getOccupationPercentage = (reserved: number, total: number) => {
     return total > 0 ? Math.round((reserved / total) * 100) : 0;
@@ -248,6 +256,8 @@ export default function ToursManagement() {
       maxPassengers: "",
       minDepositPercentage: "",
       images: [],
+      featured: false,
+      discount: "",
     });
     setFormErrors({});
     setEditingTour(null);
@@ -270,6 +280,8 @@ export default function ToursManagement() {
       maxPassengers: tour.maxPassengers.toString(),
       minDepositPercentage: tour.minDepositPercentage ? tour.minDepositPercentage.toString() : "",
       images: tour.images || [],
+      featured: tour.featured || false,
+      discount: tour.discount ? tour.discount.toString() : "",
     });
     setShowCreateEditDialog(true);
   };
@@ -310,6 +322,8 @@ export default function ToursManagement() {
       duration: tourForm.duration,
       maxPassengers: parseInt(tourForm.maxPassengers),
       images: tourForm.images.filter(img => img && img.trim() !== ''),
+      featured: tourForm.featured,
+      discount: tourForm.discount ? parseInt(tourForm.discount) : 0,
     };
 
     if (tourForm.minDepositPercentage) {
@@ -737,23 +751,42 @@ export default function ToursManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Ubicación *</Label>
-                <Input
+                <Select
                   value={tourForm.location}
-                  onChange={(e) => setTourForm({ ...tourForm, location: e.target.value })}
-                  data-testid="input-location"
-                />
+                  onValueChange={(value) => setTourForm({ ...tourForm, location: value })}
+                >
+                  <SelectTrigger data-testid="select-location">
+                    <SelectValue placeholder="Selecciona una ciudad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map((city: string) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formErrors.location && (
                   <p className="text-xs text-destructive mt-1">{formErrors.location}</p>
                 )}
               </div>
               <div>
                 <Label>Duración *</Label>
-                <Input
+                <Select
                   value={tourForm.duration}
-                  onChange={(e) => setTourForm({ ...tourForm, duration: e.target.value })}
-                  placeholder="ej: 3 días"
-                  data-testid="input-duration"
-                />
+                  onValueChange={(value) => setTourForm({ ...tourForm, duration: value })}
+                >
+                  <SelectTrigger data-testid="select-duration">
+                    <SelectValue placeholder="Selecciona días" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((days) => (
+                      <SelectItem key={days} value={`${days} día${days > 1 ? 's' : ''}`}>
+                        {days} día{days > 1 ? 's' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formErrors.duration && (
                   <p className="text-xs text-destructive mt-1">{formErrors.duration}</p>
                 )}
@@ -790,23 +823,53 @@ export default function ToursManagement() {
               </div>
             </div>
 
-            <div>
-              <Label>% Mínimo de Depósito (Opcional)</Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                value={tourForm.minDepositPercentage}
-                onChange={(e) => setTourForm({ ...tourForm, minDepositPercentage: e.target.value })}
-                placeholder="Usar configuración global"
-                data-testid="input-min-deposit"
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>% Mínimo de Depósito (Opcional)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={tourForm.minDepositPercentage}
+                  onChange={(e) => setTourForm({ ...tourForm, minDepositPercentage: e.target.value })}
+                  placeholder="Usar configuración global"
+                  data-testid="input-min-deposit"
+                />
+                {formErrors.minDepositPercentage && (
+                  <p className="text-xs text-destructive mt-1">{formErrors.minDepositPercentage}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Deja vacío para usar la configuración global
+                </p>
+              </div>
+              <div>
+                <Label>% Descuento (Opcional)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={tourForm.discount}
+                  onChange={(e) => setTourForm({ ...tourForm, discount: e.target.value })}
+                  placeholder="0"
+                  data-testid="input-discount"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Porcentaje de descuento a mostrar
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="featured"
+                checked={tourForm.featured}
+                onCheckedChange={(checked) => setTourForm({ ...tourForm, featured: checked })}
+                data-testid="switch-featured"
               />
-              {formErrors.minDepositPercentage && (
-                <p className="text-xs text-destructive mt-1">{formErrors.minDepositPercentage}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Deja vacío para usar la configuración global
-              </p>
+              <Label htmlFor="featured" className="flex items-center gap-2 cursor-pointer">
+                <Star className="h-4 w-4 text-yellow-500" />
+                Destacar este tour en la página principal
+              </Label>
             </div>
 
             <div className="space-y-4">
