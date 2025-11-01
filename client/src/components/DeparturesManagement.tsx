@@ -41,7 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Copy, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Copy, Calendar, Eye, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -71,9 +71,11 @@ export default function DeparturesManagement() {
   const [showCreateEditDialog, setShowCreateEditDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [editingDeparture, setEditingDeparture] = useState<Departure | null>(null);
   const [duplicatingDeparture, setDuplicatingDeparture] = useState<Departure | null>(null);
   const [deletingDeparture, setDeletingDeparture] = useState<Departure | null>(null);
+  const [viewingDeparture, setViewingDeparture] = useState<Departure | null>(null);
   
   // Filtros
   const [filterTourId, setFilterTourId] = useState<string>("all");
@@ -333,6 +335,11 @@ export default function DeparturesManagement() {
     }
   };
 
+  const handleOpenDetailsDialog = (departure: Departure) => {
+    setViewingDeparture(departure);
+    setShowDetailsDialog(true);
+  };
+
   const handleDuplicate = () => {
     if (!duplicatingDeparture) return;
     
@@ -552,16 +559,30 @@ export default function DeparturesManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-sm">
-                            {departure.reservedSeats} / {departure.totalSeats}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">
+                              {departure.reservedSeats} / {departure.totalSeats}
+                            </span>
+                            {occupationPercentage === 100 && (
+                              <Badge variant="destructive" className="text-xs">
+                                COMPLETO
+                              </Badge>
+                            )}
                           </div>
                           <Progress value={occupationPercentage} className="h-2" />
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className={`font-semibold ${getOccupationColor(occupationPercentage)}`}>
-                          {occupationPercentage}%
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold ${getOccupationColor(occupationPercentage)}`}>
+                            {occupationPercentage}%
+                          </span>
+                          {occupationPercentage >= 90 && occupationPercentage < 100 && (
+                            <Badge variant="outline" className="text-xs border-orange-600 text-orange-600">
+                              CASI LLENO
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>${parseFloat(departure.price).toLocaleString()}</TableCell>
                       <TableCell>
@@ -574,8 +595,18 @@ export default function DeparturesManagement() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            onClick={() => handleOpenDetailsDialog(departure)}
+                            data-testid={`button-details-departure-${departure.id}`}
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             onClick={() => handleOpenEditDialog(departure)}
                             data-testid={`button-edit-departure-${departure.id}`}
+                            title="Editar"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -584,6 +615,7 @@ export default function DeparturesManagement() {
                             variant="ghost"
                             onClick={() => handleOpenDuplicateDialog(departure)}
                             data-testid={`button-duplicate-departure-${departure.id}`}
+                            title="Duplicar"
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -592,6 +624,7 @@ export default function DeparturesManagement() {
                             variant="ghost"
                             onClick={() => handleOpenDeleteDialog(departure)}
                             data-testid={`button-delete-departure-${departure.id}`}
+                            title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
@@ -832,6 +865,136 @@ export default function DeparturesManagement() {
               data-testid="button-confirm-duplicate"
             >
               Duplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalles de la Salida</DialogTitle>
+          </DialogHeader>
+          {viewingDeparture && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-600">Tour</Label>
+                  <p className="font-medium">{getTourName(viewingDeparture.tourId)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Estado</Label>
+                  <div className="mt-1">
+                    <Badge variant={getStatusBadgeVariant(viewingDeparture.status)}>
+                      {getStatusLabel(viewingDeparture.status)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-600">Fecha de Salida</Label>
+                  <p className="font-medium">
+                    {format(new Date(viewingDeparture.departureDate), "dd/MM/yyyy", { locale: es })}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Fecha de Regreso</Label>
+                  <p className="font-medium">
+                    {viewingDeparture.returnDate
+                      ? format(new Date(viewingDeparture.returnDate), "dd/MM/yyyy", { locale: es })
+                      : "No especificada"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-gray-600">Precio Base</Label>
+                  <p className="text-2xl font-bold text-primary">
+                    ${parseFloat(viewingDeparture.price).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Plazo de Pago</Label>
+                  <p className="font-medium">{viewingDeparture.paymentDeadlineDays} días</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <Label className="text-sm font-medium">Ocupación</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-600">Total Cupos</p>
+                    <p className="text-2xl font-bold">{viewingDeparture.totalSeats}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-600">Reservados</p>
+                    <p className="text-2xl font-bold text-primary">{viewingDeparture.reservedSeats}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-600">Disponibles</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {viewingDeparture.totalSeats - viewingDeparture.reservedSeats}
+                    </p>
+                  </div>
+                </div>
+                <Progress 
+                  value={getOccupationPercentage(viewingDeparture.reservedSeats, viewingDeparture.totalSeats)} 
+                  className="h-3"
+                />
+                <div className="flex justify-center">
+                  <span className={`font-bold text-lg ${getOccupationColor(getOccupationPercentage(viewingDeparture.reservedSeats, viewingDeparture.totalSeats))}`}>
+                    {getOccupationPercentage(viewingDeparture.reservedSeats, viewingDeparture.totalSeats)}% Ocupación
+                  </span>
+                </div>
+              </div>
+
+              {viewingDeparture.supplements && Object.keys(viewingDeparture.supplements).length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Suplementos</Label>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <pre className="text-xs overflow-auto">
+                      {JSON.stringify(viewingDeparture.supplements, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {viewingDeparture.cancellationPolicyOverride && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Política de Cancelación</Label>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm">{viewingDeparture.cancellationPolicyOverride}</p>
+                  </div>
+                </div>
+              )}
+
+              {viewingDeparture.reservedSeats > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDetailsDialog(false);
+                      window.location.hash = '#/admin?tab=reservas&departure=' + viewingDeparture.id;
+                    }}
+                    data-testid="button-view-reservations"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Ver {viewingDeparture.reservedSeats} Reserva{viewingDeparture.reservedSeats !== 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDetailsDialog(false)}
+              data-testid="button-close-details"
+            >
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>
