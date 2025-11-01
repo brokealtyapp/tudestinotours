@@ -54,6 +54,33 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 
 ## Recent Updates
 
+### November 1, 2025 - Mejoras Completas al Módulo de Gestión de Salidas
+
+**Sistema de Filtrado y Búsqueda Avanzado:**
+- Búsqueda de texto libre (por nombre de tour o fecha)
+- Filtro por rango de fechas (desde/hasta)
+- Ordenamiento dinámico por fecha, ocupación o precio (ascendente/descendente)
+- Contador de resultados mostrando "X de Y salidas"
+- Botón "Limpiar filtros" cuando hay filtros activos
+
+**Mejoras en UI/UX:**
+- AlertDialog reemplazando confirm() para eliminación de salidas con advertencias contextuales
+- Badges visuales: "COMPLETO" (100% ocupación), "CASI LLENO" (≥90% ocupación)
+- Modal de detalles expandido mostrando información completa de cada salida
+- Botón "Ver Reservas" en modal de detalles para navegación directa
+- Estado vacío mejorado con mensajes contextuales según filtros activos
+- Tooltips en todos los botones de acción
+
+**Validaciones y Seguridad:**
+- Validación en tiempo real del formulario de creación/edición
+- Verificación de fechas futuras y coherencia entre fechas de salida/regreso
+- Validación de cupos mínimos y precios positivos
+- Validación de JSON para suplementos
+- Backend valida que no se eliminen salidas con reservas activas
+
+**Archivos Modificados:**
+- client/src/components/DeparturesManagement.tsx (rediseño completo con 1100+ líneas)
+
 ### November 1, 2025 - Auditoría y Correcciones Críticas de Seguridad
 
 **Auditoría Completa del Sistema:**

@@ -329,6 +329,15 @@ export default function DeparturesManagement() {
   };
 
   const handleSave = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Error de validación",
+        description: "Por favor, corrige los errores en el formulario",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const data: any = {
       tourId: departureForm.tourId,
       departureDate: new Date(departureForm.departureDate),
@@ -343,16 +352,7 @@ export default function DeparturesManagement() {
     }
 
     if (departureForm.supplements) {
-      try {
-        data.supplements = JSON.parse(departureForm.supplements);
-      } catch (e) {
-        toast({
-          title: "Error",
-          description: "Suplementos debe ser un JSON válido",
-          variant: "destructive",
-        });
-        return;
-      }
+      data.supplements = JSON.parse(departureForm.supplements);
     }
 
     if (departureForm.cancellationPolicyOverride) {
