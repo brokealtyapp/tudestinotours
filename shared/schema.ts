@@ -3,6 +3,8 @@ import { pgTable, text, varchar, integer, timestamp, decimal, boolean, jsonb, re
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+const timestampDate = (name: string) => timestamp(name, { mode: "date", withTimezone: true });
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
@@ -11,7 +13,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("client"),
   permissions: text("permissions").array().notNull().default(sql`ARRAY[]::text[]`),
   active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -43,7 +45,7 @@ export const tours = pgTable("tours", {
   cancellationPolicy: text("cancellation_policy"),
   requirements: text("requirements"),
   faqs: jsonb("faqs"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertTourSchema = createInsertSchema(tours).omit({
@@ -59,8 +61,8 @@ export type Tour = typeof tours.$inferSelect;
 export const departures = pgTable("departures", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tourId: varchar("tour_id").notNull().references(() => tours.id),
-  departureDate: timestamp("departure_date").notNull(),
-  returnDate: timestamp("return_date"),
+  departureDate: timestampDate("departure_date").notNull(),
+  returnDate: timestampDate("return_date"),
   totalSeats: integer("total_seats").notNull(),
   reservedSeats: integer("reserved_seats").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
@@ -68,7 +70,7 @@ export const departures = pgTable("departures", {
   cancellationPolicyOverride: text("cancellation_policy_override"),
   paymentDeadlineDays: integer("payment_deadline_days").notNull().default(30),
   status: text("status").notNull().default("active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertDepartureSchema = createInsertSchema(departures)
@@ -96,17 +98,17 @@ export const reservations = pgTable("reservations", {
   buyerPassportNumber: text("buyer_passport_number"),
   buyerDepartureAirport: text("buyer_departure_airport"),
   buyerNationality: text("buyer_nationality"),
-  reservationDate: timestamp("reservation_date").notNull(),
-  departureDate: timestamp("departure_date").notNull(),
-  paymentDueDate: timestamp("payment_due_date"),
-  autoCancelAt: timestamp("auto_cancel_at"),
+  reservationDate: timestampDate("reservation_date").notNull(),
+  departureDate: timestampDate("departure_date").notNull(),
+  paymentDueDate: timestampDate("payment_due_date"),
+  autoCancelAt: timestampDate("auto_cancel_at"),
   lastReminderSent: integer("last_reminder_sent"),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("pending"),
   paymentLink: text("payment_link"),
   numberOfPassengers: integer("number_of_passengers").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertReservationSchema = createInsertSchema(reservations)
@@ -131,11 +133,11 @@ export const passengers = pgTable("passengers", {
   fullName: text("full_name").notNull(),
   passportNumber: text("passport_number").notNull(),
   nationality: text("nationality").notNull(),
-  dateOfBirth: timestamp("date_of_birth").notNull(),
+  dateOfBirth: timestampDate("date_of_birth").notNull(),
   passportImageUrl: text("passport_image_url"),
   documentStatus: text("document_status").notNull().default("pending"),
   documentNotes: text("document_notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertPassengerSchema = createInsertSchema(passengers)
@@ -159,8 +161,8 @@ export const payments = pgTable("payments", {
   status: text("status").notNull().default("pending"),
   paymentLink: text("payment_link"),
   confirmedBy: varchar("confirmed_by").references(() => users.id),
-  confirmedAt: timestamp("confirmed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  confirmedAt: timestampDate("confirmed_at"),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertPaymentSchema = createInsertSchema(payments).omit({
@@ -176,7 +178,7 @@ export const reservationNotifications = pgTable("reservation_notifications", {
   reservationId: varchar("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
   notificationType: text("notification_type").notNull(),
   daysBeforeDeparture: integer("days_before_departure"),
-  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  sentAt: timestampDate("sent_at").defaultNow().notNull(),
   emailStatus: text("email_status").notNull().default("sent"),
   errorMessage: text("error_message"),
 });
@@ -196,16 +198,16 @@ export const paymentInstallments = pgTable("payment_installments", {
   description: text("description").notNull(),
   amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
   percentageDue: integer("percentage_due").notNull(),
-  dueDate: timestamp("due_date").notNull(),
+  dueDate: timestampDate("due_date").notNull(),
   status: text("status").notNull().default("pending"),
   paymentLink: text("payment_link"),
-  paidAt: timestamp("paid_at"),
+  paidAt: timestampDate("paid_at"),
   paidBy: varchar("paid_by").references(() => users.id),
   paymentMethod: text("payment_method"),
   paymentReference: text("payment_reference"),
   exchangeRate: real("exchange_rate"),
   receiptUrl: text("receipt_url"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertPaymentInstallmentSchema = createInsertSchema(paymentInstallments).omit({
@@ -221,8 +223,8 @@ export const systemConfig = pgTable("system_config", {
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   description: text("description"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestampDate("updated_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({
@@ -241,7 +243,7 @@ export const reservationTimelineEvents = pgTable("reservation_timeline_events", 
   description: text("description").notNull(),
   performedBy: varchar("performed_by").references(() => users.id),
   metadata: text("metadata"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertReservationTimelineEventSchema = createInsertSchema(reservationTimelineEvents).omit({
@@ -260,8 +262,8 @@ export const emailTemplates = pgTable("email_templates", {
   body: text("body").notNull(),
   variables: jsonb("variables"),
   isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
+  updatedAt: timestampDate("updated_at").defaultNow().notNull(),
 });
 
 export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
@@ -282,7 +284,7 @@ export const emailTemplateVersions = pgTable("email_template_versions", {
   variables: jsonb("variables"),
   category: text("category").notNull(),
   changedBy: varchar("changed_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
 export const insertEmailTemplateVersionSchema = createInsertSchema(emailTemplateVersions).omit({
@@ -299,8 +301,8 @@ export const reminderRules = pgTable("reminder_rules", {
   enabled: boolean("enabled").notNull().default(true),
   templateType: text("template_type").notNull(),
   sendTime: text("send_time").notNull().default("09:00"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
+  updatedAt: timestampDate("updated_at").defaultNow().notNull(),
 });
 
 export const insertReminderRuleSchema = createInsertSchema(reminderRules).omit({
@@ -316,7 +318,7 @@ export const emailLogs = pgTable("email_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   reservationId: varchar("reservation_id").references(() => reservations.id, { onDelete: "cascade" }),
   templateType: text("template_type").notNull(),
-  sentAt: timestamp("sent_at").defaultNow().notNull(),
+  sentAt: timestampDate("sent_at").defaultNow().notNull(),
   recipientEmail: text("recipient_email").notNull(),
   status: text("status").notNull().default("sent"),
   subject: text("subject").notNull(),
@@ -340,7 +342,7 @@ export const auditLogs = pgTable("audit_logs", {
   entityType: text("entity_type").notNull(),
   entityId: varchar("entity_id").notNull(),
   changes: jsonb("changes"),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  timestamp: timestampDate("timestamp").defaultNow().notNull(),
 });
 
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
@@ -358,7 +360,7 @@ export const systemSettings = pgTable("system_settings", {
   category: text("category").notNull(),
   description: text("description"),
   dataType: text("data_type").notNull().default("string"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestampDate("updated_at").defaultNow().notNull(),
   updatedBy: varchar("updated_by").references(() => users.id),
 });
 
