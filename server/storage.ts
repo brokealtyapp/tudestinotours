@@ -56,6 +56,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  findOrCreateClientUser(email: string, name: string): Promise<{ user: User; isNewUser: boolean; generatedPassword?: string }>;
   
   // Tour methods
   getTours(): Promise<Tour[]>;
@@ -252,6 +253,32 @@ export class DbStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const result = await db.insert(users).values(user).returning();
     return result[0];
+  }
+
+  async findOrCreateClientUser(email: string, name: string): Promise<{ user: User; isNewUser: boolean; generatedPassword?: string }> {
+    // Buscar usuario existente
+    const existingUser = await this.getUserByEmail(email);
+    
+    if (existingUser) {
+      return { user: existingUser, isNewUser: false };
+    }
+    
+    // Generar contraseña aleatoria
+    const bcrypt = await import("bcryptjs");
+    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+    
+    // Crear nuevo usuario cliente
+    const newUser = await this.createUser({
+      email,
+      name,
+      password: hashedPassword,
+      role: "client",
+      permissions: [],
+      active: true,
+    });
+    
+    return { user: newUser, isNewUser: true, generatedPassword };
   }
 
   // Tour methods
