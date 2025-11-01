@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Settings } from "lucide-react";
+import CitiesManagement from "./CitiesManagement";
 
 interface SystemSetting {
   id: string;
@@ -191,7 +192,9 @@ export default function SystemSettings() {
   }
 
   return (
-    <>
+    <div className="space-y-6">
+      <CitiesManagement />
+      
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -395,6 +398,6 @@ export default function SystemSettings() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
