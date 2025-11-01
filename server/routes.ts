@@ -1773,6 +1773,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public endpoint for fetching nationalities (no auth required for booking)
+  app.get("/api/system-settings/category/:category", async (req, res) => {
+    try {
+      const category = req.params.category;
+      const settings = await storage.getSettings(category);
+      res.json(settings);
+    } catch (error: any) {
+      console.error("Error obteniendo configuraciones por categoría:", error);
+      res.status(500).json({ error: "Error obteniendo configuraciones" });
+    }
+  });
+
   // System Settings routes
   app.get("/api/settings", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {

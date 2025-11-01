@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react";
 import { format } from "date-fns";
@@ -52,6 +59,9 @@ export default function Booking() {
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  const [buyerPassportNumber, setBuyerPassportNumber] = useState("");
+  const [buyerDepartureAirport, setBuyerDepartureAirport] = useState("");
+  const [buyerNationality, setBuyerNationality] = useState("");
 
   const { data: tour, isLoading: tourLoading } = useQuery<any>({
     queryKey: ["/api/tours", tourId],
@@ -71,6 +81,14 @@ export default function Booking() {
     enabled: !!tourId,
   });
 
+  const { data: nationalities } = useQuery<Array<{key: string; value: string}>>({
+    queryKey: ["/api/system-settings/category/nationalities"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/system-settings/category/nationalities");
+      return response;
+    },
+  });
+
   // Permitir reservas sin autenticación (reservas anónimas)
 
   useEffect(() => {
@@ -86,6 +104,22 @@ export default function Booking() {
         }))
     );
   }, [numPassengers]);
+
+  // Auto-duplicar datos del comprador al pasajero 1
+  useEffect(() => {
+    if (passengers.length > 0 && buyerName) {
+      setPassengers((prev) => {
+        const updated = [...prev];
+        updated[0] = {
+          ...updated[0],
+          name: buyerName,
+          passportNumber: buyerPassportNumber,
+          nationality: buyerNationality,
+        };
+        return updated;
+      });
+    }
+  }, [buyerName, buyerPassportNumber, buyerNationality]);
 
   if (tourLoading) {
     return (
@@ -146,10 +180,10 @@ export default function Booking() {
 
     if (currentStep === 2) {
       // Validar datos del comprador
-      if (!buyerName || !buyerEmail || !buyerPhone) {
+      if (!buyerName || !buyerEmail || !buyerPhone || !buyerPassportNumber || !buyerDepartureAirport || !buyerNationality) {
         toast({
           title: "Error",
-          description: "Por favor completa tus datos de contacto (nombre, email y teléfono)",
+          description: "Por favor completa todos los datos del comprador",
           variant: "destructive",
         });
         return;
@@ -276,6 +310,9 @@ export default function Booking() {
         buyerName,
         buyerEmail,
         buyerPhone,
+        buyerPassportNumber,
+        buyerDepartureAirport,
+        buyerNationality,
         reservationDate: new Date().toISOString(),
         departureDate: selectedDeparture.departureDate,
         numberOfPassengers: numPassengers,
@@ -513,7 +550,7 @@ export default function Booking() {
                   <CardHeader>
                     <CardTitle>Datos del Comprador</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Ingresa tus datos de contacto para recibir la confirmación de tu reserva
+                      Ingresa tus datos de contacto para recibir la confirmación de tu reserva. Estos datos se copiarán automáticamente al Pasajero 1.
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -550,6 +587,46 @@ export default function Booking() {
                           data-testid="input-buyer-phone"
                         />
                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="buyer-passport">Número de Pasaporte *</Label>
+                        <Input
+                          id="buyer-passport"
+                          value={buyerPassportNumber}
+                          onChange={(e) => setBuyerPassportNumber(e.target.value)}
+                          placeholder="AB123456"
+                          data-testid="input-buyer-passport"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="buyer-nationality">Nacionalidad *</Label>
+                        <Select
+                          value={buyerNationality}
+                          onValueChange={setBuyerNationality}
+                        >
+                          <SelectTrigger id="buyer-nationality" data-testid="select-buyer-nationality">
+                            <SelectValue placeholder="Selecciona nacionalidad" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {nationalities?.map((nat) => (
+                              <SelectItem key={nat.key} value={nat.value}>
+                                {nat.value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="buyer-airport">Aeropuerto de Salida *</Label>
+                      <Input
+                        id="buyer-airport"
+                        value={buyerDepartureAirport}
+                        onChange={(e) => setBuyerDepartureAirport(e.target.value)}
+                        placeholder="Ej: Aeropuerto Internacional de Las Américas (SDQ)"
+                        data-testid="input-buyer-airport"
+                        />
                     </div>
                   </CardContent>
                 </Card>
@@ -597,35 +674,99 @@ export default function Booking() {
                           <Label htmlFor={`nationality-${index}`}>
                             Nacionalidad
                           </Label>
-                          <Input
-                            id={`nationality-${index}`}
+                          <Select
                             value={passenger.nationality}
-                            onChange={(e) =>
-                              handlePassengerChange(
-                                index,
-                                "nationality",
-                                e.target.value
-                              )
+                            onValueChange={(value) =>
+                              handlePassengerChange(index, "nationality", value)
                             }
-                            data-testid={`input-passenger-nationality-${index}`}
-                          />
+                          >
+                            <SelectTrigger id={`nationality-${index}`} data-testid={`select-passenger-nationality-${index}`}>
+                              <SelectValue placeholder="Selecciona nacionalidad" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {nationalities?.map((nat) => (
+                                <SelectItem key={nat.key} value={nat.value}>
+                                  {nat.value}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor={`dob-${index}`}>Fecha de Nacimiento</Label>
-                        <Input
-                          id={`dob-${index}`}
-                          type="date"
-                          value={passenger.dateOfBirth}
-                          onChange={(e) =>
-                            handlePassengerChange(
-                              index,
-                              "dateOfBirth",
-                              e.target.value
-                            )
-                          }
-                          data-testid={`input-passenger-dob-${index}`}
-                        />
+                        <Label>Fecha de Nacimiento</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Select
+                            value={passenger.dateOfBirth.split('-')[2] || ""}
+                            onValueChange={(day) => {
+                              const [year, month] = passenger.dateOfBirth.split('-');
+                              const newDate = `${year || new Date().getFullYear()}-${month || '01'}-${day.padStart(2, '0')}`;
+                              handlePassengerChange(index, "dateOfBirth", newDate);
+                            }}
+                          >
+                            <SelectTrigger data-testid={`select-passenger-dob-day-${index}`}>
+                              <SelectValue placeholder="Día" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                <SelectItem key={day} value={day.toString().padStart(2, '0')}>
+                                  {day}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={passenger.dateOfBirth.split('-')[1] || ""}
+                            onValueChange={(month) => {
+                              const [year, , day] = passenger.dateOfBirth.split('-');
+                              const newDate = `${year || new Date().getFullYear()}-${month.padStart(2, '0')}-${day || '01'}`;
+                              handlePassengerChange(index, "dateOfBirth", newDate);
+                            }}
+                          >
+                            <SelectTrigger data-testid={`select-passenger-dob-month-${index}`}>
+                              <SelectValue placeholder="Mes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                { value: "01", label: "Enero" },
+                                { value: "02", label: "Febrero" },
+                                { value: "03", label: "Marzo" },
+                                { value: "04", label: "Abril" },
+                                { value: "05", label: "Mayo" },
+                                { value: "06", label: "Junio" },
+                                { value: "07", label: "Julio" },
+                                { value: "08", label: "Agosto" },
+                                { value: "09", label: "Septiembre" },
+                                { value: "10", label: "Octubre" },
+                                { value: "11", label: "Noviembre" },
+                                { value: "12", label: "Diciembre" },
+                              ].map((month) => (
+                                <SelectItem key={month.value} value={month.value}>
+                                  {month.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={passenger.dateOfBirth.split('-')[0] || ""}
+                            onValueChange={(year) => {
+                              const [, month, day] = passenger.dateOfBirth.split('-');
+                              const newDate = `${year}-${month || '01'}-${day || '01'}`;
+                              handlePassengerChange(index, "dateOfBirth", newDate);
+                            }}
+                          >
+                            <SelectTrigger data-testid={`select-passenger-dob-year-${index}`}>
+                              <SelectValue placeholder="Año" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
