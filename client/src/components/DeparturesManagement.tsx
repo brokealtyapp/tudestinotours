@@ -346,7 +346,7 @@ export default function DeparturesManagement() {
 
     const data: any = {
       tourId: departureForm.tourId,
-      departureDate: new Date(departureForm.departureDate),
+      departureDate: departureForm.departureDate,
       totalSeats: parseInt(departureForm.totalSeats),
       price: departureForm.price,
       paymentDeadlineDays: parseInt(departureForm.paymentDeadlineDays),
@@ -354,7 +354,7 @@ export default function DeparturesManagement() {
     };
 
     if (departureForm.returnDate) {
-      data.returnDate = new Date(departureForm.returnDate);
+      data.returnDate = departureForm.returnDate;
     }
 
     if (departureForm.supplements) {
