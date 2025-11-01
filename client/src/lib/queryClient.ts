@@ -39,13 +39,37 @@ export async function apiRequest(
   return res;
 }
 
+function buildQueryUrl(queryKey: readonly unknown[]): string {
+  // First element is always the base path
+  const basePath = queryKey[0] as string;
+  
+  // If there's a second element and it's an object, convert it to query string
+  if (queryKey.length > 1 && typeof queryKey[1] === 'object' && queryKey[1] !== null) {
+    const params = queryKey[1] as Record<string, any>;
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    
+    const queryString = searchParams.toString();
+    return queryString ? `${basePath}?${queryString}` : basePath;
+  }
+  
+  // Otherwise, join all parts with "/"
+  return queryKey.join("/") as string;
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = buildQueryUrl(queryKey);
+    const res = await fetch(url, {
       headers: getAuthHeaders(false),
       credentials: "include",
     });
