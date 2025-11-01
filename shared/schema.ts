@@ -65,11 +65,16 @@ export const departures = pgTable("departures", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertDepartureSchema = createInsertSchema(departures).omit({
-  id: true,
-  createdAt: true,
-  reservedSeats: true,
-});
+export const insertDepartureSchema = createInsertSchema(departures)
+  .omit({
+    id: true,
+    createdAt: true,
+    reservedSeats: true,
+  })
+  .extend({
+    departureDate: z.coerce.date(),
+    returnDate: z.coerce.date().nullable().optional(),
+  });
 
 export type InsertDeparture = z.infer<typeof insertDepartureSchema>;
 export type Departure = typeof departures.$inferSelect;
