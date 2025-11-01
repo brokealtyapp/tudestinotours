@@ -360,6 +360,33 @@ export default function ToursManagement() {
     }));
   };
 
+  // Bloquear letras en campos numéricos
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Permitir: backspace, delete, tab, escape, enter, home, end, arrows
+    const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'Home', 'End', 
+                         'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    
+    // Permitir: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    if (e.ctrlKey || e.metaKey) {
+      return;
+    }
+    
+    // Permitir teclas de control
+    if (allowedKeys.includes(e.key)) {
+      return;
+    }
+    
+    // Permitir punto decimal (solo uno)
+    if (e.key === '.' && !(e.currentTarget.value.includes('.'))) {
+      return;
+    }
+    
+    // Bloquear todo lo que no sea número
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -813,6 +840,7 @@ export default function ToursManagement() {
                   min="0"
                   value={tourForm.price}
                   onChange={(e) => setTourForm({ ...tourForm, price: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
                   data-testid="input-price"
                 />
                 {formErrors.price && (
@@ -826,6 +854,7 @@ export default function ToursManagement() {
                   min="1"
                   value={tourForm.maxPassengers}
                   onChange={(e) => setTourForm({ ...tourForm, maxPassengers: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
                   data-testid="input-max-passengers"
                 />
                 {formErrors.maxPassengers && (
@@ -843,6 +872,7 @@ export default function ToursManagement() {
                   max="100"
                   value={tourForm.minDepositPercentage}
                   onChange={(e) => setTourForm({ ...tourForm, minDepositPercentage: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
                   placeholder="Usar configuración global"
                   data-testid="input-min-deposit"
                 />
@@ -861,6 +891,7 @@ export default function ToursManagement() {
                   max="100"
                   value={tourForm.discount}
                   onChange={(e) => setTourForm({ ...tourForm, discount: e.target.value })}
+                  onKeyDown={handleNumericKeyDown}
                   placeholder="0"
                   data-testid="input-discount"
                 />
