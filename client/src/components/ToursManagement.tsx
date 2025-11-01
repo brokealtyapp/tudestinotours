@@ -424,11 +424,6 @@ export default function ToursManagement() {
         });
         
         compressedFile = await imageCompression(file, options);
-        
-        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
-        const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
-        
-        console.log(`Imagen comprimida: ${originalSizeMB}MB → ${compressedSizeMB}MB`);
       }
 
       setUploadProgress(20);
