@@ -341,15 +341,38 @@ export class DbStorage implements IStorage {
   }
 
   // Reservation methods
-  async getReservations(userId?: string): Promise<Reservation[]> {
+  async getReservations(userId?: string): Promise<any[]> {
+    const query = db
+      .select({
+        id: reservations.id,
+        tourId: reservations.tourId,
+        departureId: reservations.departureId,
+        userId: reservations.userId,
+        buyerName: reservations.buyerName,
+        buyerEmail: reservations.buyerEmail,
+        buyerPhone: reservations.buyerPhone,
+        reservationDate: reservations.reservationDate,
+        departureDate: reservations.departureDate,
+        numberOfPassengers: reservations.numberOfPassengers,
+        totalPrice: reservations.totalPrice,
+        status: reservations.status,
+        paymentStatus: reservations.paymentStatus,
+        paymentDueDate: reservations.paymentDueDate,
+        paymentLink: reservations.paymentLink,
+        autoCancelAt: reservations.autoCancelAt,
+        lastReminderSent: reservations.lastReminderSent,
+        createdAt: reservations.createdAt,
+        tourTitle: tours.title,
+      })
+      .from(reservations)
+      .leftJoin(tours, eq(reservations.tourId, tours.id));
+
     if (userId) {
-      return await db
-        .select()
-        .from(reservations)
+      return await query
         .where(eq(reservations.userId, userId))
         .orderBy(desc(reservations.createdAt));
     }
-    return await db.select().from(reservations).orderBy(desc(reservations.createdAt));
+    return await query.orderBy(desc(reservations.createdAt));
   }
 
   async getReservation(id: string): Promise<Reservation | undefined> {
