@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -1113,9 +1114,24 @@ export default function Admin() {
                               Enlace de pago
                             </a>
                           )}
-                          <p className="text-sm font-medium mt-1">
-                            Estado: {installment.status === 'paid' ? 'Pagado' : installment.status === 'pending' ? 'Pendiente' : installment.status === 'overdue' ? 'Vencido' : installment.status}
-                          </p>
+                          <Badge 
+                            variant="outline"
+                            className={`mt-1 border-0 ${
+                              installment.status === 'paid' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-50' 
+                                : installment.status === 'overdue'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-50'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-50'
+                            }`}
+                          >
+                            {installment.status === 'paid' 
+                              ? '✓ Pagado' 
+                              : installment.status === 'pending' 
+                              ? 'Pendiente' 
+                              : installment.status === 'overdue' 
+                              ? 'Vencido' 
+                              : installment.status}
+                          </Badge>
                         </div>
                         <div className="flex gap-2">
                           {installment.status === 'pending' && (
