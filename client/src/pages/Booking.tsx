@@ -315,7 +315,7 @@ export default function Booking() {
         paymentStatus: "pending",
         paymentLink: null,
         passengers: passengers.map(p => ({
-          fullName: p.fullName,
+          fullName: p.name,
           passportNumber: p.passportNumber,
           nationality: p.nationality,
           dateOfBirth: p.dateOfBirth,
