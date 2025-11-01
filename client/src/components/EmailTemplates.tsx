@@ -39,9 +39,7 @@ import {
 import { Plus, Edit, Trash2, Copy, History, Send, Search, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-// @ts-ignore
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { QuillEditor } from "./QuillEditor";
 
 const TEMPLATE_TYPES = [
   { value: "confirmation", label: "Confirmación de Reserva" },
@@ -566,8 +564,7 @@ export function EmailTemplates() {
             <div className="space-y-2">
               <Label htmlFor="body">Cuerpo del Email (HTML)</Label>
               <div className="border rounded-md" data-testid="editor-body">
-                <ReactQuill
-                  theme="snow"
+                <QuillEditor
                   value={templateForm.body}
                   onChange={(value) => setTemplateForm({ ...templateForm, body: value })}
                   modules={QUILL_MODULES}

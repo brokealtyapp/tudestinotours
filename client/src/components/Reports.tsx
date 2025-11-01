@@ -281,33 +281,39 @@ function SalesReport() {
               </Button>
             </CardHeader>
             <CardContent className="p-6 pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tour</TableHead>
-                    <TableHead className="text-right">Reservas</TableHead>
-                    <TableHead className="text-right">Ingreso Total</TableHead>
-                    <TableHead className="text-right">Ticket Promedio</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.byTour.map((item) => (
-                    <TableRow key={item.tourId} data-testid={`row-tour-${item.tourId}`}>
-                      <TableCell className="font-medium">{item.tourName}</TableCell>
-                      <TableCell className="text-right">{item.count}</TableCell>
-                      <TableCell className="text-right">
-                        ${item.revenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ${item.count > 0 
-                          ? (item.revenue / item.count).toLocaleString('es-MX', { minimumFractionDigits: 2 })
-                          : '0.00'
-                        }
-                      </TableCell>
+              {report.byTour.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay datos de ventas en el período seleccionado
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tour</TableHead>
+                      <TableHead className="text-right">Reservas</TableHead>
+                      <TableHead className="text-right">Ingreso Total</TableHead>
+                      <TableHead className="text-right">Ticket Promedio</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report.byTour.map((item) => (
+                      <TableRow key={item.tourId} data-testid={`row-tour-${item.tourId}`}>
+                        <TableCell className="font-medium">{item.tourName}</TableCell>
+                        <TableCell className="text-right">{item.count}</TableCell>
+                        <TableCell className="text-right">
+                          ${item.revenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${item.count > 0 
+                            ? (item.revenue / item.count).toLocaleString('es-MX', { minimumFractionDigits: 2 })
+                            : '0.00'
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
@@ -432,56 +438,62 @@ function OccupationReport() {
               </Button>
             </CardHeader>
             <CardContent className="p-6 pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tour</TableHead>
-                    <TableHead>Fecha Salida</TableHead>
-                    <TableHead className="text-right">Total Cupos</TableHead>
-                    <TableHead className="text-right">Reservados</TableHead>
-                    <TableHead className="text-right">Ocupación</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.map((item) => (
-                    <TableRow key={item.departureId} data-testid={`row-departure-${item.departureId}`}>
-                      <TableCell className="font-medium">{item.tourName}</TableCell>
-                      <TableCell>
-                        {format(new Date(item.departureDate), 'dd MMM yyyy', { locale: es })}
-                      </TableCell>
-                      <TableCell className="text-right">{item.totalSeats}</TableCell>
-                      <TableCell className="text-right">{item.reservedSeats}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${getOccupationColor(item.occupationPercentage)}`}
-                              style={{ width: `${Math.min(item.occupationPercentage, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium w-12 text-right">
-                            {item.occupationPercentage.toFixed(0)}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            item.occupationPercentage >= 70 ? "default" :
-                            item.occupationPercentage >= 40 ? "secondary" :
-                            "destructive"
-                          }
-                        >
-                          {item.occupationPercentage >= 70 ? "Alta" :
-                           item.occupationPercentage >= 40 ? "Media" :
-                           "Baja"}
-                        </Badge>
-                      </TableCell>
+              {report.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay salidas programadas en el período seleccionado
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tour</TableHead>
+                      <TableHead>Fecha Salida</TableHead>
+                      <TableHead className="text-right">Total Cupos</TableHead>
+                      <TableHead className="text-right">Reservados</TableHead>
+                      <TableHead className="text-right">Ocupación</TableHead>
+                      <TableHead>Estado</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report.map((item) => (
+                      <TableRow key={item.departureId} data-testid={`row-departure-${item.departureId}`}>
+                        <TableCell className="font-medium">{item.tourName}</TableCell>
+                        <TableCell>
+                          {format(new Date(item.departureDate), 'dd MMM yyyy', { locale: es })}
+                        </TableCell>
+                        <TableCell className="text-right">{item.totalSeats}</TableCell>
+                        <TableCell className="text-right">{item.reservedSeats}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${getOccupationColor(item.occupationPercentage)}`}
+                                style={{ width: `${Math.min(item.occupationPercentage, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium w-12 text-right">
+                              {item.occupationPercentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              item.occupationPercentage >= 70 ? "default" :
+                              item.occupationPercentage >= 40 ? "secondary" :
+                              "destructive"
+                            }
+                          >
+                            {item.occupationPercentage >= 70 ? "Alta" :
+                             item.occupationPercentage >= 40 ? "Media" :
+                             "Baja"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
@@ -604,55 +616,61 @@ function AgingReport() {
               </Button>
             </CardHeader>
             <CardContent className="p-6 pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Tour</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                    <TableHead className="text-right">Días Vencido</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.reservations.map((item) => (
-                    <TableRow key={item.id} data-testid={`row-reservation-${item.id}`}>
-                      <TableCell className="font-medium">{item.code}</TableCell>
-                      <TableCell>{item.tourName}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.buyerName}</div>
-                          <div className="text-sm text-muted-foreground">{item.buyerEmail}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ${item.balanceDue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.daysOverdue > 0 ? (
-                          <Badge variant="destructive">{item.daysOverdue} días</Badge>
-                        ) : (
-                          <Badge variant="secondary">Al día</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            item.daysOverdue > 30 ? "destructive" :
-                            item.daysOverdue > 14 ? "secondary" :
-                            "default"
-                          }
-                        >
-                          {item.daysOverdue > 30 ? "Crítico" :
-                           item.daysOverdue > 14 ? "Atención" :
-                           "Normal"}
-                        </Badge>
-                      </TableCell>
+              {report.reservations.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay cuentas pendientes por cobrar
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Tour</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                      <TableHead className="text-right">Días Vencido</TableHead>
+                      <TableHead>Estado</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report.reservations.map((item) => (
+                      <TableRow key={item.id} data-testid={`row-reservation-${item.id}`}>
+                        <TableCell className="font-medium">{item.code}</TableCell>
+                        <TableCell>{item.tourName}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{item.buyerName}</div>
+                            <div className="text-sm text-muted-foreground">{item.buyerEmail}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ${item.balanceDue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.daysOverdue > 0 ? (
+                            <Badge variant="destructive">{item.daysOverdue} días</Badge>
+                          ) : (
+                            <Badge variant="secondary">Al día</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              item.daysOverdue > 30 ? "destructive" :
+                              item.daysOverdue > 14 ? "secondary" :
+                              "default"
+                            }
+                          >
+                            {item.daysOverdue > 30 ? "Crítico" :
+                             item.daysOverdue > 14 ? "Atención" :
+                             "Normal"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </>
