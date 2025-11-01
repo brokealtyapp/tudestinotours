@@ -50,9 +50,13 @@ export default function Booking() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
+  // Leer departureId de la URL query string
+  const queryParams = new URLSearchParams(window.location.search);
+  const initialDepartureId = queryParams.get('departureId') || "";
+
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [numPassengers, setNumPassengers] = useState(1);
-  const [selectedDepartureId, setSelectedDepartureId] = useState<string>("");
+  const [selectedDepartureId, setSelectedDepartureId] = useState<string>(initialDepartureId);
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [paymentUrl, setPaymentUrl] = useState("");
   
