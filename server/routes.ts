@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               departureGroups.set(key, {
                 tourId: reservation.tourId,
                 tourName: tour.title,
-                departureDate: reservation.departureDate.toISOString(),
+                departureDate: new Date(reservation.departureDate).toISOString(),
                 passengerCount: reservation.numberOfPassengers,
                 maxPassengers: tour.maxPassengers,
               });
@@ -711,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         performedBy: userId,
         metadata: JSON.stringify({ 
           tourTitle: tour.title,
-          departureDate: departure.departureDate.toISOString(),
+          departureDate: new Date(departure.departureDate).toISOString(),
           passengers: validatedData.numberOfPassengers,
           totalPrice: totalPrice,
           buyerEmail: validatedData.buyerEmail,
@@ -891,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           performedBy: req.user!.userId,
           metadata: JSON.stringify({
             tourTitle: tour.title,
-            departureDate: departure.departureDate.toISOString(),
+            departureDate: new Date(departure.departureDate).toISOString(),
             passengers: reservation.numberOfPassengers,
             totalPrice: totalPrice,
             buyerEmail: reservation.buyerEmail,
