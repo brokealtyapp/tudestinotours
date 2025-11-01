@@ -944,7 +944,7 @@ export default function Admin() {
                               </div>
                             </div>
                             <div className="flex-shrink-0">
-                              {passenger.passportDocumentUrl && (
+                              {passenger.passportImageUrl && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1319,10 +1319,10 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {selectedPassenger.passportDocumentUrl && (
+                {selectedPassenger.passportImageUrl && (
                   <div className="border rounded-lg overflow-hidden bg-muted/30">
                     <img
-                      src={selectedPassenger.passportDocumentUrl}
+                      src={selectedPassenger.passportImageUrl}
                       alt={`Pasaporte de ${selectedPassenger.fullName}`}
                       className="w-full h-auto max-h-[50vh] object-contain"
                     />
