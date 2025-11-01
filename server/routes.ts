@@ -1486,6 +1486,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/users", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { name, email, password, role } = req.body;
+      
+      // Validate required fields
+      if (!name || !email || !password || !role) {
+        return res.status(400).json({ error: "Todos los campos son requeridos" });
+      }
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ error: "Ya existe un usuario con este correo electrónico" });
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Get permissions for the role
+      const permissions = getPermissionsForRole(role);
+      
+      // Create user
+      const user = await storage.createUser({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        permissions,
+        active: true,
+      });
+
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error creando usuario:", error);
+      res.status(500).json({ error: "Error creando usuario" });
+    }
+  });
+
   app.put("/api/admin/users/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const { name, email, active } = req.body;
