@@ -222,188 +222,116 @@ export default function TourDetail() {
             <Separator />
 
             {/* What's Included */}
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Qué incluye</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  "Transporte turístico",
-                  "Guía profesional",
-                  "Entradas a sitios turísticos",
-                  "Desayuno continental",
-                  "Seguro de viaje",
-                  "Impuestos y cargos"
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2" data-testid={`included-${idx}`}>
-                    <div className="rounded-full bg-green-100 dark:bg-green-900/20 p-1">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            {tour.includes && tour.includes.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Qué incluye</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {tour.includes.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2" data-testid={`included-${idx}`}>
+                      <div className="rounded-full bg-green-100 dark:bg-green-900/20 p-1">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-sm">{item}</span>
                     </div>
-                    <span className="text-sm">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <Separator />
 
             {/* What's NOT Included */}
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Qué NO incluye</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  "Comidas no especificadas",
-                  "Gastos personales",
-                  "Propinas",
-                  "Bebidas alcohólicas"
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2" data-testid={`not-included-${idx}`}>
-                    <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-1">
-                      <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+            {tour.excludes && tour.excludes.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Qué NO incluye</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {tour.excludes.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2" data-testid={`not-included-${idx}`}>
+                      <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-1">
+                        <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      </div>
+                      <span className="text-sm">{item}</span>
                     </div>
-                    <span className="text-sm">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <Separator />
 
             {/* Itinerary */}
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="day-1" data-testid="accordion-day-1">
-                  <AccordionTrigger>
-                    <span className="font-semibold">Día 1: Llegada y Bienvenida</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground">
-                      Recepción en el aeropuerto y traslado al hotel. Check-in y sesión de orientación. 
-                      Por la tarde, tour panorámico de la ciudad para familiarizarse con el destino.
-                      Cena de bienvenida incluida.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="day-2" data-testid="accordion-day-2">
-                  <AccordionTrigger>
-                    <span className="font-semibold">Día 2: Tour de Ciudad Completo</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground">
-                      Desayuno buffet. Visita a los principales puntos de interés históricos y culturales. 
-                      Almuerzo en restaurante local. Tarde libre para explorar por cuenta propia.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="day-3" data-testid="accordion-day-3">
-                  <AccordionTrigger>
-                    <span className="font-semibold">Día 3: Excursión de Día Completo</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground">
-                      Salida temprano hacia las atracciones naturales de la región. Almuerzo tipo picnic. 
-                      Actividades opcionales como senderismo, kayak o ciclismo. Regreso al hotel por la tarde.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="day-4" data-testid="accordion-day-4">
-                  <AccordionTrigger>
-                    <span className="font-semibold">Día 4: Despedida</span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-muted-foreground">
-                      Desayuno. Tiempo libre para últimas compras o actividades. 
-                      Check-out del hotel y traslado al aeropuerto según horario de vuelo.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </section>
+            {tour.itinerary && (
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
+                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
+                  {tour.itinerary}
+                </div>
+              </section>
+            )}
 
             <Separator />
 
             {/* Policies & Requirements */}
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Políticas y Requisitos</h2>
-              
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      Política de Cancelación
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      • Cancelación con más de 30 días: reembolso del 100%
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      • Cancelación entre 15-30 días: reembolso del 50%
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      • Cancelación con menos de 15 días: sin reembolso
-                    </p>
-                  </CardContent>
-                </Card>
+            {(tour.cancellationPolicy || tour.requirements) && (
+              <section>
+                <h2 className="text-2xl font-bold mb-6">Políticas y Requisitos</h2>
+                
+                <div className="space-y-4">
+                  {tour.cancellationPolicy && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-primary" />
+                          Política de Cancelación
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground whitespace-pre-line">
+                          {tour.cancellationPolicy}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Info className="h-5 w-5 text-primary" />
-                      Requisitos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      • Pasaporte válido con al menos 6 meses de vigencia
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      • El pago completo debe realizarse 30 días antes de la salida
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      • Se aceptan pagos parciales desde {tour.minDepositPercentage || 20}% como depósito inicial
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
+                  {tour.requirements && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Info className="h-5 w-5 text-primary" />
+                          Requisitos
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground whitespace-pre-line">
+                          {tour.requirements}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </section>
+            )}
 
             <Separator />
 
             {/* FAQ */}
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Preguntas Frecuentes</h2>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="faq-1" data-testid="faq-payment">
-                  <AccordionTrigger>¿Puedo pagar en cuotas?</AccordionTrigger>
-                  <AccordionContent>
-                    Sí, aceptamos pagos parciales. Puedes pagar un depósito inicial de {tour.minDepositPercentage || 20}% 
-                    y el saldo restante debe completarse al menos 30 días antes de la fecha de salida.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="faq-2" data-testid="faq-documents">
-                  <AccordionTrigger>¿Qué documentos necesito?</AccordionTrigger>
-                  <AccordionContent>
-                    Necesitas un pasaporte válido con al menos 6 meses de vigencia desde la fecha de regreso. 
-                    Te pediremos una foto o copia de tu pasaporte al momento de la reserva.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="faq-3" data-testid="faq-changes">
-                  <AccordionTrigger>¿Puedo cambiar mi fecha de viaje?</AccordionTrigger>
-                  <AccordionContent>
-                    Los cambios de fecha están sujetos a disponibilidad y pueden incurrir en cargos adicionales. 
-                    Contáctanos lo antes posible si necesitas hacer un cambio.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="faq-4" data-testid="faq-group">
-                  <AccordionTrigger>¿Hay descuentos para grupos?</AccordionTrigger>
-                  <AccordionContent>
-                    Sí, ofrecemos descuentos especiales para grupos de 10 o más personas. 
-                    Contacta a nuestro equipo de ventas para obtener una cotización personalizada.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </section>
+            {tour.faqs && tour.faqs.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold mb-4">Preguntas Frecuentes</h2>
+                <Accordion type="single" collapsible className="w-full">
+                  {tour.faqs.map((faq: any, idx: number) => (
+                    <AccordionItem key={idx} value={`faq-${idx}`} data-testid={`faq-${idx}`}>
+                      <AccordionTrigger>{faq.question}</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="text-muted-foreground whitespace-pre-line">
+                          {faq.answer}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </section>
+            )}
           </div>
 
           {/* Sidebar - Departures & Booking */}
