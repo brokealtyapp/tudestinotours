@@ -493,22 +493,28 @@ export default function Booking() {
                       <Label htmlFor="num-passengers">
                         Número de Pasajeros
                       </Label>
-                      <Input
-                        id="num-passengers"
-                        type="number"
-                        min={1}
-                        max={
-                          departures.find(d => d.id === selectedDepartureId)
-                            ? departures.find(d => d.id === selectedDepartureId)!.totalSeats -
-                              departures.find(d => d.id === selectedDepartureId)!.reservedSeats
-                            : 1
-                        }
-                        value={numPassengers}
-                        onChange={(e) =>
-                          setNumPassengers(Math.max(1, parseInt(e.target.value) || 1))
-                        }
-                        data-testid="input-num-passengers"
-                      />
+                      <Select
+                        value={numPassengers.toString()}
+                        onValueChange={(value) => setNumPassengers(parseInt(value))}
+                      >
+                        <SelectTrigger id="num-passengers" data-testid="select-num-passengers">
+                          <SelectValue placeholder="Selecciona número de pasajeros" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const maxAvailable = departures.find(d => d.id === selectedDepartureId)
+                              ? departures.find(d => d.id === selectedDepartureId)!.totalSeats -
+                                departures.find(d => d.id === selectedDepartureId)!.reservedSeats
+                              : 1;
+                            const max = Math.min(100, maxAvailable);
+                            return Array.from({ length: max }, (_, i) => i + 1).map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num} {num === 1 ? 'pasajero' : 'pasajeros'}
+                              </SelectItem>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
                       {(() => {
