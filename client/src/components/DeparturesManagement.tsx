@@ -13,6 +13,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -60,8 +70,10 @@ export default function DeparturesManagement() {
   const { toast } = useToast();
   const [showCreateEditDialog, setShowCreateEditDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingDeparture, setEditingDeparture] = useState<Departure | null>(null);
   const [duplicatingDeparture, setDuplicatingDeparture] = useState<Departure | null>(null);
+  const [deletingDeparture, setDeletingDeparture] = useState<Departure | null>(null);
   
   // Filtros
   const [filterTourId, setFilterTourId] = useState<string>("all");
@@ -308,9 +320,16 @@ export default function DeparturesManagement() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("¿Está seguro de eliminar esta salida? Esta acción no se puede deshacer.")) {
-      deleteMutation.mutate(id);
+  const handleOpenDeleteDialog = (departure: Departure) => {
+    setDeletingDeparture(departure);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingDeparture) {
+      deleteMutation.mutate(deletingDeparture.id);
+      setShowDeleteDialog(false);
+      setDeletingDeparture(null);
     }
   };
 
@@ -571,7 +590,7 @@ export default function DeparturesManagement() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => handleDelete(departure.id)}
+                            onClick={() => handleOpenDeleteDialog(departure)}
                             data-testid={`button-delete-departure-${departure.id}`}
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
@@ -817,6 +836,44 @@ export default function DeparturesManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingDeparture && (
+                <>
+                  Está a punto de eliminar la salida del tour{" "}
+                  <strong>{getTourName(deletingDeparture.tourId)}</strong> con fecha{" "}
+                  <strong>
+                    {format(new Date(deletingDeparture.departureDate), "dd/MM/yyyy", { locale: es })}
+                  </strong>
+                  . Esta acción no se puede deshacer.
+                  {deletingDeparture.reservedSeats > 0 && (
+                    <div className="mt-4 p-3 bg-destructive/10 border border-destructive rounded-md">
+                      <p className="text-sm font-medium text-destructive">
+                        ⚠️ Esta salida tiene {deletingDeparture.reservedSeats} cupo(s) reservado(s).
+                        No podrá eliminarla si existen reservas activas.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
