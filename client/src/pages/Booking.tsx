@@ -83,10 +83,6 @@ export default function Booking() {
 
   const { data: nationalities } = useQuery<Array<{key: string; value: string}>>({
     queryKey: ["/api/system-settings/category/nationalities"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/system-settings/category/nationalities");
-      return response;
-    },
   });
 
   // Permitir reservas sin autenticación (reservas anónimas)
