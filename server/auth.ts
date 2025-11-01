@@ -47,7 +47,7 @@ export interface AuthRequest extends Request {
   user?: JWTPayload;
 }
 
-export function authenticateToken(
+export async function authenticateToken(
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -62,6 +62,15 @@ export function authenticateToken(
   const payload = verifyToken(token);
   if (!payload) {
     return res.status(403).json({ error: "Invalid or expired token" });
+  }
+
+  // Import storage here to avoid circular dependency
+  const { storage } = await import("./storage");
+  
+  // Verify user is still active
+  const user = await storage.getUser(payload.userId);
+  if (!user || !user.active) {
+    return res.status(403).json({ error: "Cuenta inactiva o no encontrada" });
   }
 
   req.user = payload;

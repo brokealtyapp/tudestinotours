@@ -159,6 +159,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Credenciales inválidas" });
       }
 
+      // Verify user is active
+      if (!user.active) {
+        return res.status(403).json({ error: "Esta cuenta ha sido desactivada. Contacte al administrador." });
+      }
+
       // Verify password
       const isValid = await comparePasswords(password, user.password);
       if (!isValid) {
