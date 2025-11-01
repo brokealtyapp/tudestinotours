@@ -314,17 +314,16 @@ export default function Booking() {
         status: "pending",
         paymentStatus: "pending",
         paymentLink: null,
+        passengers: passengers.map(p => ({
+          fullName: p.fullName,
+          passportNumber: p.passportNumber,
+          nationality: p.nationality,
+          dateOfBirth: p.dateOfBirth,
+          passportImageUrl: p.passportImageUrl,
+        })),
       };
 
       const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);
-
-      const passengersPromises = passengers.map((passenger) =>
-        apiRequest("POST", "/api/passengers", {
-          ...passenger,
-          reservationId: reservation.id,
-        })
-      );
-      await Promise.all(passengersPromises);
 
       // Las cuotas de pago ya se generan automáticamente en el backend al crear la reserva
       // ya no es necesario crear un payment manual aquí
