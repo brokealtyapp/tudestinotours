@@ -52,6 +52,48 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 - **SMTP Server**: Email delivery via nodemailer (configurable SMTP provider).
 - **Mercado Pago, PayPal, etc.**: External payment gateways (integrated via manual links).
 
+## Recent Updates
+
+### November 1, 2025 - Auditoría y Correcciones Críticas de Seguridad
+
+**Auditoría Completa del Sistema:**
+- Evaluación exhaustiva de 22 hallazgos (3 críticos, 7 altos, 8 medios, 4 bajos)
+- Documentación generada: AUDITORIA-SISTEMA.md, CORRECCIONES-IMPLEMENTADAS.md, INFORME-FINAL-AUDITORIA.md
+
+**Correcciones Críticas Implementadas:**
+
+1. **Transacciones Atómicas en Reservas (Prevención de Overbooking)**
+   - Método `createReservationAtomic()` con bloqueo pesimista (FOR UPDATE)
+   - Garantiza: verificar cupos + crear reserva + actualizar cupos = operación atómica
+   - Previene race conditions en requests concurrentes
+   - Endpoint actualizado: POST /api/reservations
+
+2. **Transacciones Atómicas en Cancelaciones**
+   - Método `cancelReservationAtomic()` con transacción completa
+   - Garantiza: cambiar estado + liberar cupos departure + liberar cupos tour = operación atómica
+   - Evita inconsistencias en el conteo de cupos
+   - Endpoint actualizado: PUT /api/reservations/:id/status
+
+3. **Transacciones en Scheduler (Cancelaciones Automáticas)**
+   - Método `autoCancelReservationAtomic()` para tareas automáticas
+   - Garantiza que cancelaciones del scheduler no dejen datos inconsistentes
+   - Sistema puede correr 24/7 sin supervisión manual
+   - Actualizado: server/jobs/scheduler.ts
+
+4. **Validación de Usuarios Inactivos**
+   - Login rechaza usuarios con active=false
+   - Middleware authenticateToken() valida estado activo en cada request
+   - Tokens de usuarios desactivados son rechazados inmediatamente
+   - Admin puede bloquear cuentas comprometidas en tiempo real
+
+**Estado del Sistema:** ✅ Production-ready con correcciones críticas implementadas
+
+**Archivos Modificados:**
+- server/storage.ts (3 nuevos métodos atómicos)
+- server/routes.ts (endpoints de reservas y cancelaciones actualizados)
+- server/auth.ts (validación de usuarios activos)
+- server/jobs/scheduler.ts (uso de transacciones)
+
 ## Recent Updates (October 31, 2025)
 
 ### FASE 6B - Sistema de Recordatorios Configurables
