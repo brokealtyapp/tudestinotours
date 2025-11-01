@@ -184,7 +184,7 @@ function CustomCalendar({
 }
 
 export default function Hero() {
-  const [selectedTour, setSelectedTour] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [guestCounts, setGuestCounts] = useState<GuestCounts>({
@@ -202,6 +202,11 @@ export default function Hero() {
     queryKey: ["/api/tours"],
   });
 
+  // Extraer ciudades únicas de los tours
+  const uniqueLocations = tours 
+    ? Array.from(new Set(tours.map(tour => tour.location).filter(Boolean))).sort()
+    : [];
+
   const totalGuests = guestCounts.adults + guestCounts.youth + guestCounts.children + guestCounts.babies;
 
   const updateGuestCount = (category: keyof GuestCounts, delta: number) => {
@@ -217,8 +222,8 @@ export default function Hero() {
     // Construir query params para la búsqueda
     const params = new URLSearchParams();
     
-    if (selectedTour) {
-      params.append("tourId", selectedTour);
+    if (selectedLocation) {
+      params.append("location", selectedLocation);
     }
     
     if (checkIn) {
@@ -265,7 +270,7 @@ export default function Hero() {
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Destino
                 </label>
-                <Select value={selectedTour} onValueChange={setSelectedTour}>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                   <SelectTrigger 
                     className="border-0 p-0 h-auto focus:ring-0 font-medium"
                     data-testid="select-destination"
@@ -275,17 +280,17 @@ export default function Hero() {
                   <SelectContent>
                     {isLoading ? (
                       <SelectItem value="loading" disabled>
-                        Cargando tours...
+                        Cargando ciudades...
                       </SelectItem>
-                    ) : tours && tours.length > 0 ? (
-                      tours.map((tour) => (
-                        <SelectItem key={tour.id} value={tour.id}>
-                          {tour.title}
+                    ) : uniqueLocations.length > 0 ? (
+                      uniqueLocations.map((location) => (
+                        <SelectItem key={location} value={location}>
+                          {location}
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-tours" disabled>
-                        No hay tours disponibles
+                      <SelectItem value="no-locations" disabled>
+                        No hay ciudades disponibles
                       </SelectItem>
                     )}
                   </SelectContent>
