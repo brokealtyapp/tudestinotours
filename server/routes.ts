@@ -1029,11 +1029,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // System Configuration routes
+  // System Configuration routes (migrado a system_settings)
   app.get("/api/config", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
-      const configs = await storage.getAllSystemConfigs();
-      res.json(configs);
+      // Leer desde system_settings en categoría 'payments'
+      const configs = await storage.getSettings('payments');
+      
+      // Convertir formato para compatibilidad con frontend
+      const formattedConfigs = configs.map(setting => ({
+        key: setting.key,
+        value: setting.value,
+        description: setting.description,
+        updatedAt: setting.updatedAt,
+      }));
+      
+      res.json(formattedConfigs);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1041,11 +1051,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/config/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
-      const config = await storage.getSystemConfig(req.params.key);
+      const config = await storage.getSetting(req.params.key);
       if (!config) {
         return res.status(404).json({ error: "Configuración no encontrada" });
       }
-      res.json(config);
+      res.json({
+        key: config.key,
+        value: config.value,
+        description: config.description,
+        updatedAt: config.updatedAt,
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -1057,8 +1072,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!key || !value) {
         return res.status(400).json({ error: "key y value son requeridos" });
       }
-      const config = await storage.setSystemConfig(key, value, description);
-      res.json(config);
+      
+      // Verificar si ya existe
+      const existing = await storage.getSetting(key);
+      
+      if (existing) {
+        // Actualizar
+        const updated = await storage.updateSetting(key, value, req.user?.userId);
+        res.json({
+          key: updated!.key,
+          value: updated!.value,
+          description: updated!.description,
+          updatedAt: updated!.updatedAt,
+        });
+      } else {
+        // Crear nuevo
+        const created = await storage.createSetting({
+          key,
+          value,
+          category: 'payments',
+          description,
+          dataType: 'string',
+          updatedBy: req.user?.userId,
+        });
+        res.json({
+          key: created.key,
+          value: created.value,
+          description: created.description,
+          updatedAt: created.updatedAt,
+        });
+      }
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
