@@ -55,7 +55,8 @@ class EmailService {
     user: User,
     reservation: Reservation,
     tour: Tour,
-    passengers: Passenger[]
+    passengers: Passenger[],
+    generatedPassword?: string
   ): Promise<boolean> {
     const html = `
       <!DOCTYPE html>
@@ -67,6 +68,7 @@ class EmailService {
           .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; }
           .content { background-color: #f9fafb; padding: 20px; }
           .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .credentials { background-color: #dcfce7; border-left: 4px solid #22c55e; padding: 15px; margin: 15px 0; }
           .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
           .highlight { color: #2563eb; font-weight: bold; }
         </style>
@@ -79,6 +81,16 @@ class EmailService {
           <div class="content">
             <p>Estimado/a ${user.name},</p>
             <p>Hemos recibido tu reserva para el tour <strong>${tour.title}</strong>. Tu número de reserva es: <span class="highlight">${reservation.id}</span></p>
+            
+            ${generatedPassword ? `
+              <div class="credentials">
+                <h3>🔐 Credenciales de Acceso</h3>
+                <p>Hemos creado una cuenta para ti. Puedes acceder a tu portal de cliente con las siguientes credenciales:</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Contraseña:</strong> <span class="highlight">${generatedPassword}</span></p>
+                <p style="font-size: 12px; color: #666;"><em>Te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</em></p>
+              </div>
+            ` : ''}
             
             <div class="details">
               <h3>Detalles de la Reserva</h3>

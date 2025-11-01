@@ -615,8 +615,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { emailService } = await import("./services/emailService");
       
+      // Extract passengers array from body (if provided)
+      const { passengers: passengersData, ...reservationData } = req.body;
+      
       // Validate basic reservation data (userId is now optional for anonymous bookings)
-      const validatedData = insertReservationSchema.parse(req.body);
+      const validatedData = insertReservationSchema.parse(reservationData);
 
       // Require departureId
       if (!validatedData.departureId) {
@@ -655,11 +658,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const autoCancelAt = new Date(paymentDueDate);
       autoCancelAt.setHours(autoCancelAt.getHours() + 24);
 
+      // IMPORTANTE: Si no hay userId (reserva anónima), buscar o crear usuario cliente
+      let userId = validatedData.userId;
+      let isNewUser = false;
+      let generatedPassword: string | undefined;
+      
+      if (!userId) {
+        const result = await storage.findOrCreateClientUser(
+          validatedData.buyerEmail,
+          validatedData.buyerName
+        );
+        userId = result.user.id;
+        isNewUser = result.isNewUser;
+        generatedPassword = result.generatedPassword;
+      }
+
       // CRÍTICO: Usar método atómico para prevenir race conditions (overbooking)
       // Esta transacción garantiza que verificación de cupos + creación + actualización sean una operación indivisible
       const reservation = await storage.createReservationAtomic(
         {
           ...validatedData,
+          userId, // Ahora siempre hay un userId válido
           tourId: departure.tourId,
           departureDate: departure.departureDate,
           totalPrice: totalPrice.toString(),
@@ -670,20 +689,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.numberOfPassengers
       );
 
+      // Crear pasajeros si vienen en el body
+      if (passengersData && Array.isArray(passengersData)) {
+        for (const passengerData of passengersData) {
+          await storage.createPassenger({
+            ...passengerData,
+            reservationId: reservation.id,
+          });
+        }
+      }
+
       // Log timeline event
       await storage.createTimelineEvent({
         reservationId: reservation.id,
         eventType: "reservation_created",
-        description: validatedData.userId 
+        description: isNewUser
+          ? `Reserva creada - Nueva cuenta de cliente generada automáticamente`
+          : userId
           ? `Reserva creada por cliente autenticado`
           : `Reserva creada de forma anónima`,
-        performedBy: validatedData.userId || null,
+        performedBy: userId,
         metadata: JSON.stringify({ 
           tourTitle: tour.title,
           departureDate: departure.departureDate.toISOString(),
           passengers: validatedData.numberOfPassengers,
           totalPrice: totalPrice,
           buyerEmail: validatedData.buyerEmail,
+          isNewUser,
         }),
       });
 
@@ -718,20 +750,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // No fallar la reserva si hay error generando cuotas
       }
 
-      // Get user for email (if authenticated)
-      const user = validatedData.userId ? await storage.getUser(validatedData.userId) : null;
+      // Get user for email
+      const user = await storage.getUser(userId);
       
       // Get passengers for email
       const passengers = await storage.getPassengersByReservation(reservation.id);
 
-      // Send confirmation email (using buyer email for anonymous reservations)
-      const emailRecipient: any = user || {
-        email: validatedData.buyerEmail,
-        name: validatedData.buyerName,
-      };
-      
-      emailService.sendReservationConfirmation(emailRecipient, reservation, tour, passengers)
-        .catch(error => console.error("Error enviando email de confirmación:", error));
+      // Send confirmation email
+      if (user) {
+        emailService.sendReservationConfirmation(user, reservation, tour, passengers, isNewUser ? generatedPassword : undefined)
+          .catch(error => console.error("Error enviando email de confirmación:", error));
+      }
 
       res.status(201).json(reservation);
     } catch (error: any) {
