@@ -154,6 +154,7 @@ async function processAutoCancellations() {
       if (paymentDueDate <= now) {
         // If status is still pending/approved, mark as vencida
         if (reservation.status === "pending" || reservation.status === "approved") {
+          // Usar método normal para cambio a "vencida" (no libera cupos aún)
           await storage.updateReservationAutomationFields(reservation.id, {
             status: "vencida",
           });
@@ -177,15 +178,8 @@ async function processAutoCancellations() {
         
         // If auto-cancel time has passed and status is vencida, cancel completely
         if (autoCancelAt && autoCancelAt <= now && reservation.status === "vencida") {
-          await storage.updateReservationAutomationFields(reservation.id, {
-            status: "cancelada",
-          });
-
-          // Release seats
-          await storage.decrementReservedSeats(
-            reservation.tourId,
-            reservation.numberOfPassengers
-          );
+          // CRÍTICO: Usar método atómico para garantizar que cancelación + liberación de cupos sean una transacción
+          await storage.autoCancelReservationAtomic(reservation.id, "cancelada");
 
           // Get user and tour info
           const user = reservation.userId ? await storage.getUser(reservation.userId) : null;

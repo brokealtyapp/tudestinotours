@@ -603,21 +603,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const autoCancelAt = new Date(paymentDueDate);
       autoCancelAt.setHours(autoCancelAt.getHours() + 24);
 
-      // Create reservation with calculated dates and departure details
-      const reservation = await storage.createReservation({
-        ...validatedData,
-        tourId: departure.tourId,
-        departureDate: departure.departureDate,
-        totalPrice: totalPrice.toString(),
-        paymentDueDate,
-        autoCancelAt,
-      });
-
-      // Increment reserved seats for the departure
-      await storage.updateDepartureSeats(departure.id, validatedData.numberOfPassengers);
-
-      // Also increment tour seats for backward compatibility
-      await storage.incrementReservedSeats(departure.tourId, validatedData.numberOfPassengers);
+      // CRÍTICO: Usar método atómico para prevenir race conditions (overbooking)
+      // Esta transacción garantiza que verificación de cupos + creación + actualización sean una operación indivisible
+      const reservation = await storage.createReservationAtomic(
+        {
+          ...validatedData,
+          tourId: departure.tourId,
+          departureDate: departure.departureDate,
+          totalPrice: totalPrice.toString(),
+          paymentDueDate,
+          autoCancelAt,
+        },
+        departure.id,
+        validatedData.numberOfPassengers
+      );
 
       // Log timeline event
       await storage.createTimelineEvent({
@@ -671,29 +670,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const oldStatus = currentReservation.status;
       const oldPaymentStatus = currentReservation.paymentStatus;
 
-      // If cancelling or status is vencida/cancelada, release seats
+      let reservation;
+      
+      // CRÍTICO: Si se está cancelando, usar método atómico para prevenir race conditions
       if (status === "cancelled" || status === "cancelada" || status === "vencida") {
-        // Release seats from departure if it has one
-        if (currentReservation.departureId) {
-          await storage.updateDepartureSeats(
-            currentReservation.departureId,
-            -currentReservation.numberOfPassengers
-          );
-        }
-        
-        // Also release from tour for backward compatibility
-        await storage.decrementReservedSeats(
-          currentReservation.tourId,
-          currentReservation.numberOfPassengers
+        // Usar transacción para garantizar que actualización de estado + liberación de cupos sean atómicas
+        reservation = await storage.cancelReservationAtomic(
+          req.params.id,
+          status,
+          paymentStatus
+        );
+      } else {
+        // Para otros cambios de estado, usar método normal
+        reservation = await storage.updateReservationStatus(
+          req.params.id,
+          status,
+          paymentStatus
         );
       }
-
-      // Update reservation
-      const reservation = await storage.updateReservationStatus(
-        req.params.id,
-        status,
-        paymentStatus
-      );
 
       // Log timeline events
       if (status && status !== oldStatus) {

@@ -73,8 +73,10 @@ export interface IStorage {
   // Reservation methods
   getReservations(userId?: string): Promise<Reservation[]>;
   getReservation(id: string): Promise<Reservation | undefined>;
+  createReservationAtomic(reservation: InsertReservation, departureId: string, numberOfPassengers: number): Promise<Reservation>;
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservationStatus(id: string, status: string, paymentStatus?: string): Promise<Reservation | undefined>;
+  cancelReservationAtomic(reservationId: string, newStatus: string, newPaymentStatus?: string): Promise<Reservation>;
   
   // Passenger methods
   getAllPassengers(): Promise<Passenger[]>;
@@ -100,6 +102,7 @@ export interface IStorage {
   getReservationsForReminders(): Promise<Reservation[]>;
   getReservationsForCancellation(): Promise<Reservation[]>;
   updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>): Promise<Reservation | undefined>;
+  autoCancelReservationAtomic(reservationId: string, newStatus: string): Promise<Reservation>;
   
   // Payment installments methods
   getPaymentInstallment(id: string): Promise<PaymentInstallment | undefined>;
@@ -347,9 +350,130 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async createReservationAtomic(reservation: InsertReservation, departureId: string, numberOfPassengers: number): Promise<Reservation> {
+    return await db.transaction(async (tx) => {
+      // 1. Obtener y bloquear la salida para actualización
+      const departureResult = await tx
+        .select()
+        .from(departures)
+        .where(eq(departures.id, departureId))
+        .for('update'); // Bloqueo pesimista - previene race conditions
+      
+      const departure = departureResult[0];
+      if (!departure) {
+        throw new Error("Salida no encontrada");
+      }
+
+      // 2. Verificar cupos disponibles
+      const availableSeats = departure.totalSeats - departure.reservedSeats;
+      if (numberOfPassengers > availableSeats) {
+        throw new Error(`No hay suficientes cupos disponibles. Disponibles: ${availableSeats}, Solicitados: ${numberOfPassengers}`);
+      }
+
+      // 3. Crear la reserva
+      const newReservationResult = await tx
+        .insert(reservations)
+        .values(reservation)
+        .returning();
+      
+      const newReservation = newReservationResult[0];
+
+      // 4. Actualizar cupos de la salida
+      await tx
+        .update(departures)
+        .set({ reservedSeats: departure.reservedSeats + numberOfPassengers })
+        .where(eq(departures.id, departureId));
+
+      // 5. También actualizar cupos del tour (para compatibilidad)
+      const tourResult = await tx
+        .select()
+        .from(tours)
+        .where(eq(tours.id, departure.tourId))
+        .for('update');
+      
+      const tour = tourResult[0];
+      if (tour) {
+        await tx
+          .update(tours)
+          .set({ reservedSeats: tour.reservedSeats + numberOfPassengers })
+          .where(eq(tours.id, departure.tourId));
+      }
+
+      return newReservation;
+    });
+  }
+
   async createReservation(reservation: InsertReservation): Promise<Reservation> {
     const result = await db.insert(reservations).values(reservation).returning();
     return result[0];
+  }
+
+  async cancelReservationAtomic(reservationId: string, newStatus: string, newPaymentStatus?: string): Promise<Reservation> {
+    return await db.transaction(async (tx) => {
+      // 1. Obtener y bloquear la reserva
+      const reservationResult = await tx
+        .select()
+        .from(reservations)
+        .where(eq(reservations.id, reservationId))
+        .for('update');
+      
+      const reservation = reservationResult[0];
+      if (!reservation) {
+        throw new Error("Reserva no encontrada");
+      }
+
+      // 2. Actualizar estado de la reserva
+      const updateData: any = { status: newStatus };
+      if (newPaymentStatus) {
+        updateData.paymentStatus = newPaymentStatus;
+      }
+
+      const updatedReservationResult = await tx
+        .update(reservations)
+        .set(updateData)
+        .where(eq(reservations.id, reservationId))
+        .returning();
+      
+      const updatedReservation = updatedReservationResult[0];
+
+      // 3. Liberar cupos de la salida (si existe)
+      if (reservation.departureId) {
+        const departureResult = await tx
+          .select()
+          .from(departures)
+          .where(eq(departures.id, reservation.departureId))
+          .for('update');
+        
+        const departure = departureResult[0];
+        if (departure) {
+          const newReservedSeats = Math.max(0, departure.reservedSeats - reservation.numberOfPassengers);
+          await tx
+            .update(departures)
+            .set({ reservedSeats: newReservedSeats })
+            .where(eq(departures.id, reservation.departureId));
+        }
+      }
+
+      // 4. Liberar cupos del tour (para compatibilidad)
+      if (reservation.tourId) {
+        const tourResult = await tx
+          .select()
+          .from(tours)
+          .where(eq(tours.id, reservation.tourId))
+          .for('update');
+        
+        const tour = tourResult[0];
+        if (tour) {
+          const newReservedSeats = Math.max(0, tour.reservedSeats - reservation.numberOfPassengers);
+          await tx
+            .update(tours)
+            .set({ reservedSeats: newReservedSeats })
+            .where(eq(tours.id, reservation.tourId));
+        }
+      }
+
+      return updatedReservation;
+    });
   }
 
   async updateReservationStatus(
@@ -519,6 +643,72 @@ export class DbStorage implements IStorage {
       .where(eq(reservations.id, id))
       .returning();
     return result[0];
+  }
+
+  async autoCancelReservationAtomic(reservationId: string, newStatus: string): Promise<Reservation> {
+    return await db.transaction(async (tx) => {
+      // 1. Obtener y bloquear la reserva
+      const reservationResult = await tx
+        .select()
+        .from(reservations)
+        .where(eq(reservations.id, reservationId))
+        .for('update');
+      
+      const reservation = reservationResult[0];
+      if (!reservation) {
+        throw new Error("Reserva no encontrada");
+      }
+
+      // 2. Actualizar estado de la reserva
+      const updatedReservationResult = await tx
+        .update(reservations)
+        .set({ status: newStatus })
+        .where(eq(reservations.id, reservationId))
+        .returning();
+      
+      const updatedReservation = updatedReservationResult[0];
+
+      // 3. Si se cancela definitivamente, liberar cupos
+      if (newStatus === "cancelada") {
+        // Liberar cupos de la salida (si existe)
+        if (reservation.departureId) {
+          const departureResult = await tx
+            .select()
+            .from(departures)
+            .where(eq(departures.id, reservation.departureId))
+            .for('update');
+          
+          const departure = departureResult[0];
+          if (departure) {
+            const newReservedSeats = Math.max(0, departure.reservedSeats - reservation.numberOfPassengers);
+            await tx
+              .update(departures)
+              .set({ reservedSeats: newReservedSeats })
+              .where(eq(departures.id, reservation.departureId));
+          }
+        }
+
+        // Liberar cupos del tour (para compatibilidad)
+        if (reservation.tourId) {
+          const tourResult = await tx
+            .select()
+            .from(tours)
+            .where(eq(tours.id, reservation.tourId))
+            .for('update');
+          
+          const tour = tourResult[0];
+          if (tour) {
+            const newReservedSeats = Math.max(0, tour.reservedSeats - reservation.numberOfPassengers);
+            await tx
+              .update(tours)
+              .set({ reservedSeats: newReservedSeats })
+              .where(eq(tours.id, reservation.tourId));
+          }
+        }
+      }
+
+      return updatedReservation;
+    });
   }
   
   // Payment installments methods
