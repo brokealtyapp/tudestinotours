@@ -768,6 +768,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Validate bulk reservations (dry-run mode - does not create reservations)
+  app.post("/api/reservations/bulk/validate", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const bulkReservations = req.body as Array<{
+        buyer: {
+          name: string;
+          email: string;
+          phone: string;
+          passportNumber?: string;
+          nationality?: string;
+          departureAirport?: string;
+        };
+        departureId: string;
+        passengers: Array<{
+          fullName: string;
+          passportNumber: string;
+          nationality: string;
+          dateOfBirth: string;
+        }>;
+      }>;
+
+      if (!Array.isArray(bulkReservations) || bulkReservations.length === 0) {
+        return res.status(400).json({ error: "Se requiere un array de reservas" });
+      }
+
+      // Check MAX_BULK_IMPORT_RESERVATIONS setting
+      const maxBulkSetting = await storage.getSetting('MAX_BULK_IMPORT_RESERVATIONS');
+      const maxBulkReservations = maxBulkSetting ? parseInt(maxBulkSetting.value) : 100;
+      
+      if (bulkReservations.length > maxBulkReservations) {
+        return res.status(400).json({ 
+          error: `Número máximo de reservas por importación excedido. Máximo: ${maxBulkReservations}, Recibido: ${bulkReservations.length}` 
+        });
+      }
+
+      // Validate no duplicate passports across entire upload
+      const allPassports = new Set<string>();
+      for (const bulkRes of bulkReservations) {
+        for (const passenger of bulkRes.passengers) {
+          const passportKey = passenger.passportNumber.trim().toUpperCase();
+          if (allPassports.has(passportKey)) {
+            return res.status(400).json({ 
+              error: `Pasaporte duplicado encontrado: ${passenger.passportNumber}. Cada pasajero debe tener un número de pasaporte único.` 
+            });
+          }
+          allPassports.add(passportKey);
+        }
+      }
+
+      const warnings: string[] = [];
+      const validatedReservations = [];
+
+      for (const bulkRes of bulkReservations) {
+        // Validate departure exists
+        const departure = await storage.getDeparture(bulkRes.departureId);
+        if (!departure) {
+          return res.status(400).json({ 
+            error: `Salida ${bulkRes.departureId} no encontrada para reserva de ${bulkRes.buyer.email}` 
+          });
+        }
+
+        // Get tour
+        const tour = await storage.getTour(departure.tourId);
+        if (!tour) {
+          return res.status(400).json({ 
+            error: `Tour no encontrado para salida ${bulkRes.departureId}` 
+          });
+        }
+
+        // Check available seats
+        const availableSeats = departure.totalSeats - departure.reservedSeats;
+        if (bulkRes.passengers.length > availableSeats) {
+          return res.status(400).json({ 
+            error: `No hay suficientes cupos en salida ${bulkRes.departureId}. Disponibles: ${availableSeats}, Solicitados: ${bulkRes.passengers.length}` 
+          });
+        }
+
+        // Check if departure date is in the past
+        const departureDate = new Date(departure.departureDate);
+        if (departureDate < new Date()) {
+          warnings.push(`La salida ${departure.departureDate} ya pasó. Reserva de ${bulkRes.buyer.email} puede no ser válida.`);
+        }
+
+        // Calculate total price including supplements
+        const basePrice = parseFloat(departure.price);
+        const supplementsTotal = departure.supplements && Array.isArray(departure.supplements)
+          ? departure.supplements.reduce((sum: number, sup: any) => sum + parseFloat(sup.price || '0'), 0)
+          : 0;
+        const pricePerPassenger = basePrice + supplementsTotal;
+        const totalPrice = pricePerPassenger * bulkRes.passengers.length;
+
+        validatedReservations.push({
+          buyer: {
+            name: bulkRes.buyer.name,
+            email: bulkRes.buyer.email,
+            phone: bulkRes.buyer.phone,
+          },
+          departureId: bulkRes.departureId,
+          passengerCount: bulkRes.passengers.length,
+          tourTitle: tour.title,
+          departureDate: departure.departureDate,
+          pricePerPassenger: pricePerPassenger.toFixed(2),
+          totalPrice: totalPrice.toFixed(2),
+          availableSeats,
+        });
+      }
+
+      res.status(200).json({
+        reservations: validatedReservations,
+        warnings,
+      });
+    } catch (error: any) {
+      console.error("Error en validación de importación:", error);
+      res.status(500).json({ 
+        error: error.message || "Error al validar reservas"
+      });
+    }
+  });
+
   // Bulk import reservations from CSV (ATOMIC: all-or-nothing)
   app.post("/api/reservations/bulk", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
@@ -794,6 +913,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Se requiere un array de reservas" });
       }
 
+      // Check MAX_BULK_IMPORT_RESERVATIONS setting
+      const maxBulkSetting = await storage.getSetting('MAX_BULK_IMPORT_RESERVATIONS');
+      const maxBulkReservations = maxBulkSetting ? parseInt(maxBulkSetting.value) : 100;
+      
+      if (bulkReservations.length > maxBulkReservations) {
+        return res.status(400).json({ 
+          error: `Número máximo de reservas por importación excedido. Máximo: ${maxBulkReservations}, Recibido: ${bulkReservations.length}` 
+        });
+      }
+
+      // First, create or get users for all unique buyer emails
+      const bcrypt = await import("bcryptjs");
+      const userMap = new Map<string, { user: any, generatedPassword?: string }>();
+      const uniqueEmailsSet = new Set(bulkReservations.map(r => r.buyer.email.trim().toLowerCase()));
+      const uniqueEmails = Array.from(uniqueEmailsSet);
+      
+      for (const email of uniqueEmails) {
+        let user = await storage.getUserByEmail(email);
+        let generatedPassword: string | undefined;
+        
+        if (!user) {
+          // Generate temporary password
+          generatedPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2);
+          const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+          
+          // Find buyer data from any reservation with this email
+          const bulkResWithEmail = bulkReservations.find(r => r.buyer.email.trim().toLowerCase() === email);
+          if (!bulkResWithEmail) continue;
+          
+          // Create new user
+          user = await storage.createUser({
+            email,
+            name: bulkResWithEmail.buyer.name,
+            password: hashedPassword,
+            role: 'client',
+            active: true,
+          });
+        }
+        
+        userMap.set(email, { user, generatedPassword });
+      }
+
+      // Validate no duplicate passports across entire upload
+      const allPassports = new Set<string>();
+      for (const bulkRes of bulkReservations) {
+        for (const passenger of bulkRes.passengers) {
+          const passportKey = passenger.passportNumber.trim().toUpperCase();
+          if (allPassports.has(passportKey)) {
+            return res.status(400).json({ 
+              error: `Pasaporte duplicado encontrado: ${passenger.passportNumber}. Cada pasajero debe tener un número de pasaporte único.` 
+            });
+          }
+          allPassports.add(passportKey);
+        }
+      }
+
       // Pre-validate and prepare all reservations data
       const reservationsToCreate: Array<{
         reservation: any;
@@ -803,6 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         departure: any;
         totalPrice: number;
         paymentDueDate: Date;
+        userInfo: { user: any, generatedPassword?: string };
       }> = [];
 
       for (const bulkRes of bulkReservations) {
@@ -822,19 +998,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Calculate prices and dates
-        const totalPrice = parseFloat(departure.price) * bulkRes.passengers.length;
+        // Calculate prices including supplements
+        const basePrice = parseFloat(departure.price);
+        const supplementsTotal = departure.supplements && Array.isArray(departure.supplements)
+          ? departure.supplements.reduce((sum: number, sup: any) => sum + parseFloat(sup.price || '0'), 0)
+          : 0;
+        const pricePerPassenger = basePrice + supplementsTotal;
+        const totalPrice = pricePerPassenger * bulkRes.passengers.length;
         const departureDate = new Date(departure.departureDate);
         const paymentDueDate = new Date(departureDate);
         paymentDueDate.setDate(paymentDueDate.getDate() - (departure.paymentDeadlineDays || 30));
         const autoCancelAt = new Date(paymentDueDate);
         autoCancelAt.setHours(autoCancelAt.getHours() + 24);
 
+        // Get user info for this buyer
+        const userInfo = userMap.get(bulkRes.buyer.email.trim().toLowerCase());
+
         reservationsToCreate.push({
           reservation: {
             tourId: departure.tourId,
             departureId: bulkRes.departureId,
-            userId: null,
+            userId: userInfo?.user?.id || null,
             buyerEmail: bulkRes.buyer.email,
             buyerPhone: bulkRes.buyer.phone,
             buyerName: bulkRes.buyer.name,
@@ -866,6 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           departure,
           totalPrice,
           paymentDueDate,
+          userInfo: userInfo!,
         });
       }
 
@@ -881,7 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Post-creation processing (timeline events, installments, emails)
       for (let i = 0; i < createdReservations.length; i++) {
         const reservation = createdReservations[i];
-        const { tour, departure, totalPrice, paymentDueDate } = reservationsToCreate[i];
+        const { tour, departure, totalPrice, paymentDueDate, userInfo } = reservationsToCreate[i];
 
         // Log timeline event
         await storage.createTimelineEvent({
@@ -931,14 +1116,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get passengers for email
         const passengers = await storage.getPassengersByReservation(reservation.id);
 
-        // Get user for email
-        const user = await storage.getUserByEmail(reservation.buyerEmail);
+        // Log user creation if it was a new user
+        if (userInfo.generatedPassword) {
+          await storage.createTimelineEvent({
+            reservationId: reservation.id,
+            eventType: "user_created",
+            description: `Usuario creado automáticamente durante importación CSV`,
+            performedBy: req.user!.userId,
+            metadata: JSON.stringify({
+              userEmail: userInfo.user.email,
+              userName: userInfo.user.name,
+              temporaryPassword: true,
+            }),
+          });
+        }
         
         // Send confirmation email
-        if (user) {
-          emailService.sendReservationConfirmation(user, reservation, tour, passengers)
-            .catch(error => console.error("Error enviando email:", error));
-        }
+        emailService.sendReservationConfirmation(
+          userInfo.user, 
+          reservation, 
+          tour, 
+          passengers, 
+          userInfo.generatedPassword
+        ).catch(error => console.error("Error enviando email:", error));
       }
 
       res.status(201).json({

@@ -1,23 +1,21 @@
 import { useState, useRef } from "react";
+import Papa from "papaparse";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, CheckCircle, AlertCircle, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Download, CheckCircle, AlertCircle, FileText, Eye, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface CSVRow {
-  // Buyer info
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string;
   buyerPassportNumber?: string;
   buyerNationality?: string;
   buyerDepartureAirport?: string;
-  
-  // Reservation info
   departureId: string;
-  
-  // Passenger info
   passengerFullName: string;
   passengerPassportNumber: string;
   passengerNationality: string;
@@ -42,11 +40,39 @@ interface ParsedReservation {
   }>;
 }
 
+interface ValidationError {
+  row: number;
+  field: string;
+  message: string;
+}
+
+interface ValidationResult {
+  reservations: Array<{
+    buyer: {
+      name: string;
+      email: string;
+      phone: string;
+    };
+    departureId: string;
+    passengerCount: number;
+    tourTitle: string;
+    departureDate: string;
+    pricePerPassenger: string;
+    totalPrice: string;
+    availableSeats: number;
+  }>;
+  warnings: string[];
+}
+
 export default function CSVImport() {
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedReservation[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [importing, setImporting] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -77,6 +103,19 @@ export default function CSVImport() {
     }
   };
 
+  const validateEmail = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    return /^\+?[0-9]{7,15}$/.test(phone.replace(/[\s\-()]/g, ''));
+  };
+
+  const validateDate = (dateString: string): boolean => {
+    const date = new Date(dateString);
+    return !isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  };
+
   const handleFile = async (file: File) => {
     if (!file.name.endsWith('.csv')) {
       toast({
@@ -88,88 +127,180 @@ export default function CSVImport() {
     }
 
     setFile(file);
+    setValidationErrors([]);
+    setValidationResult(null);
+    setParsedData([]);
+    setProgress(0);
     
-    // Parse CSV
-    const text = await file.text();
-    const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
-    
-    if (rows.length < 2) {
-      toast({
-        title: "Error",
-        description: "El archivo CSV está vacío o no tiene datos",
-        variant: "destructive",
-      });
-      return;
-    }
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
+      complete: (results) => {
+        const errors: ValidationError[] = [];
+        const data = results.data as CSVRow[];
+        
+        if (data.length === 0) {
+          toast({
+            title: "Error",
+            description: "El archivo CSV está vacío",
+            variant: "destructive",
+          });
+          return;
+        }
 
-    // Parse header
-    const headers = rows[0].split(',').map(h => h.trim());
-    
-    // Required headers
-    const requiredHeaders = [
-      'buyerName', 'buyerEmail', 'buyerPhone',
-      'departureId',
-      'passengerFullName', 'passengerPassportNumber', 
-      'passengerNationality', 'passengerDateOfBirth'
-    ];
-    
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-    if (missingHeaders.length > 0) {
-      toast({
-        title: "Error en formato CSV",
-        description: `Faltan columnas requeridas: ${missingHeaders.join(', ')}`,
-        variant: "destructive",
-      });
-      return;
-    }
+        const requiredHeaders = [
+          'buyerName', 'buyerEmail', 'buyerPhone',
+          'departureId',
+          'passengerFullName', 'passengerPassportNumber', 
+          'passengerNationality', 'passengerDateOfBirth'
+        ];
+        
+        const headers = Object.keys(data[0]);
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        
+        if (missingHeaders.length > 0) {
+          toast({
+            title: "Error en formato CSV",
+            description: `Faltan columnas requeridas: ${missingHeaders.join(', ')}`,
+            variant: "destructive",
+          });
+          return;
+        }
 
-    // Parse data rows
-    const dataRows: CSVRow[] = [];
-    for (let i = 1; i < rows.length; i++) {
-      const values = rows[i].split(',').map(v => v.trim());
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      dataRows.push(row as CSVRow);
-    }
+        // Validate each row
+        const seenPassports = new Set<string>();
+        data.forEach((row, index) => {
+          const rowNum = index + 2; // +2 because of header and 0-indexing
 
-    // Group by buyer email + departureId to create reservations
-    const reservationsMap = new Map<string, ParsedReservation>();
-    
-    for (const row of dataRows) {
-      const key = `${row.buyerEmail}-${row.departureId}`;
-      
-      if (!reservationsMap.has(key)) {
-        reservationsMap.set(key, {
-          buyer: {
-            name: row.buyerName,
-            email: row.buyerEmail,
-            phone: row.buyerPhone,
-            passportNumber: row.buyerPassportNumber,
-            nationality: row.buyerNationality,
-            departureAirport: row.buyerDepartureAirport,
-          },
-          departureId: row.departureId,
-          passengers: [],
+          // Buyer validations
+          if (!row.buyerName || row.buyerName.length < 2) {
+            errors.push({ row: rowNum, field: 'buyerName', message: 'Nombre de comprador inválido' });
+          }
+          if (!row.buyerEmail || !validateEmail(row.buyerEmail)) {
+            errors.push({ row: rowNum, field: 'buyerEmail', message: 'Email inválido' });
+          }
+          if (!row.buyerPhone || !validatePhone(row.buyerPhone)) {
+            errors.push({ row: rowNum, field: 'buyerPhone', message: 'Teléfono inválido' });
+          }
+
+          // Departure validation
+          if (!row.departureId || row.departureId.trim().length === 0) {
+            errors.push({ row: rowNum, field: 'departureId', message: 'ID de salida requerido' });
+          }
+
+          // Passenger validations
+          if (!row.passengerFullName || row.passengerFullName.length < 2) {
+            errors.push({ row: rowNum, field: 'passengerFullName', message: 'Nombre de pasajero inválido' });
+          }
+          if (!row.passengerPassportNumber || row.passengerPassportNumber.trim().length === 0) {
+            errors.push({ row: rowNum, field: 'passengerPassportNumber', message: 'Número de pasaporte requerido' });
+          } else {
+            // Check for duplicate passports
+            const passportKey = row.passengerPassportNumber.trim().toUpperCase();
+            if (seenPassports.has(passportKey)) {
+              errors.push({ row: rowNum, field: 'passengerPassportNumber', message: `Pasaporte duplicado: ${row.passengerPassportNumber}` });
+            }
+            seenPassports.add(passportKey);
+          }
+          if (!row.passengerNationality || row.passengerNationality.trim().length === 0) {
+            errors.push({ row: rowNum, field: 'passengerNationality', message: 'Nacionalidad requerida' });
+          }
+          if (!row.passengerDateOfBirth || !validateDate(row.passengerDateOfBirth)) {
+            errors.push({ row: rowNum, field: 'passengerDateOfBirth', message: 'Fecha de nacimiento inválida (formato: YYYY-MM-DD)' });
+          }
+        });
+
+        if (errors.length > 0) {
+          setValidationErrors(errors);
+          toast({
+            title: "Errores de Validación",
+            description: `Se encontraron ${errors.length} errores. Revisa los detalles abajo.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Group by buyer email + departureId
+        const reservationsMap = new Map<string, ParsedReservation>();
+        
+        for (const row of data) {
+          const key = `${row.buyerEmail.trim().toLowerCase()}-${row.departureId.trim()}`;
+          
+          if (!reservationsMap.has(key)) {
+            reservationsMap.set(key, {
+              buyer: {
+                name: row.buyerName.trim(),
+                email: row.buyerEmail.trim().toLowerCase(),
+                phone: row.buyerPhone.trim(),
+                passportNumber: row.buyerPassportNumber?.trim(),
+                nationality: row.buyerNationality?.trim(),
+                departureAirport: row.buyerDepartureAirport?.trim(),
+              },
+              departureId: row.departureId.trim(),
+              passengers: [],
+            });
+          }
+          
+          const reservation = reservationsMap.get(key)!;
+          reservation.passengers.push({
+            fullName: row.passengerFullName.trim(),
+            passportNumber: row.passengerPassportNumber.trim(),
+            nationality: row.passengerNationality.trim(),
+            dateOfBirth: row.passengerDateOfBirth.trim(),
+          });
+        }
+
+        setParsedData(Array.from(reservationsMap.values()));
+        
+        toast({
+          title: "CSV Analizado Exitosamente",
+          description: `Se encontraron ${reservationsMap.size} reservas con ${data.length} pasajeros`,
+        });
+      },
+      error: (error) => {
+        toast({
+          title: "Error al Analizar CSV",
+          description: error.message,
+          variant: "destructive",
         });
       }
-      
-      const reservation = reservationsMap.get(key)!;
-      reservation.passengers.push({
-        fullName: row.passengerFullName,
-        passportNumber: row.passengerPassportNumber,
-        nationality: row.passengerNationality,
-        dateOfBirth: row.passengerDateOfBirth,
+    });
+  };
+
+  const handleValidate = async () => {
+    if (parsedData.length === 0) {
+      toast({
+        title: "Error",
+        description: "No hay datos para validar",
+        variant: "destructive",
       });
+      return;
     }
 
-    setParsedData(Array.from(reservationsMap.values()));
-    
-    toast({
-      title: "CSV Analizado",
-      description: `Se encontraron ${reservationsMap.size} reservas con ${dataRows.length} pasajeros`,
-    });
+    setValidating(true);
+    setProgress(0);
+
+    try {
+      const response = await apiRequest('POST', '/api/reservations/bulk/validate', parsedData);
+      const result = await response.json();
+
+      setValidationResult(result);
+      setProgress(100);
+      
+      toast({
+        title: "Validación Completa",
+        description: `${result.reservations.length} reservas validadas correctamente`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error en Validación",
+        description: error.message || "No se pudo validar las reservas",
+        variant: "destructive",
+      });
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleImport = async () => {
@@ -183,12 +314,14 @@ export default function CSVImport() {
     }
 
     setImporting(true);
+    setProgress(0);
 
     try {
       const response = await apiRequest('POST', '/api/reservations/bulk', parsedData);
       const result = await response.json();
 
       queryClient.invalidateQueries({ queryKey: ['/api/reservations'] });
+      setProgress(100);
       
       toast({
         title: "Importación Exitosa",
@@ -198,6 +331,9 @@ export default function CSVImport() {
       // Reset state
       setFile(null);
       setParsedData([]);
+      setValidationResult(null);
+      setValidationErrors([]);
+      setProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -237,7 +373,7 @@ export default function CSVImport() {
     ];
     
     const csv = [headers.join(','), ...exampleRows.map(row => row.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -314,54 +450,155 @@ export default function CSVImport() {
           )}
         </div>
 
-        {/* Preview */}
-        {parsedData.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">Vista Previa</h3>
-              <span className="text-sm text-muted-foreground">
-                {parsedData.length} reservas, {parsedData.reduce((sum, r) => sum + r.passengers.length, 0)} pasajeros
-              </span>
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium">Se encontraron {validationErrors.length} errores de validación</p>
+                <p className="text-sm mt-1">Corrige estos errores antes de continuar</p>
+              </div>
             </div>
-            
-            <div className="max-h-96 overflow-y-auto space-y-2">
-              {parsedData.slice(0, 5).map((reservation, index) => (
-                <Card key={index}>
-                  <CardContent className="p-4">
-                    <div className="text-sm">
-                      <p className="font-medium">{reservation.buyer.name}</p>
-                      <p className="text-muted-foreground">{reservation.buyer.email}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {reservation.passengers.length} pasajero(s)
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="max-h-48 overflow-y-auto space-y-1">
+              {validationErrors.slice(0, 10).map((error, index) => (
+                <div key={index} className="text-sm p-2 bg-muted rounded">
+                  <span className="font-medium">Fila {error.row}:</span> {error.field} - {error.message}
+                </div>
               ))}
-              {parsedData.length > 5 && (
-                <p className="text-sm text-muted-foreground text-center">
-                  ... y {parsedData.length - 5} reservas más
+              {validationErrors.length > 10 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  ... y {validationErrors.length - 10} errores más
                 </p>
               )}
             </div>
-
-            <Button
-              onClick={handleImport}
-              disabled={importing}
-              className="w-full"
-              data-testid="button-import-csv"
-            >
-              {importing ? 'Importando...' : `Importar ${parsedData.length} Reservas`}
-            </Button>
           </div>
         )}
 
-        {parsedData.length === 0 && file && (
-          <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
-            <AlertCircle className="h-5 w-5" />
-            <p className="text-sm">
-              No se pudieron analizar datos del archivo. Verifica el formato.
-            </p>
+        {/* Parsed Data Summary */}
+        {parsedData.length > 0 && validationErrors.length === 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Datos Analizados</h3>
+              <div className="flex gap-2">
+                <Badge variant="outline">{parsedData.length} reservas</Badge>
+                <Badge variant="outline">{parsedData.reduce((sum, r) => sum + r.passengers.length, 0)} pasajeros</Badge>
+              </div>
+            </div>
+
+            {/* Validate Button */}
+            {!validationResult && (
+              <Button
+                variant="outline"
+                onClick={handleValidate}
+                disabled={validating}
+                className="w-full"
+                data-testid="button-validate-csv"
+              >
+                {validating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Validando...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Vista Previa con Precios
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Validation Result */}
+            {validationResult && (
+              <div className="space-y-4">
+                {validationResult.warnings.length > 0 && (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-yellow-800 dark:text-yellow-200">Advertencias</p>
+                        <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 space-y-1">
+                          {validationResult.warnings.map((warning, i) => (
+                            <li key={i}>• {warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="max-h-96 overflow-y-auto space-y-2">
+                  {validationResult.reservations.map((res, index) => (
+                    <Card key={index}>
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium">{res.buyer.name}</p>
+                              <p className="text-sm text-muted-foreground">{res.buyer.email}</p>
+                            </div>
+                            <Badge variant="outline">{res.passengerCount} pax</Badge>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <p className="text-muted-foreground">
+                              <span className="font-medium">Tour:</span> {res.tourTitle}
+                            </p>
+                            <p className="text-muted-foreground">
+                              <span className="font-medium">Salida:</span> {new Date(res.departureDate).toLocaleDateString('es-ES')}
+                            </p>
+                            <div className="flex items-center justify-between pt-1 border-t">
+                              <span className="text-muted-foreground">
+                                ${res.pricePerPassenger} × {res.passengerCount}
+                              </span>
+                              <span className="font-semibold text-primary">
+                                ${res.totalPrice}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            {(importing || validating) && progress > 0 && (
+              <div className="space-y-2">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-center text-muted-foreground">
+                  {importing ? 'Importando...' : 'Validando...'} {progress}%
+                </p>
+              </div>
+            )}
+
+            {/* Import Button */}
+            {validationResult && (
+              <Button
+                onClick={handleImport}
+                disabled={importing}
+                className="w-full"
+                data-testid="button-import-csv"
+              >
+                {importing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  `Importar ${parsedData.length} Reservas`
+                )}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {parsedData.length === 0 && file && validationErrors.length === 0 && (
+          <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <p className="text-sm">Analizando archivo...</p>
           </div>
         )}
       </CardContent>
