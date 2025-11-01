@@ -751,6 +751,9 @@ export default function DeparturesManagement() {
                   ))}
                 </SelectContent>
               </Select>
+              {formErrors.tourId && (
+                <p className="text-sm text-destructive mt-1">{formErrors.tourId}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -764,6 +767,9 @@ export default function DeparturesManagement() {
                   }
                   data-testid="input-departure-date"
                 />
+                {formErrors.departureDate && (
+                  <p className="text-sm text-destructive mt-1">{formErrors.departureDate}</p>
+                )}
               </div>
               <div>
                 <Label>Fecha de Regreso</Label>
@@ -775,6 +781,9 @@ export default function DeparturesManagement() {
                   }
                   data-testid="input-return-date"
                 />
+                {formErrors.returnDate && (
+                  <p className="text-sm text-destructive mt-1">{formErrors.returnDate}</p>
+                )}
               </div>
             </div>
 
@@ -790,6 +799,9 @@ export default function DeparturesManagement() {
                   }
                   data-testid="input-total-seats"
                 />
+                {formErrors.totalSeats && (
+                  <p className="text-sm text-destructive mt-1">{formErrors.totalSeats}</p>
+                )}
               </div>
               <div>
                 <Label>Precio *</Label>
@@ -803,6 +815,9 @@ export default function DeparturesManagement() {
                   }
                   data-testid="input-price"
                 />
+                {formErrors.price && (
+                  <p className="text-sm text-destructive mt-1">{formErrors.price}</p>
+                )}
               </div>
             </div>
 
@@ -817,6 +832,9 @@ export default function DeparturesManagement() {
                 }
                 data-testid="input-payment-deadline"
               />
+              {formErrors.paymentDeadlineDays && (
+                <p className="text-sm text-destructive mt-1">{formErrors.paymentDeadlineDays}</p>
+              )}
             </div>
 
             <div>
@@ -849,9 +867,13 @@ export default function DeparturesManagement() {
                 rows={3}
                 data-testid="input-supplements"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Ej: {`{"descuento_anticipado": -100, "habitacion_individual": 200}`}
-              </p>
+              {formErrors.supplements ? (
+                <p className="text-sm text-destructive mt-1">{formErrors.supplements}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ej: {`{"descuento_anticipado": -100, "habitacion_individual": 200}`}
+                </p>
+              )}
             </div>
 
             <div>
