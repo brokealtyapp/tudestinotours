@@ -39,6 +39,7 @@ import {
 import { Plus, Edit, Trash2, Copy, History, Send, Search, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+// @ts-ignore
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -333,8 +334,8 @@ export function EmailTemplates() {
   // Auto-extract variables from body
   useEffect(() => {
     const regex = /\{\{(\w+)\}\}/g;
-    const matches = [...templateForm.body.matchAll(regex)];
-    const extractedVars = [...new Set(matches.map(m => m[1]))];
+    const matches = Array.from(templateForm.body.matchAll(regex));
+    const extractedVars = Array.from(new Set(matches.map(m => m[1])));
     setTemplateForm(prev => ({ ...prev, variables: extractedVars }));
   }, [templateForm.body]);
 
