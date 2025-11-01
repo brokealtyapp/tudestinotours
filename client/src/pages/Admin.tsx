@@ -1294,7 +1294,7 @@ export default function Admin() {
         </Dialog>
 
         <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] rounded-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Verificación de Documento - {selectedPassenger?.fullName}</DialogTitle>
             </DialogHeader>
@@ -1302,25 +1302,25 @@ export default function Admin() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Pasaporte:</span>
-                    <span className="ml-2 font-mono">{selectedPassenger.passportNumber}</span>
+                    <span className="text-muted-foreground">Pasaporte:</span>
+                    <span className="ml-2 font-mono font-medium">{selectedPassenger.passportNumber}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Nacionalidad:</span>
+                    <span className="text-muted-foreground">Nacionalidad:</span>
                     <span className="ml-2">{selectedPassenger.nationality}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Fecha de Nacimiento:</span>
+                    <span className="text-muted-foreground">Fecha de Nacimiento:</span>
                     <span className="ml-2">{new Date(selectedPassenger.dateOfBirth).toLocaleDateString('es-ES')}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Reserva:</span>
+                    <span className="text-muted-foreground">Reserva:</span>
                     <span className="ml-2 font-mono">{selectedPassenger.reservationId}</span>
                   </div>
                 </div>
 
                 {selectedPassenger.passportDocumentUrl && (
-                  <div className="border rounded-lg overflow-hidden bg-gray-50">
+                  <div className="border rounded-lg overflow-hidden bg-muted/30">
                     <img
                       src={selectedPassenger.passportDocumentUrl}
                       alt={`Pasaporte de ${selectedPassenger.fullName}`}
@@ -1331,7 +1331,7 @@ export default function Admin() {
 
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-700">Estado del Documento</Label>
+                    <Label className="text-sm font-medium">Estado del Documento</Label>
                     <div className="mt-2">
                       <span className={`px-3 py-1.5 rounded-md text-sm font-medium ${getDocumentStatusBadgeColor(selectedPassenger.documentStatus || 'pending')}`}>
                         {getDocumentStatusLabel(selectedPassenger.documentStatus || 'pending')}
@@ -1340,24 +1340,22 @@ export default function Admin() {
                   </div>
 
                   <div>
-                    <Label htmlFor="document-notes" className="text-sm font-medium text-gray-700">Notas / Razón de Rechazo</Label>
+                    <Label htmlFor="document-notes" className="text-sm font-medium">Notas / Razón de Rechazo</Label>
                     <Textarea
                       id="document-notes"
                       value={documentNotes}
                       onChange={(e) => setDocumentNotes(e.target.value)}
-                      placeholder="Ej: La foto está borrosa, no se pueden leer los datos..."
+                      placeholder="Ej: La foto está borrosa, no se pueden leer los datos claramente..."
                       rows={3}
                       data-testid="input-document-notes"
-                      className="rounded-lg border-gray-300 focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="flex gap-3 justify-end">
+                  <div className="flex gap-3 justify-end pt-2">
                     <Button
                       variant="outline"
                       onClick={() => setShowDocumentModal(false)}
                       data-testid="button-cancel-document-verification"
-                      className="rounded-lg"
                     >
                       <X className="h-4 w-4 mr-2" />
                       Cancelar
@@ -1365,7 +1363,7 @@ export default function Admin() {
                     {selectedPassenger.documentStatus !== "approved" && (
                       <Button
                         variant="outline"
-                        className="border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950 rounded-lg"
+                        className="border-green-500 text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
                         onClick={() => handleUpdateDocumentStatus("approved")}
                         data-testid="button-approve-document"
                       >
@@ -1374,8 +1372,7 @@ export default function Admin() {
                       </Button>
                     )}
                     <Button
-                      variant="outline"
-                      className="border-red-500 text-red-700 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg"
+                      variant="destructive"
                       onClick={() => handleUpdateDocumentStatus("rejected", documentNotes)}
                       disabled={!documentNotes.trim()}
                       data-testid="button-reject-document"
