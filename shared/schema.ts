@@ -109,10 +109,18 @@ export const reservations = pgTable("reservations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertReservationSchema = createInsertSchema(reservations).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertReservationSchema = createInsertSchema(reservations)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    reservationDate: z.coerce.date(),
+    departureDate: z.coerce.date(),
+    paymentDueDate: z.coerce.date().nullable().optional(),
+    autoCancelAt: z.coerce.date().nullable().optional(),
+    totalPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  });
 
 export type InsertReservation = z.infer<typeof insertReservationSchema>;
 export type Reservation = typeof reservations.$inferSelect;
@@ -130,15 +138,16 @@ export const passengers = pgTable("passengers", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertPassengerSchema = createInsertSchema(passengers).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  // Hacer explícitamente opcional el campo passportImageUrl
-  passportImageUrl: z.string().optional(),
-  // Hacer explícitamente opcional el campo documentNotes
-  documentNotes: z.string().optional(),
-});
+export const insertPassengerSchema = createInsertSchema(passengers)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    dateOfBirth: z.coerce.date(),
+    passportImageUrl: z.string().nullable().optional(),
+    documentNotes: z.string().nullable().optional(),
+  });
 
 export type InsertPassenger = z.infer<typeof insertPassengerSchema>;
 export type Passenger = typeof passengers.$inferSelect;
