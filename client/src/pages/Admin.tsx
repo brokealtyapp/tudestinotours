@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { AdminHeader } from "@/components/AdminHeader";
-import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Eye, ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Check, X, DollarSign, FileText, Download, Users, Eye, ThumbsUp, ThumbsDown, AlertTriangle, XCircle } from "lucide-react";
 import ReservationTimeline from "@/components/ReservationTimeline";
 import DashboardAdmin from "@/components/DashboardAdmin";
 import DeparturesManagement from "@/components/DeparturesManagement";
@@ -81,6 +81,10 @@ export default function Admin() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  
+  // Diálogo de cancelación
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [reservationToCancel, setReservationToCancel] = useState<any>(null);
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
@@ -256,6 +260,34 @@ export default function Admin() {
         title: "Éxito",
         description: `Estado de reserva actualizado a ${status}`,
       });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelReservation = (reservation: any) => {
+    setReservationToCancel(reservation);
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancelReservation = async () => {
+    if (!reservationToCancel) return;
+    
+    try {
+      await apiRequest("PUT", `/api/reservations/${reservationToCancel.id}/status`, {
+        status: "cancelled",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+      toast({
+        title: "Éxito",
+        description: "Reserva cancelada exitosamente. Los cupos han sido liberados.",
+      });
+      setShowCancelDialog(false);
+      setReservationToCancel(null);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -872,6 +904,20 @@ export default function Admin() {
                                 >
                                   <Check className="h-4 w-4 mr-2" />
                                   Confirmar Pago
+                                </Button>
+                              )}
+                              {reservation.status !== "vencida" && 
+                               reservation.status !== "cancelada" && 
+                               reservation.status !== "cancelled" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCancelReservation(reservation)}
+                                  data-testid={`button-cancel-${reservation.id}`}
+                                  className="border-red-200 text-red-700 hover:bg-red-50"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Cancelar Reserva
                                 </Button>
                               )}
                             </div>
@@ -1653,6 +1699,78 @@ export default function Admin() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo de confirmación de cancelación */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Confirmar Cancelación de Reserva
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-900 mb-1">
+                      ¿Está seguro que desea cancelar esta reserva?
+                    </p>
+                    <p className="text-sm text-yellow-700">
+                      Esta acción liberará los cupos reservados y no se puede deshacer.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {reservationToCancel && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Reserva:</span>
+                    <span className="font-medium text-gray-900">#{reservationToCancel.id.slice(0, 8)}</span>
+                  </div>
+                  {reservationToCancel.tourTitle && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tour:</span>
+                      <span className="font-medium text-gray-900">{reservationToCancel.tourTitle}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Comprador:</span>
+                    <span className="font-medium text-gray-900">{reservationToCancel.buyerName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total:</span>
+                    <span className="font-medium text-gray-900">${reservationToCancel.totalPrice}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Pasajeros:</span>
+                    <span className="font-medium text-gray-900">{reservationToCancel.numberOfPassengers}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+                data-testid="button-cancel-dialog"
+                className="rounded-lg"
+              >
+                No, Mantener Reserva
+              </Button>
+              <Button
+                onClick={confirmCancelReservation}
+                data-testid="button-confirm-cancel"
+                className="bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Sí, Cancelar Reserva
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
     </SidebarProvider>
