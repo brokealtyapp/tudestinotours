@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ interface Tour {
 
 export default function ToursManagement() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showCreateEditDialog, setShowCreateEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -1129,7 +1131,7 @@ export default function ToursManagement() {
                   variant="outline"
                   onClick={() => {
                     setShowDetailsDialog(false);
-                    window.location.hash = '#/admin?tab=salidas&tour=' + viewingTour.id;
+                    setLocation(`/admin?tab=salidas&tour=${viewingTour.id}`);
                   }}
                   data-testid="button-view-departures"
                 >
