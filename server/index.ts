@@ -68,6 +68,14 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
+  // Initialize default system settings
+  try {
+    await storage.initializeDefaultSettings();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`[INIT] Error inicializando configuraciones por defecto: ${errorMessage}`);
+  }
+
   // Initialize default reminder rules if they don't exist
   try {
     const existingRules = await storage.getReminderRules();
