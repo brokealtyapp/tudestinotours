@@ -42,7 +42,6 @@ interface AuditLog {
 }
 
 const ROLES = [
-  { value: "super_admin", label: "Super Admin", color: "bg-purple-500" },
   { value: "admin", label: "Administrador", color: "bg-red-500" },
   { value: "manager", label: "Gerente", color: "bg-blue-500" },
   { value: "agent", label: "Agente", color: "bg-green-500" },
