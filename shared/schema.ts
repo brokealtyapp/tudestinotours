@@ -226,6 +226,7 @@ export type ReservationTimelineEvent = typeof reservationTimelineEvents.$inferSe
 export const emailTemplates = pgTable("email_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   templateType: text("template_type").notNull().unique(),
+  category: text("category").notNull().default("transactional"),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   variables: jsonb("variables"),
@@ -242,6 +243,26 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
 
 export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+export const emailTemplateVersions = pgTable("email_template_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => emailTemplates.id, { onDelete: "cascade" }),
+  versionNumber: integer("version_number").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  variables: jsonb("variables"),
+  category: text("category").notNull(),
+  changedBy: varchar("changed_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertEmailTemplateVersionSchema = createInsertSchema(emailTemplateVersions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertEmailTemplateVersion = z.infer<typeof insertEmailTemplateVersionSchema>;
+export type EmailTemplateVersion = typeof emailTemplateVersions.$inferSelect;
 
 export const reminderRules = pgTable("reminder_rules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
