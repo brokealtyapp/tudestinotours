@@ -20,6 +20,7 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 - **PDF Generation**: Server-side PDF generation using `@react-pdf/renderer` for branded invoices and itineraries.
 - **Email Service**: SMTP-based transactional email service using nodemailer for confirmations, reminders, and cancellations.
 - **Scheduler**: `node-cron` for daily and periodic automated tasks with dynamic rule-based configuration from database.
+- **Date Handling**: All timestamp columns use `{ mode: "date", withTimezone: true }` to ensure Drizzle returns proper JavaScript Date objects instead of strings, preventing "value.toISOString is not a function" errors.
 
 ### Feature Specifications
 - **Authentication**: JWT-based with role-based access control (Administrator, Client). Login rejects inactive users, and tokens of deactivated users are rejected.
