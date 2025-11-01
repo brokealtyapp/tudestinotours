@@ -21,6 +21,7 @@ import EmailCommunications from "@/components/EmailCommunications";
 import AuditLog from "@/components/AuditLog";
 import UserManagement from "@/components/UserManagement";
 import SystemSettings from "@/components/SystemSettings";
+import { DocumentVerification } from "@/components/DocumentVerification";
 import {
   Dialog,
   DialogContent,
@@ -964,73 +965,7 @@ export default function Admin() {
               )}
 
               {activeSection === "documents" && (
-                <div>
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-semibold text-gray-900">Verificación de Documentos</h2>
-                  </div>
-
-                  {!allPassengers || allPassengers.length === 0 ? (
-                    <p className="text-gray-600 text-center py-8">No hay documentos para verificar</p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {allPassengers
-                        .filter((p: any) => p.passportDocumentUrl)
-                        .map((passenger: any) => (
-                          <div
-                            key={passenger.id}
-                            className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6 space-y-4"
-                            data-testid={`card-document-${passenger.id}`}
-                          >
-                            <div className="aspect-video bg-gray-100 rounded-xl overflow-hidden relative">
-                              <img
-                                src={passenger.passportDocumentUrl}
-                                alt={`Pasaporte de ${passenger.fullName}`}
-                                className="w-full h-full object-cover cursor-pointer"
-                                onClick={() => handleViewDocument(passenger)}
-                              />
-                              <div className="absolute top-3 right-3">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getDocumentStatusBadgeColor(passenger.documentStatus || 'pending')}`}>
-                                  {getDocumentStatusLabel(passenger.documentStatus || 'pending')}
-                                </span>
-                              </div>
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{passenger.fullName}</h3>
-                              <p className="text-sm text-gray-600">Pasaporte: {passenger.passportNumber}</p>
-                              <p className="text-sm text-gray-600">Reserva: {passenger.reservationId}</p>
-                            </div>
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => handleViewDocument(passenger)}
-                                data-testid={`button-view-fullscreen-${passenger.id}`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver
-                              </Button>
-                              {passenger.documentStatus !== "approved" && (
-                                <Button
-                                  size="sm"
-                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                                  onClick={() => {
-                                    setSelectedPassenger(passenger);
-                                    setDocumentNotes("");
-                                    handleUpdateDocumentStatus("approved");
-                                  }}
-                                  data-testid={`button-approve-${passenger.id}`}
-                                >
-                                  <ThumbsUp className="h-4 w-4 mr-2" />
-                                  Aprobar
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                <DocumentVerification />
               )}
             </div>
           </main>
