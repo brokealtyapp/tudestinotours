@@ -100,6 +100,7 @@ export default function DeparturesManagement() {
     status: "active",
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [duplicateDates, setDuplicateDates] = useState<string[]>([""]);
 
   const { data: tours } = useQuery<Tour[]>({ queryKey: ["/api/tours"] });
@@ -114,6 +115,49 @@ export default function DeparturesManagement() {
 
   const getOccupationPercentage = (reserved: number, total: number) => {
     return total > 0 ? Math.round((reserved / total) * 100) : 0;
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!departureForm.tourId) {
+      errors.tourId = "El tour es obligatorio";
+    }
+    
+    if (!departureForm.departureDate) {
+      errors.departureDate = "La fecha de salida es obligatoria";
+    } else if (new Date(departureForm.departureDate) < new Date()) {
+      errors.departureDate = "La fecha de salida debe ser futura";
+    }
+    
+    if (departureForm.returnDate && departureForm.departureDate) {
+      if (new Date(departureForm.returnDate) < new Date(departureForm.departureDate)) {
+        errors.returnDate = "La fecha de regreso debe ser posterior a la de salida";
+      }
+    }
+    
+    if (!departureForm.totalSeats || parseInt(departureForm.totalSeats) < 1) {
+      errors.totalSeats = "Los cupos deben ser al menos 1";
+    }
+    
+    if (!departureForm.price || parseFloat(departureForm.price) <= 0) {
+      errors.price = "El precio debe ser mayor a 0";
+    }
+    
+    if (!departureForm.paymentDeadlineDays || parseInt(departureForm.paymentDeadlineDays) < 1) {
+      errors.paymentDeadlineDays = "El plazo debe ser al menos 1 día";
+    }
+    
+    if (departureForm.supplements) {
+      try {
+        JSON.parse(departureForm.supplements);
+      } catch {
+        errors.supplements = "Debe ser un JSON válido";
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // Filtrado y ordenamiento
@@ -635,8 +679,37 @@ export default function DeparturesManagement() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    No hay salidas registradas
+                  <TableCell colSpan={8} className="text-center py-12">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <Calendar className="w-12 h-12 text-gray-400" />
+                      {searchQuery || filterTourId !== "all" || filterStatus !== "all" || dateFrom || dateTo ? (
+                        <>
+                          <p className="text-lg font-medium text-gray-900">
+                            No se encontraron salidas
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Intenta ajustar los filtros para ver más resultados
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-medium text-gray-900">
+                            No hay salidas programadas
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Comienza creando la primera salida de un tour
+                          </p>
+                          <Button
+                            onClick={handleOpenCreateDialog}
+                            className="mt-2"
+                            data-testid="button-create-first-departure"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Nueva Salida
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
