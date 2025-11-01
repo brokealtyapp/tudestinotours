@@ -34,6 +34,7 @@ export const tours = pgTable("tours", {
   minDepositPercentage: integer("min_deposit_percentage"),
   images: text("images").array().notNull().default(sql`ARRAY[]::text[]`),
   featured: boolean("featured").notNull().default(false),
+  discount: integer("discount").default(0),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   reviewCount: integer("review_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
