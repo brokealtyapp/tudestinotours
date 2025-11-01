@@ -157,7 +157,6 @@ export class ObjectStorageService {
       metadata: {
         contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
       },
-      public: true,
     });
     
     const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
