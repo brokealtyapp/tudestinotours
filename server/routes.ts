@@ -931,14 +931,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get passengers for email
         const passengers = await storage.getPassengersByReservation(reservation.id);
 
+        // Get user for email
+        const user = await storage.getUserByEmail(reservation.buyerEmail);
+        
         // Send confirmation email
-        const emailRecipient = {
-          email: reservation.buyerEmail,
-          name: reservation.buyerName,
-        };
-
-        emailService.sendReservationConfirmation(emailRecipient, reservation, tour, passengers)
-          .catch(error => console.error("Error enviando email:", error));
+        if (user) {
+          emailService.sendReservationConfirmation(user, reservation, tour, passengers)
+            .catch(error => console.error("Error enviando email:", error));
+        }
       }
 
       res.status(201).json({
