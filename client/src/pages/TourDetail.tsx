@@ -260,7 +260,7 @@ export default function TourDetail() {
             <Separator />
 
             {/* Itinerary */}
-            {tour.itinerary && (
+            {tour.itinerary && typeof tour.itinerary === 'string' && (
               <section>
                 <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
@@ -315,11 +315,11 @@ export default function TourDetail() {
             <Separator />
 
             {/* FAQ */}
-            {tour.faqs && tour.faqs.length > 0 && (
+            {tour.faqs && Array.isArray(tour.faqs) && tour.faqs.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-4">Preguntas Frecuentes</h2>
                 <Accordion type="single" collapsible className="w-full">
-                  {tour.faqs.map((faq: any, idx: number) => (
+                  {(tour.faqs as Array<{ question: string; answer: string }>).map((faq, idx) => (
                     <AccordionItem key={idx} value={`faq-${idx}`} data-testid={`faq-${idx}`}>
                       <AccordionTrigger>{faq.question}</AccordionTrigger>
                       <AccordionContent>
