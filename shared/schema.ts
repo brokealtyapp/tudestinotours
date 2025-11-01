@@ -118,6 +118,11 @@ export const passengers = pgTable("passengers", {
 export const insertPassengerSchema = createInsertSchema(passengers).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Hacer explícitamente opcional el campo passportImageUrl
+  passportImageUrl: z.string().optional(),
+  // Hacer explícitamente opcional el campo documentNotes
+  documentNotes: z.string().optional(),
 });
 
 export type InsertPassenger = z.infer<typeof insertPassengerSchema>;
