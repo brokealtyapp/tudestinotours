@@ -388,9 +388,11 @@ export default function ToursManagement() {
       setUploadProgress(20);
 
       // Paso 2: Obtener URL de subida
-      const { uploadURL, publicURL } = await apiRequest("POST", "/api/tours/upload-url", {
+      const response = await apiRequest("POST", "/api/tours/upload-url", {
         filename: file.name,
-      });
+      }) as { uploadURL: string; publicURL: string };
+      
+      const { uploadURL, publicURL } = response;
 
       setUploadProgress(40);
 
