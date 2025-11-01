@@ -51,6 +51,9 @@ export default function Admin() {
     images: [] as string[],
   });
   const [minDepositPercentage, setMinDepositPercentage] = useState("30");
+  const [graceDaysBeforeCancellation, setGraceDaysBeforeCancellation] = useState("3");
+  const [maxInstallmentsAllowed, setMaxInstallmentsAllowed] = useState("6");
+  const [latePaymentSurcharge, setLatePaymentSurcharge] = useState("0");
   const [showInstallmentsDialog, setShowInstallmentsDialog] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [installmentForm, setInstallmentForm] = useState({
@@ -89,9 +92,24 @@ export default function Admin() {
 
   useEffect(() => {
     if (systemConfig) {
-      const config = systemConfig.find((c: any) => c.key === "DEFAULT_MIN_DEPOSIT_PERCENTAGE");
-      if (config) {
-        setMinDepositPercentage(config.value);
+      const minDepositConfig = systemConfig.find((c: any) => c.key === "DEFAULT_MIN_DEPOSIT_PERCENTAGE");
+      if (minDepositConfig) {
+        setMinDepositPercentage(minDepositConfig.value);
+      }
+      
+      const graceDaysConfig = systemConfig.find((c: any) => c.key === "GRACE_DAYS_BEFORE_CANCELLATION");
+      if (graceDaysConfig) {
+        setGraceDaysBeforeCancellation(graceDaysConfig.value);
+      }
+      
+      const maxInstallmentsConfig = systemConfig.find((c: any) => c.key === "MAX_INSTALLMENTS_ALLOWED");
+      if (maxInstallmentsConfig) {
+        setMaxInstallmentsAllowed(maxInstallmentsConfig.value);
+      }
+      
+      const latePaymentConfig = systemConfig.find((c: any) => c.key === "LATE_PAYMENT_SURCHARGE");
+      if (latePaymentConfig) {
+        setLatePaymentSurcharge(latePaymentConfig.value);
       }
     }
   }, [systemConfig]);
@@ -278,11 +296,29 @@ export default function Admin() {
 
   const handleSaveConfig = async () => {
     try {
-      await apiRequest("POST", "/api/config", {
-        key: "DEFAULT_MIN_DEPOSIT_PERCENTAGE",
-        value: minDepositPercentage,
-        description: "Porcentaje mínimo de depósito inicial requerido para todas las reservas"
-      });
+      // Guardar todas las configuraciones de pago
+      await Promise.all([
+        apiRequest("POST", "/api/config", {
+          key: "DEFAULT_MIN_DEPOSIT_PERCENTAGE",
+          value: minDepositPercentage,
+          description: "Porcentaje mínimo de depósito inicial requerido para todas las reservas"
+        }),
+        apiRequest("POST", "/api/config", {
+          key: "GRACE_DAYS_BEFORE_CANCELLATION",
+          value: graceDaysBeforeCancellation,
+          description: "Días de gracia después del vencimiento antes de cancelar automáticamente"
+        }),
+        apiRequest("POST", "/api/config", {
+          key: "MAX_INSTALLMENTS_ALLOWED",
+          value: maxInstallmentsAllowed,
+          description: "Cantidad máxima de cuotas permitidas por reserva"
+        }),
+        apiRequest("POST", "/api/config", {
+          key: "LATE_PAYMENT_SURCHARGE",
+          value: latePaymentSurcharge,
+          description: "Porcentaje de recargo aplicado a pagos tardíos"
+        })
+      ]);
       queryClient.invalidateQueries({ queryKey: ["/api/config"] });
       toast({ title: "Éxito", description: "Configuración guardada exitosamente" });
     } catch (error: any) {
@@ -751,39 +787,99 @@ export default function Admin() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Configuración de Pagos</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Configura los parámetros globales del sistema de pagos y cuotas
+                    </p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
                       <div>
                         <Label htmlFor="min-deposit">Porcentaje Mínimo de Depósito Global (%)</Label>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Este es el porcentaje mínimo que los clientes deben pagar como depósito inicial para cualquier reserva. Puedes configurar excepciones por tour individual.
+                          Porcentaje mínimo que los clientes deben pagar como depósito inicial
                         </p>
-                        <div className="flex gap-4 items-end">
-                          <div className="flex-1 max-w-xs">
-                            <Input
-                              id="min-deposit"
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={minDepositPercentage}
-                              onChange={(e) => setMinDepositPercentage(e.target.value)}
-                              data-testid="input-min-deposit-percentage"
-                            />
-                          </div>
-                          <Button onClick={handleSaveConfig} data-testid="button-save-config">
-                            Guardar Configuración
-                          </Button>
+                        <div className="flex-1 max-w-xs">
+                          <Input
+                            id="min-deposit"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={minDepositPercentage}
+                            onChange={(e) => setMinDepositPercentage(e.target.value)}
+                            data-testid="input-min-deposit-percentage"
+                          />
                         </div>
+                      </div>
+                      
+                      <div className="border-t pt-6">
+                        <Label htmlFor="grace-days">Días de Gracia Antes de Cancelar</Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Días que el sistema esperará después del vencimiento antes de cancelar automáticamente
+                        </p>
+                        <div className="flex-1 max-w-xs">
+                          <Input
+                            id="grace-days"
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={graceDaysBeforeCancellation}
+                            onChange={(e) => setGraceDaysBeforeCancellation(e.target.value)}
+                            data-testid="input-grace-days"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-6">
+                        <Label htmlFor="max-installments">Cantidad Máxima de Cuotas Permitidas</Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Número máximo de cuotas que se pueden crear para una reserva
+                        </p>
+                        <div className="flex-1 max-w-xs">
+                          <Input
+                            id="max-installments"
+                            type="number"
+                            min="1"
+                            max="12"
+                            value={maxInstallmentsAllowed}
+                            onChange={(e) => setMaxInstallmentsAllowed(e.target.value)}
+                            data-testid="input-max-installments"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-6">
+                        <Label htmlFor="late-surcharge">Recargo por Pago Tardío (%)</Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Porcentaje de recargo aplicado cuando un pago se realiza después de su fecha límite
+                        </p>
+                        <div className="flex-1 max-w-xs">
+                          <Input
+                            id="late-surcharge"
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            value={latePaymentSurcharge}
+                            onChange={(e) => setLatePaymentSurcharge(e.target.value)}
+                            data-testid="input-late-surcharge"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-6 flex justify-end">
+                        <Button onClick={handleSaveConfig} data-testid="button-save-config">
+                          Guardar Todas las Configuraciones
+                        </Button>
                       </div>
                       
                       <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">Información Adicional</h3>
                         <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-                          <li>Este porcentaje aplica por defecto a todos los tours nuevos</li>
-                          <li>Puedes configurar un porcentaje diferente para tours específicos en la sección "Tours"</li>
-                          <li>Si un tour tiene un porcentaje configurado, ese valor anula el global</li>
-                          <li>Los clientes deberán pagar al menos este porcentaje del total al hacer la reserva</li>
+                          <li>El porcentaje de depósito aplica por defecto a todos los tours nuevos</li>
+                          <li>Puedes configurar excepciones individuales en la sección "Tours"</li>
+                          <li>Los días de gracia se suman automáticamente a la fecha de vencimiento</li>
+                          <li>El límite de cuotas previene la fragmentación excesiva de pagos</li>
+                          <li>El recargo por pago tardío se calcula sobre el monto de la cuota vencida</li>
                         </ul>
                       </div>
                     </div>
