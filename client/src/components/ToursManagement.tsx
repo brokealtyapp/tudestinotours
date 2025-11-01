@@ -437,7 +437,12 @@ export default function ToursManagement() {
       const response = await apiRequest("POST", "/api/tours/upload-url", {
         filename: file.name,
       });
-      const { uploadURL, publicURL } = await response.json() as { uploadURL: string; publicURL: string };
+      const { uploadURL, publicURL, objectName, bucketName } = await response.json() as { 
+        uploadURL: string; 
+        publicURL: string; 
+        objectName: string; 
+        bucketName: string; 
+      };
 
       setUploadProgress(40);
 
@@ -454,19 +459,21 @@ export default function ToursManagement() {
         throw new Error("Error al subir la imagen");
       }
 
+      setUploadProgress(70);
+
+      // Paso 4: Hacer pública la imagen
+      await apiRequest("POST", "/api/tours/make-public", {
+        bucketName,
+        objectName,
+      });
+
       setUploadProgress(90);
 
-      // Paso 4: Agregar URL pública a la lista de imágenes
-      console.log("[DEBUG] handleFileUpload - publicURL to add:", publicURL);
-      setTourForm(prev => {
-        const newImages = [...prev.images, publicURL];
-        console.log("[DEBUG] handleFileUpload - previous images:", prev.images);
-        console.log("[DEBUG] handleFileUpload - new images array:", newImages);
-        return {
-          ...prev,
-          images: newImages,
-        };
-      });
+      // Paso 5: Agregar URL pública a la lista de imágenes
+      setTourForm(prev => ({
+        ...prev,
+        images: [...prev.images, publicURL],
+      }));
 
       setUploadProgress(100);
 

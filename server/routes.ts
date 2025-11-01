@@ -97,10 +97,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "filename es requerido" });
       }
       const objectStorageService = new ObjectStorageService();
-      const { uploadURL, publicURL } = await objectStorageService.getTourImageUploadURL(filename);
-      res.json({ uploadURL, publicURL });
+      const { uploadURL, publicURL, objectName, bucketName } = await objectStorageService.getTourImageUploadURL(filename);
+      res.json({ uploadURL, publicURL, objectName, bucketName });
     } catch (error: any) {
       console.error("Error generando URL de subida:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/tours/make-public", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { bucketName, objectName } = req.body;
+      if (!bucketName || !objectName) {
+        return res.status(400).json({ error: "bucketName y objectName son requeridos" });
+      }
+      const objectStorageService = new ObjectStorageService();
+      await objectStorageService.makeImagePublic(bucketName, objectName);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error haciendo pública la imagen:", error);
       res.status(500).json({ error: error.message });
     }
   });
