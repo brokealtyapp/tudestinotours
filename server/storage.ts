@@ -766,6 +766,57 @@ export class DbStorage implements IStorage {
   async deletePaymentInstallment(id: string): Promise<void> {
     await db.delete(paymentInstallments).where(eq(paymentInstallments.id, id));
   }
+
+  // Generate payment installments for a reservation
+  async generatePaymentInstallments(
+    reservationId: string,
+    totalAmount: number,
+    paymentDueDate: Date,
+    numberOfInstallments: number = 3
+  ): Promise<PaymentInstallment[]> {
+    // Obtener configuración de depósito mínimo
+    const minDepositSetting = await this.getSetting('MIN_DEPOSIT_PERCENTAGE');
+    const minDepositPercentage = minDepositSetting ? parseFloat(minDepositSetting.value) : 30;
+
+    // Calcular depósito inicial (30% por defecto)
+    const depositAmount = (totalAmount * minDepositPercentage) / 100;
+    const remainingAmount = totalAmount - depositAmount;
+
+    // Calcular monto de cada cuota
+    const installmentAmount = remainingAmount / numberOfInstallments;
+
+    const installments: PaymentInstallment[] = [];
+
+    // Crear depósito inicial (cuota 0)
+    const depositInstallment = await this.createPaymentInstallment({
+      reservationId,
+      installmentNumber: 0,
+      amountDue: depositAmount.toFixed(2),
+      dueDate: paymentDueDate,
+      status: 'pending',
+      description: 'Depósito inicial',
+    });
+    installments.push(depositInstallment);
+
+    // Crear cuotas restantes
+    for (let i = 1; i <= numberOfInstallments; i++) {
+      // Calcular fecha de vencimiento escalonada (cada 30 días después del depósito inicial)
+      const installmentDueDate = new Date(paymentDueDate);
+      installmentDueDate.setDate(installmentDueDate.getDate() + (i * 30));
+
+      const installment = await this.createPaymentInstallment({
+        reservationId,
+        installmentNumber: i,
+        amountDue: installmentAmount.toFixed(2),
+        dueDate: installmentDueDate,
+        status: 'pending',
+        description: `Cuota ${i} de ${numberOfInstallments}`,
+      });
+      installments.push(installment);
+    }
+
+    return installments;
+  }
   
   // System config methods
   async getSystemConfig(key: string): Promise<SystemConfig | undefined> {
