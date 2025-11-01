@@ -19,7 +19,7 @@ export default function CitiesManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async (updatedCities: string[]) => {
-      return apiRequest("PUT", "/api/config", {
+      return apiRequest("POST", "/api/config", {
         key: "AVAILABLE_CITIES",
         value: JSON.stringify(updatedCities),
         description: "Ciudades disponibles para tours"
