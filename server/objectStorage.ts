@@ -1,6 +1,7 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Response } from "express";
 import { randomUUID } from "crypto";
+import sharp from "sharp";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
 
@@ -145,17 +146,33 @@ export class ObjectStorageService {
     }
     
     const publicPath = publicSearchPaths[0];
-    const ext = filename.split('.').pop() || 'jpg';
-    const uniqueFilename = `tour-${randomUUID()}.${ext}`;
+    const uniqueFilename = `tour-${randomUUID()}.webp`; // Usar WebP para mejor compresión
     const fullPath = `${publicPath}/tours/${uniqueFilename}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    // Optimizar imagen con sharp
+    const optimizedBuffer = await sharp(buffer)
+      .resize({
+        width: 1920,
+        height: 1080,
+        fit: 'inside',
+        withoutEnlargement: true, // No agrandar imágenes pequeñas
+      })
+      .webp({
+        quality: 85, // Calidad óptima con buen equilibrio
+        effort: 6,   // Mayor esfuerzo de compresión
+      })
+      .toBuffer();
+    
+    console.log(`Imagen optimizada: ${(buffer.length / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB`);
     
     const bucket = objectStorageClient.bucket(bucketName);
     const file = bucket.file(objectName);
     
-    await file.save(buffer, {
+    await file.save(optimizedBuffer, {
       metadata: {
-        contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+        contentType: 'image/webp',
+        cacheControl: 'public, max-age=31536000', // Cache por 1 año
       },
     });
     

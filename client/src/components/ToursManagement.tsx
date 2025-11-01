@@ -838,7 +838,7 @@ export default function ToursManagement() {
                         Subir imagen desde tu computadora
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        JPG, PNG o WEBP (máx. 5MB)
+                        JPG, PNG o WEBP • Se optimizará automáticamente
                       </p>
                     </>
                   )}
