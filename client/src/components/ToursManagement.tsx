@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Eye, ExternalLink, MapPin, Users, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, ExternalLink, MapPin, Users, Calendar as CalendarIcon, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface Tour {
   id: string;
@@ -84,6 +84,8 @@ export default function ToursManagement() {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const { data: allTours } = useQuery<Tour[]>({ queryKey: ["/api/tours"] });
 
@@ -336,6 +338,84 @@ export default function ToursManagement() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Solo se permiten archivos JPG, PNG o WEBP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar tamaño (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "El archivo no debe superar 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setUploadProgress(0);
+
+      // Paso 1: Obtener URL de subida
+      const { uploadURL, publicURL } = await apiRequest("POST", "/api/tours/upload-url", {
+        filename: file.name,
+      });
+
+      setUploadProgress(30);
+
+      // Paso 2: Subir archivo a Object Storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Error al subir la imagen");
+      }
+
+      setUploadProgress(90);
+
+      // Paso 3: Agregar URL pública a la lista de imágenes
+      setTourForm(prev => ({
+        ...prev,
+        images: [...prev.images, publicURL],
+      }));
+
+      setUploadProgress(100);
+
+      toast({
+        title: "Éxito",
+        description: "Imagen subida correctamente",
+      });
+
+      // Resetear input
+      event.target.value = "";
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al subir la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress(0);
+    }
   };
 
   const getOccupationColor = (percentage: number) => {
@@ -709,48 +789,113 @@ export default function ToursManagement() {
               </p>
             </div>
 
-            <div>
-              <Label>Imágenes (URLs)</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  data-testid="input-image-url"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddImage();
-                    }
-                  }}
+            <div className="space-y-4">
+              <Label>Imágenes del Tour</Label>
+              
+              {/* Subida de archivos */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary transition-colors">
+                <input
+                  type="file"
+                  id="tour-image-upload"
+                  className="hidden"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleFileUpload}
+                  disabled={uploadingImage}
+                  data-testid="input-file-upload"
                 />
-                <Button
-                  type="button"
-                  onClick={handleAddImage}
-                  data-testid="button-add-image"
+                <label
+                  htmlFor="tour-image-upload"
+                  className="flex flex-col items-center justify-center cursor-pointer"
                 >
-                  Agregar
-                </Button>
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
+                      <p className="text-sm text-gray-600 mb-2">Subiendo imagen...</p>
+                      <Progress value={uploadProgress} className="w-full max-w-xs" />
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                      <p className="text-sm font-medium text-gray-900">
+                        Subir imagen desde tu computadora
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        JPG, PNG o WEBP (máx. 5MB)
+                      </p>
+                    </>
+                  )}
+                </label>
               </div>
+
+              {/* O agregar URL */}
+              <div>
+                <Label className="text-xs text-gray-600">O pega una URL externa</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    data-testid="input-image-url"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddImage();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddImage}
+                    variant="outline"
+                    data-testid="button-add-image"
+                  >
+                    Agregar
+                  </Button>
+                </div>
+              </div>
+
+              {/* Galería de imágenes */}
               {tourForm.images.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  <p className="text-sm text-gray-600">
-                    {tourForm.images.length} imagen(es) agregada(s):
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-900">
+                    {tourForm.images.length} imagen(es):
                   </p>
-                  {tourForm.images.map((img, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <span className="flex-1 truncate">{img}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveImage(idx)}
-                        data-testid={`button-remove-image-${idx}`}
+                  <div className="grid grid-cols-2 gap-3">
+                    {tourForm.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group rounded-lg overflow-hidden border border-gray-200"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <img
+                          src={img}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-32 object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 
+                              'https://via.placeholder.com/300x200?text=Error+cargando+imagen';
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                          onClick={() => handleRemoveImage(idx)}
+                          data-testid={`button-remove-image-${idx}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                        {img.includes('storage.googleapis.com') && (
+                          <Badge 
+                            variant="secondary" 
+                            className="absolute bottom-2 left-2 text-xs"
+                          >
+                            Almacenada
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
