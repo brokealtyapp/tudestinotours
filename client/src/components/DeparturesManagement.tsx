@@ -62,8 +62,17 @@ export default function DeparturesManagement() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [editingDeparture, setEditingDeparture] = useState<Departure | null>(null);
   const [duplicatingDeparture, setDuplicatingDeparture] = useState<Departure | null>(null);
+  
+  // Filtros
   const [filterTourId, setFilterTourId] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  
+  // Ordenamiento
+  const [sortBy, setSortBy] = useState<"date" | "occupation" | "price">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   
   const [departureForm, setDepartureForm] = useState({
     tourId: "",
@@ -84,11 +93,69 @@ export default function DeparturesManagement() {
     queryKey: ["/api/departures"],
   });
 
-  const departures = allDepartures?.filter(d => {
-    if (filterTourId !== "all" && d.tourId !== filterTourId) return false;
-    if (filterStatus !== "all" && d.status !== filterStatus) return false;
-    return true;
-  });
+  // Funciones auxiliares
+  const getTourName = (tourId: string) => {
+    return tours?.find(t => t.id === tourId)?.title || "Tour no encontrado";
+  };
+
+  const getOccupationPercentage = (reserved: number, total: number) => {
+    return total > 0 ? Math.round((reserved / total) * 100) : 0;
+  };
+
+  // Filtrado y ordenamiento
+  const filteredAndSortedDepartures = allDepartures
+    ?.filter(d => {
+      // Filtro por tour
+      if (filterTourId !== "all" && d.tourId !== filterTourId) return false;
+      
+      // Filtro por estado
+      if (filterStatus !== "all" && d.status !== filterStatus) return false;
+      
+      // Filtro por búsqueda de texto
+      if (searchQuery) {
+        const tourName = getTourName(d.tourId).toLowerCase();
+        const departureDate = format(new Date(d.departureDate), "dd/MM/yyyy");
+        const searchLower = searchQuery.toLowerCase();
+        
+        if (!tourName.includes(searchLower) && !departureDate.includes(searchLower)) {
+          return false;
+        }
+      }
+      
+      // Filtro por rango de fechas
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        const departure = new Date(d.departureDate);
+        if (departure < from) return false;
+      }
+      
+      if (dateTo) {
+        const to = new Date(dateTo);
+        const departure = new Date(d.departureDate);
+        if (departure > to) return false;
+      }
+      
+      return true;
+    })
+    ?.sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortBy === "date") {
+        const dateA = new Date(a.departureDate).getTime();
+        const dateB = new Date(b.departureDate).getTime();
+        comparison = dateA - dateB;
+      } else if (sortBy === "occupation") {
+        const occA = getOccupationPercentage(a.reservedSeats, a.totalSeats);
+        const occB = getOccupationPercentage(b.reservedSeats, b.totalSeats);
+        comparison = occA - occB;
+      } else if (sortBy === "price") {
+        comparison = parseFloat(a.price) - parseFloat(b.price);
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  
+  const departures = filteredAndSortedDepartures;
 
   const createMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/departures", data),
@@ -277,14 +344,6 @@ export default function DeparturesManagement() {
     setDuplicateDates(newDates);
   };
 
-  const getTourName = (tourId: string) => {
-    return tours?.find(t => t.id === tourId)?.title || "Tour no encontrado";
-  };
-
-  const getOccupationPercentage = (reserved: number, total: number) => {
-    return total > 0 ? Math.round((reserved / total) * 100) : 0;
-  };
-
   const getOccupationColor = (percentage: number) => {
     if (percentage >= 90) return "text-red-600";
     if (percentage >= 70) return "text-orange-600";
@@ -327,37 +386,115 @@ export default function DeparturesManagement() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
-            <Label>Filtrar por Tour</Label>
-            <Select value={filterTourId} onValueChange={setFilterTourId}>
-              <SelectTrigger data-testid="select-filter-tour">
-                <SelectValue placeholder="Todos los tours" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tours</SelectItem>
-                {tours?.map((tour) => (
-                  <SelectItem key={tour.id} value={tour.id}>
-                    {tour.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="bg-white rounded-lg border p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-gray-900">Filtros y Búsqueda</h3>
+            <div className="text-sm text-gray-600">
+              Mostrando {departures?.length || 0} de {allDepartures?.length || 0} salidas
+            </div>
           </div>
-          <div className="flex-1 min-w-[200px]">
-            <Label>Filtrar por Estado</Label>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger data-testid="select-filter-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="active">Activas</SelectItem>
-                <SelectItem value="completed">Completadas</SelectItem>
-                <SelectItem value="cancelled">Canceladas</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <Label className="text-xs text-gray-700">Buscar</Label>
+              <Input
+                placeholder="Tour, fecha..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                data-testid="input-search"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-700">Tour</Label>
+              <Select value={filterTourId} onValueChange={setFilterTourId}>
+                <SelectTrigger data-testid="select-filter-tour" className="mt-1">
+                  <SelectValue placeholder="Todos los tours" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tours</SelectItem>
+                  {tours?.map((tour) => (
+                    <SelectItem key={tour.id} value={tour.id}>
+                      {tour.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-700">Estado</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger data-testid="select-filter-status" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="active">Activas</SelectItem>
+                  <SelectItem value="completed">Completadas</SelectItem>
+                  <SelectItem value="cancelled">Canceladas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-700">Ordenar por</Label>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger data-testid="select-sort-by" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Fecha</SelectItem>
+                  <SelectItem value="occupation">Ocupación</SelectItem>
+                  <SelectItem value="price">Precio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-gray-700">Desde</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                data-testid="input-date-from"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-700">Hasta</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                data-testid="input-date-to"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {(searchQuery || filterTourId !== "all" || filterStatus !== "all" || dateFrom || dateTo) && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterTourId("all");
+                  setFilterStatus("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                data-testid="button-clear-filters"
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border">
