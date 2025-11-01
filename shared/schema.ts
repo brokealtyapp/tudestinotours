@@ -116,7 +116,7 @@ export const insertReservationSchema = createInsertSchema(reservations)
   })
   .extend({
     reservationDate: z.coerce.date(),
-    departureDate: z.coerce.date(),
+    departureDate: z.coerce.date().optional(),
     paymentDueDate: z.coerce.date().nullable().optional(),
     autoCancelAt: z.coerce.date().nullable().optional(),
     totalPrice: z.union([z.string(), z.number()]).transform(val => String(val)),

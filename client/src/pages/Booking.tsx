@@ -308,7 +308,6 @@ export default function Booking() {
         buyerDepartureAirport,
         buyerNationality,
         reservationDate: new Date().toISOString(),
-        departureDate: selectedDeparture.departureDate,
         numberOfPassengers: numPassengers,
         totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
         status: "pending",
