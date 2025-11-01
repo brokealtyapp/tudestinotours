@@ -1328,6 +1328,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/email-templates/:id/duplicate", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const originalTemplate = await storage.getEmailTemplate(req.params.id);
+      if (!originalTemplate) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      
+      const duplicatedTemplate = await storage.createEmailTemplate({
+        templateType: `${originalTemplate.templateType}_copy_${Date.now()}`,
+        category: originalTemplate.category,
+        subject: `${originalTemplate.subject} (Copia)`,
+        body: originalTemplate.body,
+        variables: originalTemplate.variables as any,
+        isActive: false,
+      });
+      
+      res.status(201).json(duplicatedTemplate);
+    } catch (error: any) {
+      console.error("Error duplicando plantilla:", error);
+      res.status(500).json({ error: "Error duplicando plantilla" });
+    }
+  });
+
+  app.get("/api/email-templates/:id/versions", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const versions = await storage.getEmailTemplateVersions(req.params.id);
+      res.json(versions);
+    } catch (error: any) {
+      console.error("Error obteniendo versiones:", error);
+      res.status(500).json({ error: "Error obteniendo versiones" });
+    }
+  });
+
+  app.post("/api/email-templates/:id/test", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { testEmail, variables } = req.body;
+      
+      if (!testEmail) {
+        return res.status(400).json({ error: "Email de prueba requerido" });
+      }
+      
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Plantilla no encontrada" });
+      }
+      
+      let renderedSubject = template.subject;
+      let renderedBody = template.body;
+      
+      if (variables) {
+        Object.keys(variables).forEach(key => {
+          const regex = new RegExp(`{{${key}}}`, 'g');
+          renderedSubject = renderedSubject.replace(regex, variables[key]);
+          renderedBody = renderedBody.replace(regex, variables[key]);
+        });
+      }
+      
+      await smtpService.sendEmail({
+        to: testEmail,
+        subject: `[PRUEBA] ${renderedSubject}`,
+        html: renderedBody,
+      });
+      
+      res.json({ success: true, message: "Email de prueba enviado correctamente" });
+    } catch (error: any) {
+      console.error("Error enviando email de prueba:", error);
+      res.status(500).json({ error: "Error enviando email de prueba" });
+    }
+  });
+
   app.post("/api/email-templates/:id/render", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       const template = await storage.getEmailTemplate(req.params.id);

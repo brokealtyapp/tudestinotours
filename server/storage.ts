@@ -22,6 +22,8 @@ import {
   type InsertReservationTimelineEvent,
   type EmailTemplate,
   type InsertEmailTemplate,
+  type EmailTemplateVersion,
+  type InsertEmailTemplateVersion,
   type ReminderRule,
   type InsertReminderRule,
   type EmailLog,
@@ -41,6 +43,7 @@ import {
   systemConfig,
   reservationTimelineEvents,
   emailTemplates,
+  emailTemplateVersions,
   reminderRules,
   emailLogs,
   auditLogs,
@@ -137,8 +140,12 @@ export interface IStorage {
   getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
   getEmailTemplateByType(templateType: string): Promise<EmailTemplate | undefined>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
-  updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+  updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>, userId?: string): Promise<EmailTemplate | undefined>;
   deleteEmailTemplate(id: string): Promise<void>;
+  
+  // Email template version methods
+  createEmailTemplateVersion(version: InsertEmailTemplateVersion): Promise<EmailTemplateVersion>;
+  getEmailTemplateVersions(templateId: string): Promise<EmailTemplateVersion[]>;
   
   // Reminder rules methods
   getReminderRules(): Promise<ReminderRule[]>;
@@ -1103,7 +1110,32 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+  async updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>, userId?: string): Promise<EmailTemplate | undefined> {
+    // First, get the current version to save as history
+    const currentTemplate = await this.getEmailTemplate(id);
+    
+    if (currentTemplate) {
+      // Count existing versions
+      const existingVersions = await db
+        .select()
+        .from(emailTemplateVersions)
+        .where(eq(emailTemplateVersions.templateId, id));
+      
+      const versionNumber = existingVersions.length + 1;
+      
+      // Save the current state as a version
+      await this.createEmailTemplateVersion({
+        templateId: id,
+        versionNumber,
+        subject: currentTemplate.subject,
+        body: currentTemplate.body,
+        variables: currentTemplate.variables as any,
+        category: currentTemplate.category,
+        changedBy: userId,
+      });
+    }
+    
+    // Now update the template
     const result = await db
       .update(emailTemplates)
       .set({ ...template, updatedAt: new Date() })
@@ -1114,6 +1146,19 @@ export class DbStorage implements IStorage {
 
   async deleteEmailTemplate(id: string): Promise<void> {
     await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+  }
+
+  async createEmailTemplateVersion(version: InsertEmailTemplateVersion): Promise<EmailTemplateVersion> {
+    const result = await db.insert(emailTemplateVersions).values(version).returning();
+    return result[0];
+  }
+
+  async getEmailTemplateVersions(templateId: string): Promise<EmailTemplateVersion[]> {
+    return await db
+      .select()
+      .from(emailTemplateVersions)
+      .where(eq(emailTemplateVersions.templateId, templateId))
+      .orderBy(desc(emailTemplateVersions.versionNumber));
   }
 
   async getReminderRules(): Promise<ReminderRule[]> {
