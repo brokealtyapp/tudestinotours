@@ -122,6 +122,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check if email exists (public endpoint for UX feedback)
+  app.get("/api/users/check-email", async (req: Request, res: Response) => {
+    try {
+      const email = req.query.email as string;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email es requerido" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      
+      // Return only whether the email exists, no sensitive data
+      res.json({ 
+        exists: !!existingUser,
+        hasAccount: !!existingUser 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al verificar el email" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
