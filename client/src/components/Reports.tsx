@@ -93,8 +93,8 @@ export function Reports() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Reportes y Análisis</h2>
-        <p className="text-sm text-gray-600">Visualiza métricas clave y genera reportes</p>
+        <h2 className="text-xl font-semibold text-foreground">Reportes y Análisis</h2>
+        <p className="text-sm text-muted-foreground">Visualiza métricas clave y genera reportes</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -159,9 +159,9 @@ function SalesReport() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white rounded-2xl shadow-sm">
+      <Card className="bg-card rounded-2xl shadow-sm">
         <CardHeader className="p-6">
-          <CardTitle className="text-lg font-semibold text-gray-900">Filtros</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -235,46 +235,46 @@ function SalesReport() {
       {report && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">Ingreso Total</CardTitle>
-                <DollarSign className="h-4 w-4 text-gray-600" />
+                <CardTitle className="text-sm font-medium text-foreground">Ingreso Total</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-total-revenue">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-total-revenue">
                   ${report.summary.totalRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">Reservas</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-gray-600" />
+                <CardTitle className="text-sm font-medium text-foreground">Reservas</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-total-reservations">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-total-reservations">
                   {report.summary.totalReservations}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">Ticket Promedio</CardTitle>
-                <TrendingUp className="h-4 w-4 text-gray-600" />
+                <CardTitle className="text-sm font-medium text-foreground">Ticket Promedio</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-average-order">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-average-order">
                   ${report.summary.averageOrderValue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-white rounded-2xl shadow-sm">
+          <Card className="bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-2 p-6">
-              <CardTitle className="text-lg font-semibold text-gray-900">Ventas por Tour</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Ventas por Tour</CardTitle>
               <Button onClick={handleExport} variant="outline" size="sm" data-testid="button-export-sales">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
@@ -311,9 +311,9 @@ function SalesReport() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-2xl shadow-sm">
+          <Card className="bg-card rounded-2xl shadow-sm">
             <CardHeader className="p-6">
-              <CardTitle className="text-lg font-semibold text-gray-900">Ventas por Mes</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Ventas por Mes</CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0">
               <ResponsiveContainer width="100%" height={300}>
@@ -371,9 +371,9 @@ function OccupationReport() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-white rounded-2xl shadow-sm">
+      <Card className="bg-card rounded-2xl shadow-sm">
         <CardHeader className="p-6">
-          <CardTitle className="text-lg font-semibold text-gray-900">Filtros</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -423,9 +423,9 @@ function OccupationReport() {
 
       {report && (
         <>
-          <Card className="bg-white rounded-2xl shadow-sm">
+          <Card className="bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-2 p-6">
-              <CardTitle className="text-lg font-semibold text-gray-900">Ocupación por Salida</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Ocupación por Salida</CardTitle>
               <Button onClick={handleExport} variant="outline" size="sm" data-testid="button-export-occupation">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
@@ -485,9 +485,9 @@ function OccupationReport() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-2xl shadow-sm">
+          <Card className="bg-card rounded-2xl shadow-sm">
             <CardHeader className="p-6">
-              <CardTitle className="text-lg font-semibold text-gray-900">Gráfico de Ocupación</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Gráfico de Ocupación</CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0">
               <ResponsiveContainer width="100%" height={400}>
@@ -546,58 +546,58 @@ function AgingReport() {
       {report && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">Vigentes (0-7 días)</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">Vigentes (0-7 días)</CardTitle>
                 <DollarSign className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-bucket-current">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-bucket-current">
                   ${report.buckets.current.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">8-14 días</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">8-14 días</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-bucket-8-14">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-bucket-8-14">
                   ${report.buckets.days8to14.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">15-30 días</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">15-30 días</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-bucket-15-30">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-bucket-15-30">
                   ${report.buckets.days15to30.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-2xl shadow-sm">
+            <Card className="bg-card rounded-2xl shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-6">
-                <CardTitle className="text-sm font-medium text-gray-900">Vencidas (+30 días)</CardTitle>
+                <CardTitle className="text-sm font-medium text-foreground">Vencidas (+30 días)</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900" data-testid="text-bucket-overdue">
+                <div className="text-2xl font-bold text-foreground" data-testid="text-bucket-overdue">
                   ${report.buckets.overdue.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-white rounded-2xl shadow-sm">
+          <Card className="bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-2 p-6">
-              <CardTitle className="text-lg font-semibold text-gray-900">Cuentas Pendientes por Cobrar</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Cuentas Pendientes por Cobrar</CardTitle>
               <Button onClick={handleExport} variant="outline" size="sm" data-testid="button-export-aging">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar CSV
