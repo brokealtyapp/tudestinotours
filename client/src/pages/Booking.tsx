@@ -181,17 +181,9 @@ export default function Booking() {
       }
     }
 
-    if (currentStep === 3) {
-      const missingPassports = passengers.some((p) => !p.passportImageUrl);
-      if (missingPassports) {
-        toast({
-          title: "Error",
-          description: "Por favor sube las imágenes de pasaporte de todos los pasajeros",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+    // NOTE: Se eliminó la validación obligatoria de documentos de pasaporte
+    // Los pasajeros pueden crear su reserva sin subir documentos
+    // y subirlos posteriormente (documentos opcionales)
 
     if (currentStep < 4) {
       setCurrentStep((currentStep + 1) as BookingStep);
