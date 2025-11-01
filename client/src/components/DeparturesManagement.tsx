@@ -126,8 +126,14 @@ export default function DeparturesManagement() {
     
     if (!departureForm.departureDate) {
       errors.departureDate = "La fecha de salida es obligatoria";
-    } else if (new Date(departureForm.departureDate) < new Date()) {
-      errors.departureDate = "La fecha de salida debe ser futura";
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(departureForm.departureDate);
+      selectedDate.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        errors.departureDate = "La fecha de salida no puede ser anterior a hoy";
+      }
     }
     
     if (departureForm.returnDate && departureForm.departureDate) {
