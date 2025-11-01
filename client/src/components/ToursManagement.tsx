@@ -314,6 +314,8 @@ export default function ToursManagement() {
       return;
     }
 
+    console.log("[DEBUG] handleSave - tourForm.images BEFORE filter:", tourForm.images);
+    
     const data: any = {
       title: tourForm.title,
       description: tourForm.description,
@@ -325,6 +327,9 @@ export default function ToursManagement() {
       featured: tourForm.featured,
       discount: tourForm.discount ? parseInt(tourForm.discount) : 0,
     };
+
+    console.log("[DEBUG] handleSave - data.images AFTER filter:", data.images);
+    console.log("[DEBUG] handleSave - complete data object:", data);
 
     if (tourForm.minDepositPercentage) {
       data.minDepositPercentage = parseInt(tourForm.minDepositPercentage);
@@ -426,10 +431,16 @@ export default function ToursManagement() {
       setUploadProgress(90);
 
       // Paso 4: Agregar URL pública a la lista de imágenes
-      setTourForm(prev => ({
-        ...prev,
-        images: [...prev.images, publicURL],
-      }));
+      console.log("[DEBUG] handleFileUpload - publicURL to add:", publicURL);
+      setTourForm(prev => {
+        const newImages = [...prev.images, publicURL];
+        console.log("[DEBUG] handleFileUpload - previous images:", prev.images);
+        console.log("[DEBUG] handleFileUpload - new images array:", newImages);
+        return {
+          ...prev,
+          images: newImages,
+        };
+      });
 
       setUploadProgress(100);
 
