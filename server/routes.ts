@@ -75,19 +75,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tours/images", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  app.post("/api/tours/upload-url", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
-      if (!req.body.imageURL) {
-        return res.status(400).json({ error: "imageURL es requerido" });
+      const { filename } = req.body;
+      if (!filename) {
+        return res.status(400).json({ error: "filename es requerido" });
       }
       const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(
-        req.body.imageURL,
-      );
-      res.status(200).json({ objectPath });
+      const { uploadURL, publicURL } = await objectStorageService.getTourImageUploadURL(filename);
+      res.json({ uploadURL, publicURL });
     } catch (error: any) {
-      console.error("Error normalizando ruta de imagen:", error);
-      res.status(500).json({ error: "Error interno del servidor" });
+      console.error("Error generando URL de subida:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 

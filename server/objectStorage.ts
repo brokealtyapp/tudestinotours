@@ -114,6 +114,30 @@ export class ObjectStorageService {
     });
   }
 
+  async getTourImageUploadURL(filename: string): Promise<{ uploadURL: string; publicURL: string }> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+    
+    const publicPath = publicSearchPaths[0];
+    const ext = filename.split('.').pop() || 'jpg';
+    const uniqueFilename = `tour-${randomUUID()}.${ext}`;
+    const fullPath = `${publicPath}/tours/${uniqueFilename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    const uploadURL = await signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 900,
+    });
+    
+    const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+    
+    return { uploadURL, publicURL };
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
