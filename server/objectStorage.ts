@@ -117,6 +117,7 @@ export class ObjectStorageService {
 
   async getTourImageUploadURL(filename: string): Promise<{ uploadURL: string; publicURL: string }> {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
+    console.log("[DEBUG] getTourImageUploadURL - publicSearchPaths:", publicSearchPaths);
     if (publicSearchPaths.length === 0) {
       throw new Error("No public search paths configured");
     }
@@ -125,7 +126,10 @@ export class ObjectStorageService {
     const ext = filename.split('.').pop() || 'jpg';
     const uniqueFilename = `tour-${randomUUID()}.${ext}`;
     const fullPath = `${publicPath}/tours/${uniqueFilename}`;
+    console.log("[DEBUG] getTourImageUploadURL - fullPath:", fullPath);
+    
     const { bucketName, objectName } = parseObjectPath(fullPath);
+    console.log("[DEBUG] getTourImageUploadURL - bucketName:", bucketName, "objectName:", objectName);
     
     const uploadURL = await signObjectURL({
       bucketName,
@@ -133,8 +137,10 @@ export class ObjectStorageService {
       method: "PUT",
       ttlSec: 900,
     });
+    console.log("[DEBUG] getTourImageUploadURL - uploadURL generated");
     
     const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+    console.log("[DEBUG] getTourImageUploadURL - publicURL:", publicURL);
     
     return { uploadURL, publicURL };
   }
