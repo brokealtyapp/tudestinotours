@@ -260,11 +260,11 @@ export default function TourDetail() {
             <Separator />
 
             {/* Itinerary */}
-            {tour.itinerary && (
+            {tour.itinerary && typeof tour.itinerary === 'string' && tour.itinerary.trim().length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
-                  {String(tour.itinerary)}
+                  {tour.itinerary as string}
                 </div>
               </section>
             )}
