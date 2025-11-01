@@ -115,7 +115,7 @@ export class ObjectStorageService {
     });
   }
 
-  async getTourImageUploadURL(filename: string): Promise<{ uploadURL: string; publicURL: string; objectName: string; bucketName: string }> {
+  async getTourImageUploadURL(filename: string): Promise<{ uploadURL: string; imagePath: string }> {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     if (publicSearchPaths.length === 0) {
       throw new Error("No public search paths configured");
@@ -135,16 +135,10 @@ export class ObjectStorageService {
       ttlSec: 900,
     });
     
-    const publicURL = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+    // Retornar ruta relativa del backend en lugar de URL pública de GCS
+    const imagePath = `/api/tours/images/${uniqueFilename}`;
     
-    return { uploadURL, publicURL, objectName, bucketName };
-  }
-
-  async makeImagePublic(bucketName: string, objectName: string): Promise<void> {
-    const bucket = objectStorageClient.bucket(bucketName);
-    const file = bucket.file(objectName);
-    
-    await file.makePublic();
+    return { uploadURL, imagePath };
   }
 
   async uploadTourImage(filename: string, buffer: Buffer): Promise<string> {

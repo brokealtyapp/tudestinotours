@@ -437,11 +437,9 @@ export default function ToursManagement() {
       const response = await apiRequest("POST", "/api/tours/upload-url", {
         filename: file.name,
       });
-      const { uploadURL, publicURL, objectName, bucketName } = await response.json() as { 
+      const { uploadURL, imagePath } = await response.json() as { 
         uploadURL: string; 
-        publicURL: string; 
-        objectName: string; 
-        bucketName: string; 
+        imagePath: string; 
       };
 
       setUploadProgress(40);
@@ -459,20 +457,12 @@ export default function ToursManagement() {
         throw new Error("Error al subir la imagen");
       }
 
-      setUploadProgress(70);
-
-      // Paso 4: Hacer pública la imagen
-      await apiRequest("POST", "/api/tours/make-public", {
-        bucketName,
-        objectName,
-      });
-
       setUploadProgress(90);
 
-      // Paso 5: Agregar URL pública a la lista de imágenes
+      // Paso 4: Agregar ruta de imagen a la lista
       setTourForm(prev => ({
         ...prev,
-        images: [...prev.images, publicURL],
+        images: [...prev.images, imagePath],
       }));
 
       setUploadProgress(100);
@@ -1016,7 +1006,7 @@ export default function ToursManagement() {
                         >
                           <X className="w-4 h-4" />
                         </Button>
-                        {img && img.includes('storage.googleapis.com') && (
+                        {img && img.startsWith('/api/tours/images/') && (
                           <Badge 
                             variant="secondary" 
                             className="absolute bottom-2 left-2 text-xs"
