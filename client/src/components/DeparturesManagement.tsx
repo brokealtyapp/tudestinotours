@@ -797,6 +797,11 @@ export default function DeparturesManagement() {
                   onChange={(e) =>
                     setDepartureForm({ ...departureForm, totalSeats: e.target.value })
                   }
+                  onKeyDown={(e) => {
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                      e.preventDefault();
+                    }
+                  }}
                   data-testid="input-total-seats"
                 />
                 {formErrors.totalSeats && (
@@ -813,6 +818,11 @@ export default function DeparturesManagement() {
                   onChange={(e) =>
                     setDepartureForm({ ...departureForm, price: e.target.value })
                   }
+                  onKeyDown={(e) => {
+                    if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                      e.preventDefault();
+                    }
+                  }}
                   data-testid="input-price"
                 />
                 {formErrors.price && (
@@ -830,6 +840,11 @@ export default function DeparturesManagement() {
                 onChange={(e) =>
                   setDepartureForm({ ...departureForm, paymentDeadlineDays: e.target.value })
                 }
+                onKeyDown={(e) => {
+                  if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                    e.preventDefault();
+                  }
+                }}
                 data-testid="input-payment-deadline"
               />
               {formErrors.paymentDeadlineDays && (
