@@ -193,6 +193,52 @@ export default function Admin() {
     }
   };
 
+  const downloadPDF = async (endpoint: string, filename: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "No se encontró token de autenticación",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al descargar PDF: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Éxito",
+        description: "PDF descargado exitosamente",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al descargar el PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending":
@@ -670,10 +716,10 @@ export default function Admin() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  const token = localStorage.getItem('token');
-                                  window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
-                                }}
+                                onClick={() => downloadPDF(
+                                  `/api/reservations/${reservation.id}/invoice`,
+                                  `factura-${reservation.id.substring(0, 8)}.pdf`
+                                )}
                                 data-testid={`button-download-invoice-${reservation.id}`}
                               >
                                 <FileText className="h-4 w-4 mr-2" />
@@ -683,10 +729,10 @@ export default function Admin() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => {
-                                    const token = localStorage.getItem('token');
-                                    window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
-                                  }}
+                                  onClick={() => downloadPDF(
+                                    `/api/reservations/${reservation.id}/itinerary`,
+                                    `itinerario-${reservation.id.substring(0, 8)}.pdf`
+                                  )}
                                   data-testid={`button-download-itinerary-${reservation.id}`}
                                 >
                                   <Download className="h-4 w-4 mr-2" />
