@@ -22,9 +22,10 @@ import heroImage from "@assets/generated_images/Tropical_beach_paradise_hero_36b
 
 type Tour = {
   id: string;
-  name: string;
-  destination: string;
-  availableSeats: number;
+  title: string;
+  location: string;
+  maxPassengers: number;
+  reservedSeats: number;
 };
 
 type GuestCounts = {
@@ -279,7 +280,7 @@ export default function Hero() {
                     ) : tours && tours.length > 0 ? (
                       tours.map((tour) => (
                         <SelectItem key={tour.id} value={tour.id}>
-                          {tour.name}
+                          {tour.title}
                         </SelectItem>
                       ))
                     ) : (
