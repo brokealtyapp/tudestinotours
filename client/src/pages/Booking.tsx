@@ -21,6 +21,7 @@ import { Check, ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react"
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 type BookingStep = 1 | 2 | 3 | 4;
 
@@ -282,15 +283,6 @@ export default function Booking() {
 
   const handleSubmitBooking = async () => {
     try {
-      if (!paymentUrl) {
-        toast({
-          title: "Error",
-          description: "Por favor proporciona una URL de pago",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
       if (!selectedDeparture) {
         toast({
@@ -317,7 +309,7 @@ export default function Booking() {
         totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
         status: "pending",
         paymentStatus: "pending",
-        paymentLink: paymentUrl,
+        paymentLink: null,
       };
 
       const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);
@@ -825,39 +817,178 @@ export default function Booking() {
 
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="p-6 bg-muted rounded-lg space-y-4">
-                  <h3 className="font-bold text-lg">Resumen de Reserva</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Tour:</span>
-                      <span className="font-semibold">{tour.title}</span>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resumen de Reserva</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Información del Tour y Salida */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground">Detalles del Tour</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm">Tour:</span>
+                          <span className="font-semibold">{tour.title}</span>
+                        </div>
+                        {(() => {
+                          const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
+                          if (selectedDeparture) {
+                            return (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-sm">Fecha de salida:</span>
+                                  <span className="font-semibold">
+                                    {format(new Date(selectedDeparture.departureDate), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                                  </span>
+                                </div>
+                                {selectedDeparture.returnDate && (
+                                  <div className="flex justify-between">
+                                    <span className="text-sm">Fecha de regreso:</span>
+                                    <span className="font-semibold">
+                                      {format(new Date(selectedDeparture.returnDate), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <div className="flex justify-between">
+                          <span className="text-sm">Ubicación:</span>
+                          <span className="font-semibold">{tour.location}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Duración:</span>
+                          <span className="font-semibold">{tour.duration}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Pasajeros:</span>
-                      <span className="font-semibold">{numPassengers}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                      <span>Monto Total:</span>
-                      <span className="text-primary">
-                        ${tour.price * numPassengers}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="payment-url">URL de Pago Externa</Label>
-                  <Input
-                    id="payment-url"
-                    placeholder="Ingresa el enlace de pago (ej: PayPal, Stripe, etc.)"
-                    value={paymentUrl}
-                    onChange={(e) => setPaymentUrl(e.target.value)}
-                    data-testid="input-payment-url"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ingresa la URL donde completaste o completarás el pago
-                  </p>
-                </div>
+                    <Separator />
+
+                    {/* Información del Comprador */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground">Datos del Comprador</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm">Nombre:</span>
+                          <span className="font-semibold">{buyerName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Email:</span>
+                          <span className="font-semibold">{buyerEmail}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Teléfono:</span>
+                          <span className="font-semibold">{buyerPhone}</span>
+                        </div>
+                        {buyerPassportNumber && (
+                          <div className="flex justify-between">
+                            <span className="text-sm">Pasaporte:</span>
+                            <span className="font-semibold">{buyerPassportNumber}</span>
+                          </div>
+                        )}
+                        {buyerNationality && (
+                          <div className="flex justify-between">
+                            <span className="text-sm">Nacionalidad:</span>
+                            <span className="font-semibold">{buyerNationality}</span>
+                          </div>
+                        )}
+                        {buyerDepartureAirport && (
+                          <div className="flex justify-between">
+                            <span className="text-sm">Aeropuerto de salida:</span>
+                            <span className="font-semibold">{buyerDepartureAirport}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Lista de Pasajeros */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground">
+                        Pasajeros ({numPassengers})
+                      </h4>
+                      <div className="space-y-4">
+                        {passengers.map((passenger, index) => (
+                          <Card key={index} className="bg-muted/50">
+                            <CardContent className="pt-4 space-y-2">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-semibold">Pasajero {index + 1}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Nombre:</span>
+                                  <p className="font-medium">{passenger.name}</p>
+                                </div>
+                                {passenger.dateOfBirth && (
+                                  <div>
+                                    <span className="text-muted-foreground">Fecha de nacimiento:</span>
+                                    <p className="font-medium">
+                                      {format(new Date(passenger.dateOfBirth), "dd/MM/yyyy")}
+                                    </p>
+                                  </div>
+                                )}
+                                {passenger.nationality && (
+                                  <div>
+                                    <span className="text-muted-foreground">Nacionalidad:</span>
+                                    <p className="font-medium">{passenger.nationality}</p>
+                                  </div>
+                                )}
+                                {passenger.passportNumber && (
+                                  <div>
+                                    <span className="text-muted-foreground">Pasaporte:</span>
+                                    <p className="font-medium">{passenger.passportNumber}</p>
+                                  </div>
+                                )}
+                                {passenger.passportImageUrl && (
+                                  <div className="col-span-2">
+                                    <span className="text-muted-foreground">Documento:</span>
+                                    <p className="font-medium text-green-600">✓ Cargado</p>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Desglose de Precios */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground">Desglose de Precios</h4>
+                      <div className="space-y-2">
+                        {(() => {
+                          const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
+                          const pricePerPerson = selectedDeparture ? parseFloat(selectedDeparture.price) : 0;
+                          const totalPrice = pricePerPerson * numPassengers;
+                          
+                          return (
+                            <>
+                              <div className="flex justify-between text-sm">
+                                <span>Precio por persona:</span>
+                                <span className="font-semibold">${pricePerPerson.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span>Número de pasajeros:</span>
+                                <span className="font-semibold">{numPassengers}</span>
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between text-lg font-bold pt-2">
+                                <span>Total a Pagar:</span>
+                                <span className="text-primary">${totalPrice.toFixed(2)}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </CardContent>
