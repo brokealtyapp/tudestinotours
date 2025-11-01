@@ -233,6 +233,30 @@ const InvoiceDocument = ({ reservation, tour, passengers, installments, user }: 
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Lista de Pasajeros</Text>
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableCol1}>#</Text>
+              <Text style={styles.tableCol2}>Nombre Completo</Text>
+              <Text style={styles.tableCol3}>Fecha Nac.</Text>
+              <Text style={styles.tableCol4}>Pasaporte</Text>
+              <Text style={styles.tableCol5}>Nacionalidad</Text>
+            </View>
+            {passengers.map((passenger, index) => (
+              <View key={passenger.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                <Text style={styles.tableCol1}>{index + 1}</Text>
+                <Text style={styles.tableCol2}>{passenger.fullName}</Text>
+                <Text style={styles.tableCol3}>
+                  {new Date(passenger.dateOfBirth).toLocaleDateString('es-ES')}
+                </Text>
+                <Text style={styles.tableCol4}>{passenger.passportNumber}</Text>
+                <Text style={styles.tableCol5}>{passenger.nationality}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cronograma de Pagos</Text>
           <View style={styles.table}>
             <View style={styles.tableHeader}>
