@@ -53,6 +53,12 @@ interface Tour {
   discount: number | null;
   rating: string | null;
   reviewCount: number | null;
+  itinerary: string | null;
+  includes: string[];
+  excludes: string[];
+  cancellationPolicy: string | null;
+  requirements: string | null;
+  faqs: any;
   createdAt: Date;
 }
 
@@ -87,6 +93,12 @@ export default function ToursManagement() {
     images: [] as string[],
     featured: false,
     discount: "",
+    itinerary: "",
+    includes: [] as string[],
+    excludes: [] as string[],
+    cancellationPolicy: "",
+    requirements: "",
+    faqs: [] as { question: string; answer: string }[],
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -260,6 +272,12 @@ export default function ToursManagement() {
       images: [],
       featured: false,
       discount: "",
+      itinerary: "",
+      includes: [],
+      excludes: [],
+      cancellationPolicy: "",
+      requirements: "",
+      faqs: [],
     });
     setFormErrors({});
     setEditingTour(null);
@@ -284,6 +302,12 @@ export default function ToursManagement() {
       images: tour.images || [],
       featured: tour.featured || false,
       discount: tour.discount ? tour.discount.toString() : "",
+      itinerary: tour.itinerary || "",
+      includes: tour.includes || [],
+      excludes: tour.excludes || [],
+      cancellationPolicy: tour.cancellationPolicy || "",
+      requirements: tour.requirements || "",
+      faqs: tour.faqs || [],
     });
     setShowCreateEditDialog(true);
   };
@@ -328,6 +352,12 @@ export default function ToursManagement() {
       images: tourForm.images.filter(img => img && img.trim() !== ''),
       featured: tourForm.featured,
       discount: tourForm.discount ? parseInt(tourForm.discount) : 0,
+      itinerary: tourForm.itinerary || null,
+      includes: tourForm.includes.filter(item => item && item.trim() !== ''),
+      excludes: tourForm.excludes.filter(item => item && item.trim() !== ''),
+      cancellationPolicy: tourForm.cancellationPolicy || null,
+      requirements: tourForm.requirements || null,
+      faqs: tourForm.faqs.filter(faq => faq.question && faq.answer) || null,
     };
 
     console.log("[DEBUG] handleSave - data.images AFTER filter:", data.images);
@@ -1016,6 +1046,198 @@ export default function ToursManagement() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Información Detallada del Tour</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label>Itinerario</Label>
+                  <Textarea
+                    value={tourForm.itinerary}
+                    onChange={(e) => setTourForm({ ...tourForm, itinerary: e.target.value })}
+                    rows={6}
+                    placeholder="Describe el itinerario día por día del tour..."
+                    data-testid="input-itinerary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Describe cada día del tour con actividades y detalles
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Lo que Incluye</Label>
+                  {tourForm.includes.map((item, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <Input
+                        value={item}
+                        onChange={(e) => {
+                          const newIncludes = [...tourForm.includes];
+                          newIncludes[idx] = e.target.value;
+                          setTourForm({ ...tourForm, includes: newIncludes });
+                        }}
+                        placeholder="Ej: Desayunos incluidos"
+                        data-testid={`input-includes-${idx}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setTourForm({ 
+                            ...tourForm, 
+                            includes: tourForm.includes.filter((_, i) => i !== idx) 
+                          });
+                        }}
+                        data-testid={`button-remove-includes-${idx}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTourForm({ ...tourForm, includes: [...tourForm.includes, ""] })}
+                    data-testid="button-add-includes"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Item
+                  </Button>
+                </div>
+
+                <div>
+                  <Label>Lo que NO Incluye</Label>
+                  {tourForm.excludes.map((item, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <Input
+                        value={item}
+                        onChange={(e) => {
+                          const newExcludes = [...tourForm.excludes];
+                          newExcludes[idx] = e.target.value;
+                          setTourForm({ ...tourForm, excludes: newExcludes });
+                        }}
+                        placeholder="Ej: Comidas no especificadas"
+                        data-testid={`input-excludes-${idx}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setTourForm({ 
+                            ...tourForm, 
+                            excludes: tourForm.excludes.filter((_, i) => i !== idx) 
+                          });
+                        }}
+                        data-testid={`button-remove-excludes-${idx}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTourForm({ ...tourForm, excludes: [...tourForm.excludes, ""] })}
+                    data-testid="button-add-excludes"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Item
+                  </Button>
+                </div>
+
+                <div>
+                  <Label>Políticas de Cancelación</Label>
+                  <Textarea
+                    value={tourForm.cancellationPolicy}
+                    onChange={(e) => setTourForm({ ...tourForm, cancellationPolicy: e.target.value })}
+                    rows={4}
+                    placeholder="Describe las políticas de cancelación del tour..."
+                    data-testid="input-cancellation-policy"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Políticas específicas para este tour (sobrescribe las políticas globales)
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Requisitos</Label>
+                  <Textarea
+                    value={tourForm.requirements}
+                    onChange={(e) => setTourForm({ ...tourForm, requirements: e.target.value })}
+                    rows={4}
+                    placeholder="Lista los requisitos necesarios para este tour..."
+                    data-testid="input-requirements"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Requisitos específicos para este tour (sobrescribe los requisitos globales)
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Preguntas Frecuentes (FAQs)</Label>
+                  {tourForm.faqs.map((faq, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 mb-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-sm">Pregunta {idx + 1}</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setTourForm({ 
+                              ...tourForm, 
+                              faqs: tourForm.faqs.filter((_, i) => i !== idx) 
+                            });
+                          }}
+                          data-testid={`button-remove-faq-${idx}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={faq.question}
+                        onChange={(e) => {
+                          const newFaqs = [...tourForm.faqs];
+                          newFaqs[idx] = { ...newFaqs[idx], question: e.target.value };
+                          setTourForm({ ...tourForm, faqs: newFaqs });
+                        }}
+                        placeholder="Escribe la pregunta..."
+                        data-testid={`input-faq-question-${idx}`}
+                      />
+                      <Textarea
+                        value={faq.answer}
+                        onChange={(e) => {
+                          const newFaqs = [...tourForm.faqs];
+                          newFaqs[idx] = { ...newFaqs[idx], answer: e.target.value };
+                          setTourForm({ ...tourForm, faqs: newFaqs });
+                        }}
+                        rows={2}
+                        placeholder="Escribe la respuesta..."
+                        data-testid={`input-faq-answer-${idx}`}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTourForm({ 
+                      ...tourForm, 
+                      faqs: [...tourForm.faqs, { question: "", answer: "" }] 
+                    })}
+                    data-testid="button-add-faq"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Pregunta
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
