@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Calendar, Users, AlertCircle, LogIn } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,10 @@ export default function Booking() {
   const [buyerPassportNumber, setBuyerPassportNumber] = useState("");
   const [buyerDepartureAirport, setBuyerDepartureAirport] = useState("");
   const [buyerNationality, setBuyerNationality] = useState("");
+  
+  // Email validation state
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   const { data: tour, isLoading: tourLoading } = useQuery<any>({
     queryKey: ["/api/tours", tourId],
@@ -121,6 +126,42 @@ export default function Booking() {
       });
     }
   }, [buyerName, buyerPassportNumber, buyerNationality]);
+
+  // Check if email exists with debounce
+  useEffect(() => {
+    // Skip if user is already logged in or email is empty
+    if (user || !buyerEmail || buyerEmail.trim() === "") {
+      setEmailExists(false);
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(buyerEmail)) {
+      setEmailExists(false);
+      return;
+    }
+
+    setCheckingEmail(true);
+    
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/users/check-email?email=${encodeURIComponent(buyerEmail)}`);
+        const data = await response.json();
+        setEmailExists(data.exists);
+      } catch (error) {
+        console.error("Error checking email:", error);
+        setEmailExists(false);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(timeoutId);
+      setCheckingEmail(false);
+    };
+  }, [buyerEmail, user]);
 
   if (tourLoading) {
     return (
@@ -574,6 +615,9 @@ export default function Booking() {
                           placeholder="ejemplo@correo.com"
                           data-testid="input-buyer-email"
                         />
+                        {checkingEmail && (
+                          <p className="text-xs text-muted-foreground mt-1">Verificando email...</p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor="buyer-phone">Teléfono *</Label>
@@ -587,6 +631,39 @@ export default function Booking() {
                         />
                       </div>
                     </div>
+                    
+                    {emailExists && !user && (
+                      <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800" data-testid="alert-email-exists">
+                        <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertDescription className="text-blue-900 dark:text-blue-100">
+                          <div className="flex flex-col gap-2">
+                            <p className="font-medium">Ya tienes una cuenta registrada con este correo.</p>
+                            <p className="text-sm">
+                              Puedes continuar con la reserva de todas formas, o iniciar sesión para ver tus reservas anteriores.
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setLocation("/login")}
+                                data-testid="button-go-to-login"
+                              >
+                                <LogIn className="h-4 w-4 mr-1" />
+                                Iniciar Sesión
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => setEmailExists(false)}
+                                data-testid="button-continue-anyway"
+                              >
+                                Continuar de todas formas
+                              </Button>
+                            </div>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="buyer-passport">Número de Pasaporte *</Label>
