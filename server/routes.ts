@@ -390,6 +390,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/tours/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
+      // Validación: verificar si tiene salidas activas
+      const departures = await storage.getDepartures(req.params.id);
+      const activeDepartures = departures.filter(d => d.status === 'active');
+      
+      if (activeDepartures.length > 0) {
+        return res.status(400).json({ 
+          error: `No se puede eliminar el tour. Tiene ${activeDepartures.length} salida(s) activa(s). Cancela o completa las salidas primero.` 
+        });
+      }
+      
       await storage.deleteTour(req.params.id);
       res.status(204).send();
     } catch (error: any) {
