@@ -1069,7 +1069,7 @@ export class DbStorage implements IStorage {
 
     const monthMap = new Map<string, { revenue: number; count: number }>();
     results.forEach(r => {
-      const month = r.reservationDate.toISOString().substring(0, 7);
+      const month = new Date(r.reservationDate).toISOString().substring(0, 7);
       const existing = monthMap.get(month);
       if (existing) {
         existing.revenue += parseFloat(r.totalPrice);
