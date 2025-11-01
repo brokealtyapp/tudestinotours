@@ -244,8 +244,9 @@ export default function Booking() {
     if (!file) return;
 
     try {
-      const uploadUrlResponse: any = await apiRequest("POST", "/api/objects/upload");
-      const { uploadURL } = uploadUrlResponse;
+      const uploadUrlResponse = await apiRequest("POST", "/api/objects/upload");
+      const uploadData = await uploadUrlResponse.json();
+      const { uploadURL } = uploadData;
 
       const uploadResponse = await fetch(uploadURL, {
         method: "PUT",
@@ -259,11 +260,12 @@ export default function Booking() {
         throw new Error("Upload failed");
       }
 
-      const normalizeResponse: any = await apiRequest("POST", "/api/objects/normalize", {
+      const normalizeResponse = await apiRequest("POST", "/api/objects/normalize", {
         imageURL: uploadURL,
       });
+      const normalizeData = await normalizeResponse.json();
 
-      handlePassengerChange(index, "passportImageUrl", normalizeResponse.objectPath);
+      handlePassengerChange(index, "passportImageUrl", normalizeData.objectPath);
 
       toast({
         title: "Éxito",
