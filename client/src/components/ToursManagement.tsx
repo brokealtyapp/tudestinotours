@@ -309,7 +309,7 @@ export default function ToursManagement() {
       price: tourForm.price,
       duration: tourForm.duration,
       maxPassengers: parseInt(tourForm.maxPassengers),
-      images: tourForm.images,
+      images: tourForm.images.filter(img => img && img.trim() !== ''),
     };
 
     if (tourForm.minDepositPercentage) {
@@ -881,7 +881,7 @@ export default function ToursManagement() {
                     {tourForm.images.length} imagen(es):
                   </p>
                   <div className="grid grid-cols-2 gap-3">
-                    {tourForm.images.map((img, idx) => (
+                    {tourForm.images.filter(img => img && img.trim() !== '').map((img, idx) => (
                       <div
                         key={idx}
                         className="relative group rounded-lg overflow-hidden border border-gray-200"
@@ -905,7 +905,7 @@ export default function ToursManagement() {
                         >
                           <X className="w-4 h-4" />
                         </Button>
-                        {img.includes('storage.googleapis.com') && (
+                        {img && img.includes('storage.googleapis.com') && (
                           <Badge 
                             variant="secondary" 
                             className="absolute bottom-2 left-2 text-xs"
