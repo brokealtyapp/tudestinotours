@@ -212,10 +212,15 @@ export const paymentInstallments = pgTable("payment_installments", {
   createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
-export const insertPaymentInstallmentSchema = createInsertSchema(paymentInstallments).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertPaymentInstallmentSchema = createInsertSchema(paymentInstallments)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    dueDate: z.coerce.date(),
+    paidAt: z.coerce.date().nullable().optional(),
+  });
 
 export type InsertPaymentInstallment = z.infer<typeof insertPaymentInstallmentSchema>;
 export type PaymentInstallment = typeof paymentInstallments.$inferSelect;
