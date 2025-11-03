@@ -50,6 +50,8 @@ import {
   systemSettings,
   insertPaymentInstallmentSchema,
   insertPassengerSchema,
+  insertDepartureSchema,
+  insertReservationSchema,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -345,7 +347,9 @@ export class DbStorage implements IStorage {
   }
 
   async createDeparture(departure: InsertDeparture): Promise<Departure> {
-    const result = await db.insert(departures).values(departure).returning();
+    // Validar y transformar fechas con el schema
+    const validatedDeparture = insertDepartureSchema.parse(departure);
+    const result = await db.insert(departures).values(validatedDeparture).returning();
     return result[0];
   }
 
@@ -563,7 +567,9 @@ export class DbStorage implements IStorage {
   }
 
   async createReservation(reservation: InsertReservation): Promise<Reservation> {
-    const result = await db.insert(reservations).values(reservation).returning();
+    // Validar y transformar fechas con el schema
+    const validatedReservation = insertReservationSchema.parse(reservation);
+    const result = await db.insert(reservations).values(validatedReservation).returning();
     return result[0];
   }
 
