@@ -816,7 +816,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error obteniendo admin para notificación:", error);
       }
 
-      res.status(201).json(reservation);
+      res.status(201).json({
+        ...reservation,
+        isNewUser,
+        generatedPassword: isNewUser ? generatedPassword : undefined,
+      });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

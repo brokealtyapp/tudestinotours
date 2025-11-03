@@ -13,13 +13,16 @@ export default function BookingConfirmation() {
   const { user } = useAuth();
   const [reservationId, setReservationId] = useState<string>("");
   const [buyerEmail, setBuyerEmail] = useState<string>("");
+  const [isNewUser, setIsNewUser] = useState<boolean>(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("reservationId") || "";
     const email = params.get("email") || "";
+    const newUser = params.get("isNewUser") === "true";
     setReservationId(id);
     setBuyerEmail(email);
+    setIsNewUser(newUser);
 
     if (!id) {
       setLocation("/tours");
@@ -72,30 +75,43 @@ export default function BookingConfirmation() {
               
               {!user ? (
                 <div className="space-y-4">
-                  <div className="bg-primary/5 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      Para ver y gestionar tu reserva en cualquier momento, crea una cuenta o inicia sesión:
-                    </p>
-                    <div className="flex gap-3 flex-wrap">
+                  {isNewUser ? (
+                    <div className="bg-primary/5 rounded-lg p-4 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1">Tu Cuenta Ha Sido Creada</h4>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Hemos creado automáticamente una cuenta para ti. Revisa tu email <strong>{buyerEmail}</strong> donde encontrarás tus credenciales de acceso.
+                          </p>
+                          <Button
+                            variant="default"
+                            onClick={() => setLocation("/signin")}
+                            data-testid="button-signin"
+                          >
+                            Iniciar Sesión
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-primary/5 rounded-lg p-4 space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Para ver y gestionar tu reserva en cualquier momento, inicia sesión con tu cuenta:
+                      </p>
                       <Button
                         variant="default"
-                        onClick={() => setLocation(`/signup?email=${encodeURIComponent(buyerEmail)}`)}
-                        data-testid="button-create-account"
-                      >
-                        Crear Cuenta
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
                         onClick={() => setLocation("/signin")}
                         data-testid="button-signin"
                       >
                         Iniciar Sesión
+                        <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </div>
-                  </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    Al crear una cuenta podrás acceder a tu historial de reservas, gestionar tus pagos y recibir actualizaciones importantes.
+                    Con tu cuenta podrás acceder a tu historial de reservas, gestionar tus pagos y recibir actualizaciones importantes.
                   </p>
                 </div>
               ) : (

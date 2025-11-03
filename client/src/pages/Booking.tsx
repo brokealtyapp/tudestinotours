@@ -394,7 +394,7 @@ export default function Booking() {
         description: "¡Reserva creada exitosamente!",
       });
 
-      setLocation(`/booking-confirmation?reservationId=${reservation.id}&email=${encodeURIComponent(buyerEmail)}`);
+      setLocation(`/booking-confirmation?reservationId=${reservation.id}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
     } catch (error: any) {
       toast({
         title: "Error",
