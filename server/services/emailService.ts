@@ -1,4 +1,5 @@
 import type { Reservation, Tour, User, Passenger } from "@shared/schema";
+import nodemailer from "nodemailer";
 
 interface EmailData {
   to: string;
@@ -7,16 +8,46 @@ interface EmailData {
 }
 
 class EmailService {
-  private resendApiKey: string | undefined;
+  private transporter: nodemailer.Transporter | null = null;
   private fromEmail: string;
+  private smtpConfigured: boolean = false;
 
   constructor() {
-    this.resendApiKey = process.env.RESEND_API_KEY;
-    this.fromEmail = process.env.FROM_EMAIL || "noreply@tudestino.tours";
+    this.fromEmail = process.env.SMTP_FROM || "noreply@tudestino.tours";
+    this.initializeTransporter();
+  }
+
+  private initializeTransporter() {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+
+    if (smtpHost && smtpPort && smtpUser && smtpPassword) {
+      try {
+        this.transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: parseInt(smtpPort),
+          secure: parseInt(smtpPort) === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPassword,
+          },
+        });
+        this.smtpConfigured = true;
+        console.log("[SMTP] Servicio SMTP inicializado correctamente");
+      } catch (error) {
+        console.error("[SMTP] Error inicializando transportador SMTP:", error);
+        this.smtpConfigured = false;
+      }
+    } else {
+      console.log("[SMTP] Credenciales SMTP no configuradas - emails en modo simulado");
+      this.smtpConfigured = false;
+    }
   }
 
   private async sendEmail(data: EmailData): Promise<boolean> {
-    if (!this.resendApiKey) {
+    if (!this.smtpConfigured || !this.transporter) {
       console.log(`[EMAIL SIMULADO] Para: ${data.to}`);
       console.log(`[EMAIL SIMULADO] Asunto: ${data.subject}`);
       console.log(`[EMAIL SIMULADO] Contenido: ${data.html.substring(0, 200)}...`);
@@ -24,29 +55,17 @@ class EmailService {
     }
 
     try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.resendApiKey}`,
-        },
-        body: JSON.stringify({
-          from: this.fromEmail,
-          to: data.to,
-          subject: data.subject,
-          html: data.html,
-        }),
+      await this.transporter.sendMail({
+        from: this.fromEmail,
+        to: data.to,
+        subject: data.subject,
+        html: data.html,
       });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error(`Error enviando email a ${data.to}:`, error);
-        return false;
-      }
-
+      
+      console.log(`[SMTP] Email enviado exitosamente a ${data.to}`);
       return true;
     } catch (error) {
-      console.error(`Error enviando email a ${data.to}:`, error);
+      console.error(`[SMTP] Error enviando email a ${data.to}:`, error);
       return false;
     }
   }
