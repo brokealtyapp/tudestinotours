@@ -42,14 +42,25 @@ import { useToast } from "@/hooks/use-toast";
 import { QuillEditor } from "./QuillEditor";
 
 const TEMPLATE_TYPES = [
-  { value: "confirmation", label: "Confirmación de Reserva" },
-  { value: "reminder", label: "Recordatorio de Pago" },
-  { value: "cancellation", label: "Cancelación de Reserva" },
-  { value: "rejection", label: "Rechazo de Documento" },
+  // Emails para clientes
+  { value: "reservation_confirmation", label: "Confirmación de Reserva" },
+  { value: "payment_reminder", label: "Recordatorio de Pago" },
+  { value: "reservation_cancellation", label: "Cancelación de Reserva" },
+  { value: "document_rejection", label: "Rechazo de Documento" },
+  { value: "document_approval", label: "Aprobación de Documento" },
   { value: "payment_confirmed", label: "Pago Confirmado" },
+  { value: "welcome_credentials", label: "Bienvenida con Credenciales" },
+  { value: "trip_reminder", label: "Recordatorio de Viaje" },
+  
+  // Emails para administradores
+  { value: "admin_new_reservation", label: "Nueva Reserva (Admin)" },
+  { value: "admin_document_uploaded", label: "Documento Subido (Admin)" },
+  { value: "admin_reservation_expiring", label: "Reserva por Vencer (Admin)" },
 ];
 
 const CATEGORIES = [
+  { value: "cliente", label: "Cliente" },
+  { value: "admin", label: "Administrador" },
   { value: "transactional", label: "Transaccional" },
   { value: "reminders", label: "Recordatorios" },
   { value: "notifications", label: "Notificaciones" },
@@ -57,11 +68,20 @@ const CATEGORIES = [
 ];
 
 const DEFAULT_VARIABLES: Record<string, string[]> = {
-  confirmation: ["clientName", "reservationCode", "tourName", "departureDate", "totalPrice"],
-  reminder: ["clientName", "reservationCode", "tourName", "amountDue", "dueDate"],
-  cancellation: ["clientName", "reservationCode", "tourName", "reason"],
-  rejection: ["clientName", "passengerName", "rejectionReason"],
-  payment_confirmed: ["clientName", "reservationCode", "amountPaid", "balance"],
+  // Emails para clientes
+  reservation_confirmation: ["buyerName", "tourName", "departureDate", "numberOfPassengers", "totalPrice", "dashboardLink"],
+  payment_reminder: ["buyerName", "tourName", "amount", "dueDate", "paymentLink"],
+  reservation_cancellation: ["buyerName", "tourName", "reason"],
+  document_rejection: ["passengerName", "rejectionReason", "uploadLink"],
+  document_approval: ["passengerName", "dashboardLink"],
+  payment_confirmed: ["buyerName", "amount", "paymentDate", "dashboardLink"],
+  welcome_credentials: ["userName", "email", "temporaryPassword", "loginLink"],
+  trip_reminder: ["buyerName", "tourName", "departureDate", "daysUntilDeparture", "dashboardLink"],
+  
+  // Emails para administradores
+  admin_new_reservation: ["reservationId", "tourName", "buyerName", "buyerEmail", "buyerPhone", "numberOfPassengers", "totalPrice", "departureDate", "adminLink"],
+  admin_document_uploaded: ["passengerName", "reservationId", "tourName", "documentType", "adminLink"],
+  admin_reservation_expiring: ["reservationId", "buyerName", "buyerEmail", "tourName", "pendingAmount", "dueDate", "daysRemaining", "adminLink"],
 };
 
 const QUILL_MODULES = {
