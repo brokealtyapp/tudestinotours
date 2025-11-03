@@ -701,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...validatedData,
           userId, // Ahora siempre hay un userId válido
           tourId: departure.tourId,
-          departureDate: departure.departureDate,
+          departureDate, // Usar la variable Date ya convertida (línea 674)
           totalPrice: totalPrice.toString(),
           paymentDueDate,
           autoCancelAt,
