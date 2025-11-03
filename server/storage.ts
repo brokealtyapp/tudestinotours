@@ -48,6 +48,7 @@ import {
   emailLogs,
   auditLogs,
   systemSettings,
+  insertPaymentInstallmentSchema,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -887,7 +888,9 @@ export class DbStorage implements IStorage {
   }
   
   async createPaymentInstallment(installment: InsertPaymentInstallment): Promise<PaymentInstallment> {
-    const result = await db.insert(paymentInstallments).values(installment).returning();
+    // Validar y transformar fechas con el schema
+    const validatedInstallment = insertPaymentInstallmentSchema.parse(installment);
+    const result = await db.insert(paymentInstallments).values(validatedInstallment).returning();
     return result[0];
   }
   
