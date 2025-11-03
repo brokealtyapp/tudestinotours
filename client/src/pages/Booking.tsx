@@ -367,7 +367,7 @@ export default function Booking() {
         buyerDepartureAirport,
         buyerNationality,
         reservationDate: new Date().toISOString(),
-        departureDate: selectedDeparture.departureDate,
+        departureDate: new Date(selectedDeparture.departureDate).toISOString(),
         numberOfPassengers: numPassengers,
         totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
         status: "pending",
@@ -377,7 +377,7 @@ export default function Booking() {
           fullName: p.name,
           passportNumber: p.passportNumber,
           nationality: p.nationality,
-          dateOfBirth: p.dateOfBirth,
+          dateOfBirth: new Date(p.dateOfBirth).toISOString(),
           passportImageUrl: p.passportImageUrl,
         })),
       };
