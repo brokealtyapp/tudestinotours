@@ -383,6 +383,9 @@ export default function Booking() {
       };
 
       const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);
+      
+      console.log("Reserva creada:", reservation);
+      console.log("ID de reserva:", reservation?.id);
 
       // Las cuotas de pago ya se generan automáticamente en el backend al crear la reserva
       // ya no es necesario crear un payment manual aquí
@@ -393,6 +396,16 @@ export default function Booking() {
         title: "Éxito",
         description: "¡Reserva creada exitosamente!",
       });
+
+      if (!reservation?.id) {
+        console.error("ERROR: La reserva no tiene ID", reservation);
+        toast({
+          title: "Error",
+          description: "La reserva se creó pero no se pudo obtener el ID",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setLocation(`/booking-confirmation?reservationId=${reservation.id}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
     } catch (error: any) {
