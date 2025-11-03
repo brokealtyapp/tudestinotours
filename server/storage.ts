@@ -423,11 +423,37 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  private async generateReservationCode(tx: any): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `TD-${year}-`;
+    
+    // Obtener el último código del año actual
+    const lastReservation = await tx
+      .select({ reservationCode: reservations.reservationCode })
+      .from(reservations)
+      .where(sql`${reservations.reservationCode} LIKE ${prefix + '%'}`)
+      .orderBy(desc(reservations.reservationCode))
+      .limit(1);
+    
+    let nextNumber = 1;
+    if (lastReservation.length > 0 && lastReservation[0].reservationCode) {
+      const lastCode = lastReservation[0].reservationCode;
+      const lastNumber = parseInt(lastCode.split('-')[2] || '0');
+      nextNumber = lastNumber + 1;
+    }
+    
+    // Formatear con 3 dígitos (001, 002, etc.)
+    const formattedNumber = nextNumber.toString().padStart(3, '0');
+    return `${prefix}${formattedNumber}`;
+  }
+
   async createReservationAtomic(reservation: InsertReservation, departureId: string, numberOfPassengers: number): Promise<Reservation> {
     // Validar y transformar fechas con el schema para defensa en profundidad
     const validatedReservation = insertReservationSchema.parse(reservation);
     
     return await db.transaction(async (tx) => {
+      // 0. Generar código de reserva único
+      const reservationCode = await this.generateReservationCode(tx);
       // 1. Obtener y bloquear la salida para actualización
       const departureResult = await tx
         .select()
@@ -446,10 +472,10 @@ export class DbStorage implements IStorage {
         throw new Error(`No hay suficientes cupos disponibles. Disponibles: ${availableSeats}, Solicitados: ${numberOfPassengers}`);
       }
 
-      // 3. Crear la reserva con datos validados
+      // 3. Crear la reserva con datos validados y código generado
       const newReservationResult = await tx
         .insert(reservations)
-        .values(validatedReservation)
+        .values({ ...validatedReservation, reservationCode })
         .returning();
       
       const newReservation = newReservationResult[0];
@@ -520,10 +546,13 @@ export class DbStorage implements IStorage {
       
       // 2. Create all reservations
       for (const { reservation, departureId, passengers: passengersList } of reservationsData) {
-        // Create reservation
+        // Generate unique reservation code
+        const reservationCode = await this.generateReservationCode(tx);
+        
+        // Create reservation with code
         const newReservationResult = await tx
           .insert(reservations)
-          .values(reservation)
+          .values({ ...reservation, reservationCode })
           .returning();
         
         const newReservation = newReservationResult[0];
@@ -572,8 +601,14 @@ export class DbStorage implements IStorage {
   async createReservation(reservation: InsertReservation): Promise<Reservation> {
     // Validar y transformar fechas con el schema
     const validatedReservation = insertReservationSchema.parse(reservation);
-    const result = await db.insert(reservations).values(validatedReservation).returning();
-    return result[0];
+    
+    return await db.transaction(async (tx) => {
+      // Generate unique reservation code
+      const reservationCode = await this.generateReservationCode(tx);
+      
+      const result = await tx.insert(reservations).values({ ...validatedReservation, reservationCode }).returning();
+      return result[0];
+    });
   }
 
   async cancelReservationAtomic(reservationId: string, newStatus: string, newPaymentStatus?: string): Promise<Reservation> {

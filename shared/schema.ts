@@ -89,6 +89,7 @@ export type Departure = typeof departures.$inferSelect;
 
 export const reservations = pgTable("reservations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reservationCode: text("reservation_code").notNull().unique(),
   tourId: varchar("tour_id").notNull().references(() => tours.id),
   departureId: varchar("departure_id").references(() => departures.id),
   userId: varchar("user_id").references(() => users.id),
@@ -116,6 +117,7 @@ export const reservations = pgTable("reservations", {
 export const insertReservationSchema = createInsertSchema(reservations)
   .omit({
     id: true,
+    reservationCode: true,
     createdAt: true,
   })
   .extend({

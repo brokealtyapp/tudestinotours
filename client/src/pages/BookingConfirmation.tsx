@@ -11,20 +11,20 @@ import { Badge } from "@/components/ui/badge";
 export default function BookingConfirmation() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const [reservationId, setReservationId] = useState<string>("");
+  const [reservationCode, setReservationCode] = useState<string>("");
   const [buyerEmail, setBuyerEmail] = useState<string>("");
   const [isNewUser, setIsNewUser] = useState<boolean>(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const id = params.get("reservationId") || "";
+    const code = params.get("reservationCode") || "";
     const email = params.get("email") || "";
     const newUser = params.get("isNewUser") === "true";
-    setReservationId(id);
+    setReservationCode(code);
     setBuyerEmail(email);
     setIsNewUser(newUser);
 
-    if (!id) {
+    if (!code) {
       setLocation("/tours");
     }
   }, [setLocation]);
@@ -49,11 +49,11 @@ export default function BookingConfirmation() {
               <p className="text-muted-foreground">
                 Tu reserva ha sido creada exitosamente
               </p>
-              {reservationId && (
+              {reservationCode && (
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm text-muted-foreground">Número de Orden:</span>
-                  <Badge variant="secondary" className="text-base font-mono">
-                    {reservationId.slice(0, 8).toUpperCase()}
+                  <span className="text-sm text-muted-foreground">Código de Reserva:</span>
+                  <Badge variant="secondary" className="text-lg font-mono font-bold">
+                    {reservationCode}
                   </Badge>
                 </div>
               )}

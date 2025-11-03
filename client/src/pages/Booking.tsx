@@ -408,7 +408,7 @@ export default function Booking() {
         return;
       }
 
-      setLocation(`/booking-confirmation?reservationId=${reservation.id}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
+      setLocation(`/booking-confirmation?reservationCode=${encodeURIComponent(reservation.reservationCode)}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
     } catch (error: any) {
       toast({
         title: "Error",

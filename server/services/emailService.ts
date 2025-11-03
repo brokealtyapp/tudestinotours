@@ -99,7 +99,7 @@ class EmailService {
           </div>
           <div class="content">
             <p>Estimado/a ${user.name},</p>
-            <p>Hemos recibido tu reserva para el tour <strong>${tour.title}</strong>. Tu número de reserva es: <span class="highlight">${reservation.id}</span></p>
+            <p>Hemos recibido tu reserva para el tour <strong>${tour.title}</strong>. Tu código de reserva es: <span class="highlight">${reservation.reservationCode}</span></p>
             
             ${generatedPassword ? `
               <div class="credentials">
@@ -142,7 +142,7 @@ class EmailService {
 
     return this.sendEmail({
       to: user.email,
-      subject: `Reserva Recibida - ${tour.title} - Ref: ${reservation.id}`,
+      subject: `Reserva Recibida - ${tour.title} - Ref: ${reservation.reservationCode}`,
       html,
     });
   }
@@ -186,7 +186,7 @@ class EmailService {
             
             <div class="details">
               <h3>Detalles de tu Reserva</h3>
-              <p><strong>Número de reserva:</strong> ${reservation.id}</p>
+              <p><strong>Código de reserva:</strong> ${reservation.reservationCode}</p>
               <p><strong>Tour:</strong> ${tour.title}</p>
               <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
               <p><strong>Monto total:</strong> $${reservation.totalPrice}</p>
@@ -257,7 +257,7 @@ class EmailService {
             
             <div class="details">
               <h3>Detalles de la Reserva Cancelada</h3>
-              <p><strong>Número de reserva:</strong> ${reservation.id}</p>
+              <p><strong>Código de reserva:</strong> ${reservation.reservationCode}</p>
               <p><strong>Tour:</strong> ${tour.title}</p>
               <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
               <p><strong>Fecha límite de pago:</strong> ${reservation.paymentDueDate ? new Date(reservation.paymentDueDate).toLocaleDateString('es-ES') : 'No definida'}</p>
@@ -320,7 +320,7 @@ class EmailService {
 
             <div class="details">
               <h3>Información del Viaje</h3>
-              <p><strong>Número de confirmación:</strong> ${reservation.id}</p>
+              <p><strong>Código de confirmación:</strong> ${reservation.reservationCode}</p>
               <p><strong>Tour:</strong> ${tour.title}</p>
               <p><strong>Destino:</strong> ${tour.location}</p>
               <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
@@ -414,7 +414,7 @@ class EmailService {
 
             <div class="details">
               <h3>Detalles de la Reserva</h3>
-              <p><strong>Número de reserva:</strong> ${reservation.id}</p>
+              <p><strong>Código de reserva:</strong> ${reservation.reservationCode}</p>
               ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
               <p><strong>Pasajero:</strong> ${passenger.fullName}</p>
               <p><strong>Pasaporte:</strong> ${passenger.passportNumber}</p>
@@ -452,7 +452,7 @@ class EmailService {
 
     return this.sendEmail({
       to: buyer.email,
-      subject: `⚠️ Acción Requerida - Documento Rechazado - Reserva ${reservation.id}`,
+      subject: `⚠️ Acción Requerida - Documento Rechazado - Reserva ${reservation.reservationCode}`,
       html,
     });
   }
@@ -487,7 +487,7 @@ class EmailService {
           <div class="content">
             <div class="notification">
               <p><strong>Se ha registrado una nueva reserva en el sistema</strong></p>
-              <p>ID: <span class="highlight">${reservation.id}</span></p>
+              <p>Código: <span class="highlight">${reservation.reservationCode}</span></p>
             </div>
 
             <div class="details">
@@ -568,7 +568,7 @@ class EmailService {
 
             <div class="details">
               <h3>Información de la Reserva</h3>
-              <p><strong>ID Reserva:</strong> ${reservation.id}</p>
+              <p><strong>Código Reserva:</strong> ${reservation.reservationCode}</p>
               ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
               <p><strong>Cliente:</strong> ${buyer.name} (${buyer.email})</p>
               <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
@@ -586,7 +586,7 @@ class EmailService {
 
     return this.sendEmail({
       to: adminEmail,
-      subject: `📄 Documento Pendiente - ${passenger.fullName} - Reserva ${reservation.id}`,
+      subject: `📄 Documento Pendiente - ${passenger.fullName} - Reserva ${reservation.reservationCode}`,
       html,
     });
   }
@@ -626,7 +626,7 @@ class EmailService {
 
             <div class="details">
               <h3>Información de la Reserva</h3>
-              <p><strong>ID:</strong> ${reservation.id}</p>
+              <p><strong>Código:</strong> ${reservation.reservationCode}</p>
               <p><strong>Cliente:</strong> ${reservation.buyerName} (${reservation.buyerEmail})</p>
               <p><strong>Tour:</strong> ${tour.title}</p>
               <p><strong>Monto:</strong> $${reservation.totalPrice}</p>
@@ -645,7 +645,7 @@ class EmailService {
 
     return this.sendEmail({
       to: adminEmail,
-      subject: `⚠️ Alerta: Reserva ${reservation.id} vence en ${daysRemaining} día${daysRemaining > 1 ? 's' : ''}`,
+      subject: `⚠️ Alerta: Reserva ${reservation.reservationCode} vence en ${daysRemaining} día${daysRemaining > 1 ? 's' : ''}`,
       html,
     });
   }
@@ -690,7 +690,7 @@ class EmailService {
               <h3>Detalles</h3>
               <p><strong>Pasajero:</strong> ${passenger.fullName}</p>
               <p><strong>Número de pasaporte:</strong> ${passenger.passportNumber}</p>
-              <p><strong>Reserva:</strong> ${reservation.id}</p>
+              <p><strong>Reserva:</strong> ${reservation.reservationCode}</p>
               ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
             </div>
 
@@ -708,7 +708,7 @@ class EmailService {
 
     return this.sendEmail({
       to: buyer.email,
-      subject: `✓ Documento Aprobado - ${passenger.fullName} - Reserva ${reservation.id}`,
+      subject: `✓ Documento Aprobado - ${passenger.fullName} - Reserva ${reservation.reservationCode}`,
       html,
     });
   }
@@ -825,7 +825,7 @@ class EmailService {
               <p><strong>Destino:</strong> ${tour.location}</p>
               <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
               <p><strong>Número de pasajeros:</strong> ${reservation.numberOfPassengers}</p>
-              <p><strong>Número de confirmación:</strong> ${reservation.id}</p>
+              <p><strong>Código de confirmación:</strong> ${reservation.reservationCode}</p>
             </div>
 
             <div class="checklist">
