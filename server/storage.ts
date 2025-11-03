@@ -49,6 +49,7 @@ import {
   auditLogs,
   systemSettings,
   insertPaymentInstallmentSchema,
+  insertPassengerSchema,
 } from "@shared/schema";
 import { eq, desc, and, or, ilike, sql, gte, lte } from "drizzle-orm";
 
@@ -676,7 +677,9 @@ export class DbStorage implements IStorage {
   }
 
   async createPassenger(passenger: InsertPassenger): Promise<Passenger> {
-    const result = await db.insert(passengers).values(passenger).returning();
+    // Validar y transformar fechas con el schema
+    const validatedPassenger = insertPassengerSchema.parse(passenger);
+    const result = await db.insert(passengers).values(validatedPassenger).returning();
     return result[0];
   }
 
