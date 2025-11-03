@@ -424,6 +424,9 @@ export class DbStorage implements IStorage {
   }
 
   async createReservationAtomic(reservation: InsertReservation, departureId: string, numberOfPassengers: number): Promise<Reservation> {
+    // Validar y transformar fechas con el schema para defensa en profundidad
+    const validatedReservation = insertReservationSchema.parse(reservation);
+    
     return await db.transaction(async (tx) => {
       // 1. Obtener y bloquear la salida para actualización
       const departureResult = await tx
@@ -443,10 +446,10 @@ export class DbStorage implements IStorage {
         throw new Error(`No hay suficientes cupos disponibles. Disponibles: ${availableSeats}, Solicitados: ${numberOfPassengers}`);
       }
 
-      // 3. Crear la reserva
+      // 3. Crear la reserva con datos validados
       const newReservationResult = await tx
         .insert(reservations)
-        .values(reservation)
+        .values(validatedReservation)
         .returning();
       
       const newReservation = newReservationResult[0];
