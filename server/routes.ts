@@ -1047,7 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             buyerDepartureAirport: bulkRes.buyer.departureAirport || null,
             buyerNationality: bulkRes.buyer.nationality || null,
             reservationDate: new Date(),
-            departureDate: departure.departureDate,
+            departureDate, // Usar la variable Date ya convertida (línea 1029)
             totalPrice: totalPrice.toString(),
             numberOfPassengers: bulkRes.passengers.length,
             paymentDueDate,
