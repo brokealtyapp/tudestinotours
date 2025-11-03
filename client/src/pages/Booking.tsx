@@ -382,7 +382,8 @@ export default function Booking() {
         })),
       };
 
-      const reservation: any = await apiRequest("POST", "/api/reservations", reservationData);
+      const response = await apiRequest("POST", "/api/reservations", reservationData);
+      const reservation: any = await response.json();
       
       console.log("Reserva creada:", reservation);
       console.log("ID de reserva:", reservation?.id);
