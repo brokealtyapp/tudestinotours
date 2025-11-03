@@ -10,11 +10,45 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, CreditCard, ChevronDown, ChevronUp, FileText, Download } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReservationTimeline from "@/components/ReservationTimeline";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [expandedReservations, setExpandedReservations] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
+
+  // Función para descargar PDFs con autenticación
+  const downloadPDF = async (reservationId: string, type: 'invoice' | 'itinerary') => {
+    try {
+      const endpoint = `/api/reservations/${reservationId}/${type}`;
+      const response = await apiRequest("GET", endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Error al descargar ${type === 'invoice' ? 'factura' : 'itinerario'}`);
+      }
+
+      // Convertir la respuesta a blob
+      const blob = await response.blob();
+      
+      // Crear un link temporal y descargarlo
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${type === 'invoice' ? 'factura' : 'itinerario'}_${reservationId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo descargar el documento",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: reservations, isLoading: reservationsLoading } = useQuery<any[]>({
     queryKey: ["/api/reservations"],
@@ -325,9 +359,7 @@ export default function Dashboard() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          window.open(`/api/reservations/${reservation.id}/invoice`, '_blank');
-                        }}
+                        onClick={() => downloadPDF(reservation.id, 'invoice')}
                         data-testid={`button-download-invoice-${reservation.id}`}
                       >
                         <FileText className="h-4 w-4 mr-2" />
@@ -337,9 +369,7 @@ export default function Dashboard() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            window.open(`/api/reservations/${reservation.id}/itinerary`, '_blank');
-                          }}
+                          onClick={() => downloadPDF(reservation.id, 'itinerary')}
                           data-testid={`button-download-itinerary-${reservation.id}`}
                         >
                           <Download className="h-4 w-4 mr-2" />
