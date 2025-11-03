@@ -388,6 +388,7 @@ export class DbStorage implements IStorage {
     const query = db
       .select({
         id: reservations.id,
+        reservationCode: reservations.reservationCode,
         tourId: reservations.tourId,
         departureId: reservations.departureId,
         userId: reservations.userId,
@@ -405,7 +406,10 @@ export class DbStorage implements IStorage {
         autoCancelAt: reservations.autoCancelAt,
         lastReminderSent: reservations.lastReminderSent,
         createdAt: reservations.createdAt,
-        tourTitle: tours.title,
+        tour: {
+          title: tours.title,
+          location: tours.location,
+        },
       })
       .from(reservations)
       .leftJoin(tours, eq(reservations.tourId, tours.id));

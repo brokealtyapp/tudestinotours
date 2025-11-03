@@ -244,7 +244,7 @@ export default function Dashboard() {
             {userReservations.map((reservation) => (
               <Card key={reservation.id} data-testid={`card-reservation-${reservation.id}`}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-3">
                     <CardTitle className="text-xl">
                       {reservation.tour?.title || "Tour"}
                     </CardTitle>
@@ -252,6 +252,14 @@ export default function Dashboard() {
                       {getStatusLabel(reservation.status)}
                     </Badge>
                   </div>
+                  {reservation.reservationCode && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Código de Reserva:</span>
+                      <Badge variant="secondary" className="font-mono font-bold">
+                        {reservation.reservationCode}
+                      </Badge>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
