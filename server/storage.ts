@@ -250,6 +250,11 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getUserByRole(role: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.role, role)).limit(1);
+    return result[0];
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     const result = await db.insert(users).values(user).returning();
     return result[0];

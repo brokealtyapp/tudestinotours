@@ -713,10 +713,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Crear pasajeros si vienen en el body
       if (passengersData && Array.isArray(passengersData)) {
         for (const passengerData of passengersData) {
-          await storage.createPassenger({
+          const passenger = await storage.createPassenger({
             ...passengerData,
             reservationId: reservation.id,
           });
+
+          // Si el pasajero tiene documento subido, notificar al admin
+          if (passengerData.passportImageUrl) {
+            try {
+              const adminUser = await storage.getUserByRole('admin');
+              if (adminUser) {
+                emailService.sendAdminDocumentUploaded(
+                  adminUser.email,
+                  reservation,
+                  tour,
+                  { fullName: passengerData.fullName, passportNumber: passengerData.passportNumber },
+                  { name: user?.name || reservation.buyerName, email: user?.email || reservation.buyerEmail }
+                ).catch(error => console.error("Error enviando notificación de documento al admin:", error));
+              }
+            } catch (error) {
+              console.error("Error obteniendo admin para notificación de documento:", error);
+            }
+          }
         }
       }
 
@@ -781,6 +799,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user) {
         emailService.sendReservationConfirmation(user, reservation, tour, passengers, isNewUser ? generatedPassword : undefined)
           .catch(error => console.error("Error enviando email de confirmación:", error));
+      }
+
+      // Send notification to admin about new reservation
+      try {
+        const adminUser = await storage.getUserByRole('admin');
+        if (adminUser) {
+          emailService.sendAdminNewReservation(
+            adminUser.email,
+            reservation,
+            tour,
+            { name: user?.name || reservation.buyerName, email: user?.email || reservation.buyerEmail }
+          ).catch(error => console.error("Error enviando email al admin:", error));
+        }
+      } catch (error) {
+        console.error("Error obteniendo admin para notificación:", error);
       }
 
       res.status(201).json(reservation);
@@ -1340,10 +1373,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
-      // If rejected, send email to buyer requesting correction
+      // Send email notifications
+      const tour = await storage.getTour(reservation.tourId);
+      
       if (status === 'rejected') {
-        const tour = await storage.getTour(reservation.tourId);
-        
+        // Notify buyer about document rejection
         emailService.sendDocumentRejectionNotification(
           { email: reservation.buyerEmail, name: reservation.buyerName },
           reservation,
@@ -1351,6 +1385,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tour,
           notes || "El documento no cumple con los requisitos necesarios"
         ).catch(error => console.error("Error enviando email de rechazo de documento:", error));
+      } else if (status === 'approved') {
+        // Notify buyer about document approval
+        emailService.sendDocumentApproval(
+          { email: reservation.buyerEmail, name: reservation.buyerName },
+          reservation,
+          passenger,
+          tour
+        ).catch(error => console.error("Error enviando email de aprobación de documento:", error));
       }
 
       res.json(passenger);
