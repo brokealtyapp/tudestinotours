@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   reservation,
                   tour,
                   { fullName: passengerData.fullName, passportNumber: passengerData.passportNumber },
-                  { name: user?.name || reservation.buyerName, email: user?.email || reservation.buyerEmail }
+                  { name: validatedData.buyerName, email: validatedData.buyerEmail }
                 ).catch(error => console.error("Error enviando notificación de documento al admin:", error));
               }
             } catch (error) {

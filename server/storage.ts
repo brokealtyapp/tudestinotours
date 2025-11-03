@@ -110,7 +110,7 @@ export interface IStorage {
   // Reservation automation methods
   getReservationsForReminders(): Promise<Reservation[]>;
   getReservationsForCancellation(): Promise<Reservation[]>;
-  updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>): Promise<Reservation | undefined>;
+  updateReservationAutomationFields(id: string, fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus' | 'adminAlertSent' | 'tripReminderSent'>>): Promise<Reservation | undefined>;
   autoCancelReservationAtomic(reservationId: string, newStatus: string): Promise<Reservation>;
   
   // Payment installments methods
@@ -792,7 +792,7 @@ export class DbStorage implements IStorage {
 
   async updateReservationAutomationFields(
     id: string,
-    fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus'>>
+    fields: Partial<Pick<Reservation, 'lastReminderSent' | 'autoCancelAt' | 'status' | 'paymentStatus' | 'adminAlertSent' | 'tripReminderSent'>>
   ): Promise<Reservation | undefined> {
     const result = await db
       .update(reservations)

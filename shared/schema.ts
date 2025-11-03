@@ -103,6 +103,8 @@ export const reservations = pgTable("reservations", {
   paymentDueDate: timestampDate("payment_due_date"),
   autoCancelAt: timestampDate("auto_cancel_at"),
   lastReminderSent: integer("last_reminder_sent"),
+  adminAlertSent: boolean("admin_alert_sent").default(false),
+  tripReminderSent: boolean("trip_reminder_sent").default(false),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("pending"),

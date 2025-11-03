@@ -206,6 +206,123 @@ async function processAutoCancellations() {
   }
 }
 
+// Process admin alerts for expiring reservations
+async function processAdminReservationExpiring() {
+  console.log("[SCHEDULER] Procesando alertas de reservas próximas a vencer...");
+  
+  try {
+    const reservations = await storage.getReservationsForReminders();
+    const adminUser = await storage.getUserByRole('admin');
+    
+    if (!adminUser) {
+      console.log("[SCHEDULER] No se encontró usuario administrador para enviar alertas");
+      return;
+    }
+
+    const now = new Date();
+    let alertsSent = 0;
+
+    for (const reservation of reservations) {
+      if (!reservation.paymentDueDate || reservation.paymentStatus !== 'pending') {
+        continue;
+      }
+
+      const daysUntilDue = daysBetween(now, new Date(reservation.paymentDueDate));
+      
+      // Send alert if reservation is expiring in 3 days and admin hasn't been alerted yet
+      if (daysUntilDue === 3 && !reservation.adminAlertSent) {
+        const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
+        
+        if (tour) {
+          await emailService.sendAdminReservationExpiring(
+            adminUser.email,
+            reservation,
+            tour,
+            daysUntilDue
+          );
+
+          // Mark alert as sent
+          await storage.updateReservationAutomationFields(reservation.id, {
+            adminAlertSent: true,
+          });
+
+          await storage.createTimelineEvent({
+            reservationId: reservation.id,
+            eventType: "email_sent",
+            description: `Alerta enviada al admin: reserva vence en ${daysUntilDue} días`,
+            metadata: JSON.stringify({ alertType: 'admin_expiring', daysRemaining: daysUntilDue }),
+          });
+
+          alertsSent++;
+          console.log(`[SCHEDULER] Alerta enviada al admin para reserva ${reservation.id} (vence en ${daysUntilDue} días)`);
+        }
+      }
+    }
+
+    console.log(`[SCHEDULER] Alertas de admin enviadas: ${alertsSent} de ${reservations.length} reservas revisadas`);
+  } catch (error) {
+    console.error("[SCHEDULER] Error procesando alertas de admin:", error);
+  }
+}
+
+// Process trip reminders for clients
+async function processTripReminders() {
+  console.log("[SCHEDULER] Procesando recordatorios de viaje próximo...");
+  
+  try {
+    // Get all confirmed reservations (paid)
+    const allReservations = await storage.getReservations();
+    const confirmedReservations = allReservations.filter((r: any) => 
+      r.paymentStatus === 'confirmed' && r.status === 'approved'
+    );
+
+    const now = new Date();
+    let remindersSent = 0;
+
+    for (const reservation of confirmedReservations) {
+      if (!reservation.departureDate) {
+        continue;
+      }
+
+      const daysUntilTrip = daysBetween(now, new Date(reservation.departureDate));
+      
+      // Send reminder if trip is in 7 days and reminder hasn't been sent yet
+      if (daysUntilTrip === 7 && !reservation.tripReminderSent) {
+        const user = reservation.userId ? await storage.getUser(reservation.userId) : null;
+        const tour = reservation.tourId ? await storage.getTour(reservation.tourId) : null;
+        
+        if (user && tour) {
+          await emailService.sendTripReminder(
+            user,
+            reservation,
+            tour,
+            daysUntilTrip
+          );
+
+          // Mark reminder as sent
+          await storage.updateReservationAutomationFields(reservation.id, {
+            tripReminderSent: true,
+          });
+
+          await storage.createTimelineEvent({
+            reservationId: reservation.id,
+            eventType: "email_sent",
+            description: `Recordatorio de viaje enviado (${daysUntilTrip} días antes de la salida)`,
+            metadata: JSON.stringify({ reminderType: 'trip_reminder', daysUntilTrip }),
+          });
+
+          remindersSent++;
+          console.log(`[SCHEDULER] Recordatorio de viaje enviado para reserva ${reservation.id} (salida en ${daysUntilTrip} días)`);
+        }
+      }
+    }
+
+    console.log(`[SCHEDULER] Recordatorios de viaje enviados: ${remindersSent} de ${confirmedReservations.length} reservas confirmadas`);
+  } catch (error) {
+    console.error("[SCHEDULER] Error procesando recordatorios de viaje:", error);
+  }
+}
+
 // Initialize scheduler
 export function initializeScheduler() {
   console.log("[SCHEDULER] Iniciando scheduler de tareas automatizadas...");
@@ -222,6 +339,18 @@ export function initializeScheduler() {
     await processAutoCancellations();
   });
 
+  // Run admin alerts daily at 10:00 AM
+  cron.schedule("0 10 * * *", async () => {
+    console.log("[SCHEDULER] Ejecutando tarea diaria: alertas de admin");
+    await processAdminReservationExpiring();
+  });
+
+  // Run trip reminders daily at 11:00 AM
+  cron.schedule("0 11 * * *", async () => {
+    console.log("[SCHEDULER] Ejecutando tarea diaria: recordatorios de viaje");
+    await processTripReminders();
+  });
+
   // Also run both jobs every 6 hours for more responsive automation
   cron.schedule("0 */6 * * *", async () => {
     console.log("[SCHEDULER] Ejecutando tarea cada 6 horas");
@@ -229,12 +358,23 @@ export function initializeScheduler() {
     await processAutoCancellations();
   });
 
+  // Run admin alerts and trip reminders once per day (don't run every 6 hours)
+  cron.schedule("0 0 * * *", async () => {
+    console.log("[SCHEDULER] Ejecutando tarea diaria a medianoche");
+    await processAdminReservationExpiring();
+    await processTripReminders();
+  });
+
   console.log("[SCHEDULER] Scheduler inicializado correctamente");
   console.log("[SCHEDULER] - Recordatorios de pago: Diariamente a las 8:00 AM y cada 6 horas");
   console.log("[SCHEDULER] - Cancelaciones automáticas: Diariamente a las 9:00 AM y cada 6 horas");
+  console.log("[SCHEDULER] - Alertas de admin: Diariamente a las 10:00 AM y medianoche");
+  console.log("[SCHEDULER] - Recordatorios de viaje: Diariamente a las 11:00 AM y medianoche");
 
   // Run immediately on startup for testing
   console.log("[SCHEDULER] Ejecutando tareas iniciales...");
   processPaymentReminders().catch(console.error);
   processAutoCancellations().catch(console.error);
+  processAdminReservationExpiring().catch(console.error);
+  processTripReminders().catch(console.error);
 }
