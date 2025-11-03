@@ -49,12 +49,14 @@ export default function BookingConfirmation() {
               <p className="text-muted-foreground">
                 Tu reserva ha sido creada exitosamente
               </p>
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-sm text-muted-foreground">Número de Orden:</span>
-                <Badge variant="secondary" className="text-base font-mono">
-                  {reservationId.slice(0, 8).toUpperCase()}
-                </Badge>
-              </div>
+              {reservationId && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-sm text-muted-foreground">Número de Orden:</span>
+                  <Badge variant="secondary" className="text-base font-mono">
+                    {reservationId.slice(0, 8).toUpperCase()}
+                  </Badge>
+                </div>
+              )}
             </div>
 
             <div className="bg-muted rounded-lg p-6 space-y-3">
