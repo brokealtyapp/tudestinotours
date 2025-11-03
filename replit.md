@@ -18,8 +18,8 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 - **Storage**: Google Cloud Storage for object storage.
 - **State Management**: TanStack Query.
 - **PDF Generation**: Server-side PDF generation using `@react-pdf/renderer` for branded invoices and itineraries.
-- **Email Service**: SMTP-based transactional email service using nodemailer for confirmations, reminders, and cancellations.
-- **Scheduler**: `node-cron` for daily and periodic automated tasks with dynamic rule-based configuration from database.
+- **Email Service**: SMTP-based transactional email service using nodemailer with 11 comprehensive email types (8 for clients, 3 for admins). Includes automated delivery for reservations, payments, documents, and administrative alerts.
+- **Scheduler**: `node-cron` for daily and periodic automated tasks including payment reminders, auto-cancellations, admin alerts for expiring reservations, and trip reminders for upcoming departures.
 - **Date Handling**: All timestamp columns use `{ mode: "date", withTimezone: true }` to ensure Drizzle returns proper JavaScript Date objects instead of strings, preventing "value.toISOString is not a function" errors.
 
 ### Feature Specifications
@@ -36,6 +36,11 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 - **Reportes y Análisis (Admin)**: Business analysis reports including Sales, Occupation, and Accounts Receivable.
 - **Sistema de Gestión de Pagos Avanzado (Admin)**: Centralized "Conciliación" view for installments, "Calendario" view for payments due, and enhanced offline payment recording.
 - **Editor de Plantillas de Email (Admin)**: Full CRUD for email templates, supporting placeholders and real-time preview.
+- **Sistema de Emails Expandido**: 11 tipos de emails automatizados:
+  - **Emails para Clientes (8)**: Confirmación de reserva, recordatorio de pago, cancelación, rechazo de documento, aprobación de documento, pago confirmado con itinerario, bienvenida con credenciales, recordatorio de viaje próximo
+  - **Emails para Administradores (3)**: Nueva reserva recibida, documento subido para revisión, alerta de reserva por vencer
+  - **Automatización**: Integrados en flujos de reservas, pagos, documentos, y scheduler jobs para envío programado
+  - **Plantillas Profesionales**: HTML responsive con branding azul/rojo/blanco, variables dinámicas, y contenido personalizado
 - **Sistema de Recordatorios Configurables (Admin)**: Database-driven reminder rules system with configurable days before deadline, send times, template selection, and enable/disable toggles. Prevents duplicate reminders.
 - **Historial de Comunicaciones (Admin)**: Complete email audit trail tracking all system-sent emails, including status, timestamps, and error messages, with resend functionality. Integrated into reservation timeline.
 - **Passport Document Verification System (Admin)**: Management of passenger document status with admin UI, automated email notifications for rejections, and timeline event logging.
