@@ -437,6 +437,410 @@ class EmailService {
       html,
     });
   }
+
+  // NEW: Notificar admin cuando se crea una reserva
+  async sendAdminNewReservation(
+    adminEmail: string,
+    reservation: Reservation,
+    tour: Tour,
+    buyer: { name: string; email: string }
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .notification { background-color: #dbeafe; border-left: 4px solid #2563eb; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #2563eb; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎯 Nueva Reserva Recibida</h1>
+          </div>
+          <div class="content">
+            <div class="notification">
+              <p><strong>Se ha registrado una nueva reserva en el sistema</strong></p>
+              <p>ID: <span class="highlight">${reservation.id}</span></p>
+            </div>
+
+            <div class="details">
+              <h3>Información del Cliente</h3>
+              <p><strong>Nombre:</strong> ${buyer.name}</p>
+              <p><strong>Email:</strong> ${buyer.email}</p>
+              <p><strong>Teléfono:</strong> ${reservation.buyerPhone}</p>
+            </div>
+
+            <div class="details">
+              <h3>Detalles de la Reserva</h3>
+              <p><strong>Tour:</strong> ${tour.title}</p>
+              <p><strong>Destino:</strong> ${tour.location}</p>
+              <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
+              <p><strong>Pasajeros:</strong> ${reservation.numberOfPassengers}</p>
+              <p><strong>Monto total:</strong> $${reservation.totalPrice}</p>
+              <p><strong>Estado de pago:</strong> ${reservation.paymentStatus === 'pending' ? 'Pendiente' : 'Confirmado'}</p>
+              <p><strong>Fecha límite de pago:</strong> ${reservation.paymentDueDate ? new Date(reservation.paymentDueDate).toLocaleDateString('es-ES') : 'No definida'}</p>
+            </div>
+
+            <p>Revisa el panel de administración para más detalles y gestionar esta reserva.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours - Sistema de Administración</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: `🎯 Nueva Reserva - ${tour.title} - ${buyer.name}`,
+      html,
+    });
+  }
+
+  // NEW: Notificar admin cuando se suben documentos
+  async sendAdminDocumentUploaded(
+    adminEmail: string,
+    reservation: Reservation,
+    tour: Tour | undefined,
+    passenger: { fullName: string; passportNumber: string },
+    buyer: { name: string; email: string }
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #8b5cf6; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .notification { background-color: #ede9fe; border-left: 4px solid #8b5cf6; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #8b5cf6; font-weight: bold; }
+          .button { display: inline-block; background-color: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📄 Documento Subido para Revisión</h1>
+          </div>
+          <div class="content">
+            <div class="notification">
+              <p><strong>Un cliente ha subido un documento de pasaporte</strong></p>
+              <p>Requiere tu revisión y aprobación</p>
+            </div>
+
+            <div class="details">
+              <h3>Información del Pasajero</h3>
+              <p><strong>Nombre:</strong> ${passenger.fullName}</p>
+              <p><strong>Pasaporte:</strong> ${passenger.passportNumber}</p>
+            </div>
+
+            <div class="details">
+              <h3>Información de la Reserva</h3>
+              <p><strong>ID Reserva:</strong> ${reservation.id}</p>
+              ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
+              <p><strong>Cliente:</strong> ${buyer.name} (${buyer.email})</p>
+              <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
+            </div>
+
+            <p><strong>Acción requerida:</strong> Revisa el documento en la sección "Documentos" del panel de administración y apruébalo o recházalo con comentarios.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours - Sistema de Administración</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: `📄 Documento Pendiente - ${passenger.fullName} - Reserva ${reservation.id}`,
+      html,
+    });
+  }
+
+  // NEW: Alerta a admin de reserva próxima a vencer
+  async sendAdminReservationExpiring(
+    adminEmail: string,
+    reservation: Reservation,
+    tour: Tour,
+    daysRemaining: number
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f59e0b; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #dc2626; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>⚠️ Alerta: Reserva Próxima a Vencer</h1>
+          </div>
+          <div class="content">
+            <div class="warning">
+              <p><strong>Una reserva vencerá en ${daysRemaining} día${daysRemaining > 1 ? 's' : ''}</strong></p>
+              <p>Fecha límite: <span class="highlight">${reservation.paymentDueDate ? new Date(reservation.paymentDueDate).toLocaleDateString('es-ES') : 'No definida'}</span></p>
+            </div>
+
+            <div class="details">
+              <h3>Información de la Reserva</h3>
+              <p><strong>ID:</strong> ${reservation.id}</p>
+              <p><strong>Cliente:</strong> ${reservation.buyerName} (${reservation.buyerEmail})</p>
+              <p><strong>Tour:</strong> ${tour.title}</p>
+              <p><strong>Monto:</strong> $${reservation.totalPrice}</p>
+              <p><strong>Estado de pago:</strong> ${reservation.paymentStatus === 'pending' ? 'Pendiente' : reservation.paymentStatus}</p>
+            </div>
+
+            <p><strong>Recomendación:</strong> Contacta al cliente para confirmar el pago o extender la fecha límite si es necesario.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours - Sistema de Administración</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: adminEmail,
+      subject: `⚠️ Alerta: Reserva ${reservation.id} vence en ${daysRemaining} día${daysRemaining > 1 ? 's' : ''}`,
+      html,
+    });
+  }
+
+  // NEW: Notificar cliente cuando documento es aprobado
+  async sendDocumentApproval(
+    buyer: { email: string; name: string },
+    reservation: Reservation,
+    passenger: Passenger,
+    tour: Tour | undefined
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #059669; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .success { background-color: #d1fae5; border-left: 4px solid #059669; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #059669; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✓ Documento Aprobado</h1>
+          </div>
+          <div class="content">
+            <p>Estimado/a ${buyer.name},</p>
+            
+            <div class="success">
+              <p><strong>✓ El documento de pasaporte ha sido aprobado exitosamente</strong></p>
+            </div>
+
+            <p>Hemos revisado y aprobado el documento de pasaporte del pasajero <strong>${passenger.fullName}</strong>.</p>
+            
+            <div class="details">
+              <h3>Detalles</h3>
+              <p><strong>Pasajero:</strong> ${passenger.fullName}</p>
+              <p><strong>Número de pasaporte:</strong> ${passenger.passportNumber}</p>
+              <p><strong>Reserva:</strong> ${reservation.id}</p>
+              ${tour ? `<p><strong>Tour:</strong> ${tour.title}</p>` : ''}
+            </div>
+
+            <p>Tu reserva está ahora un paso más cerca de estar completamente confirmada. Asegúrate de completar el pago antes de la fecha límite para garantizar tu lugar.</p>
+
+            <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: buyer.email,
+      subject: `✓ Documento Aprobado - ${passenger.fullName} - Reserva ${reservation.id}`,
+      html,
+    });
+  }
+
+  // NEW: Enviar credenciales cuando admin crea usuario
+  async sendWelcomeCredentials(
+    user: User,
+    generatedPassword: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .credentials { background-color: #dbeafe; border-left: 4px solid #2563eb; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #2563eb; font-weight: bold; }
+          .button { display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>¡Bienvenido a Tu Destino Tours!</h1>
+          </div>
+          <div class="content">
+            <p>Hola ${user.name},</p>
+            
+            <p>Hemos creado una cuenta para ti en nuestra plataforma. Ahora puedes acceder a tu portal de cliente para gestionar tus reservas, ver itinerarios, y más.</p>
+
+            <div class="credentials">
+              <h3>🔐 Tus Credenciales de Acceso</h3>
+              <p><strong>Email:</strong> ${user.email}</p>
+              <p><strong>Contraseña temporal:</strong> <span class="highlight">${generatedPassword}</span></p>
+              <p style="font-size: 12px; color: #666; margin-top: 10px;"><em>⚠️ Te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</em></p>
+            </div>
+
+            <div class="details">
+              <h3>Qué puedes hacer en tu portal:</h3>
+              <ul>
+                <li>Ver todas tus reservas</li>
+                <li>Consultar los detalles de tus viajes</li>
+                <li>Descargar itinerarios y facturas</li>
+                <li>Ver el estado de tus pagos</li>
+                <li>Subir documentos de viaje</li>
+              </ul>
+            </div>
+
+            <p>Si tienes alguna pregunta sobre tu cuenta o nuestros servicios, no dudes en contactarnos.</p>
+
+            <p>¡Esperamos verte pronto en uno de nuestros increíbles tours!</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: user.email,
+      subject: `🎉 Bienvenido a Tu Destino Tours - Credenciales de Acceso`,
+      html,
+    });
+  }
+
+  // NEW: Recordatorio de viaje próximo
+  async sendTripReminder(
+    user: User,
+    reservation: Reservation,
+    tour: Tour,
+    daysUntilTrip: number
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #8b5cf6; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .reminder { background-color: #ede9fe; border-left: 4px solid #8b5cf6; padding: 15px; margin: 15px 0; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .checklist { background-color: #fef3c7; padding: 15px; margin: 15px 0; border-radius: 5px; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #8b5cf6; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🌍 ¡Tu Viaje se Acerca!</h1>
+          </div>
+          <div class="content">
+            <p>Estimado/a ${user.name},</p>
+            
+            <div class="reminder">
+              <p><strong>Faltan ${daysUntilTrip} día${daysUntilTrip > 1 ? 's' : ''} para tu viaje</strong></p>
+              <p>Fecha de salida: <span class="highlight">${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</span></p>
+            </div>
+
+            <p>Nos emociona que tu aventura a <strong>${tour.location}</strong> esté cada vez más cerca. Queremos asegurarnos de que estés completamente preparado.</p>
+
+            <div class="details">
+              <h3>Detalles de tu Viaje</h3>
+              <p><strong>Tour:</strong> ${tour.title}</p>
+              <p><strong>Destino:</strong> ${tour.location}</p>
+              <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
+              <p><strong>Número de pasajeros:</strong> ${reservation.numberOfPassengers}</p>
+              <p><strong>Número de confirmación:</strong> ${reservation.id}</p>
+            </div>
+
+            <div class="checklist">
+              <h3>✅ Lista de Verificación Pre-Viaje</h3>
+              <ul>
+                <li>Verifica que tu pasaporte esté vigente</li>
+                <li>Revisa las recomendaciones de equipaje</li>
+                <li>Confirma tu punto de encuentro o recogida</li>
+                <li>Revisa el itinerario completo</li>
+                <li>Guarda una copia de tu confirmación de reserva</li>
+                <li>Verifica los requisitos de visado si aplican</li>
+              </ul>
+            </div>
+
+            <p>Puedes descargar tu itinerario completo desde tu panel de cliente.</p>
+
+            <p>Si tienes alguna pregunta o necesitas información adicional, estamos aquí para ayudarte.</p>
+
+            <p><strong>¡Que tengas un viaje increíble!</strong></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: user.email,
+      subject: `🌍 Recordatorio: Tu viaje a ${tour.location} es en ${daysUntilTrip} día${daysUntilTrip > 1 ? 's' : ''}`,
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();
