@@ -62,8 +62,8 @@ export default function Booking() {
   const [paymentUrl, setPaymentUrl] = useState("");
   
   // Datos del comprador (requeridos para reservas anónimas)
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerName, setBuyerName] = useState(user?.name || "");
+  const [buyerEmail, setBuyerEmail] = useState(user?.email || "");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerPassportNumber, setBuyerPassportNumber] = useState("");
   const [buyerDepartureAirport, setBuyerDepartureAirport] = useState("");
@@ -72,6 +72,14 @@ export default function Booking() {
   // Email validation state
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // Auto-llenar datos del usuario autenticado
+  useEffect(() => {
+    if (user) {
+      setBuyerName(user.name || "");
+      setBuyerEmail(user.email || "");
+    }
+  }, [user]);
 
   const { data: tour, isLoading: tourLoading } = useQuery<any>({
     queryKey: ["/api/tours", tourId],
@@ -408,7 +416,12 @@ export default function Booking() {
         return;
       }
 
-      setLocation(`/booking-confirmation?reservationCode=${encodeURIComponent(reservation.reservationCode)}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
+      // Si el usuario está autenticado, ir al dashboard; si no, a la confirmación
+      if (user) {
+        setLocation(`/dashboard`);
+      } else {
+        setLocation(`/booking-confirmation?reservationCode=${encodeURIComponent(reservation.reservationCode)}&email=${encodeURIComponent(buyerEmail)}&isNewUser=${reservation.isNewUser || false}`);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -634,7 +647,14 @@ export default function Booking() {
                         onChange={(e) => setBuyerName(e.target.value)}
                         placeholder="Juan Pérez"
                         data-testid="input-buyer-name"
+                        disabled={!!user}
+                        className={user ? "bg-muted" : ""}
                       />
+                      {user && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Usando tu nombre de perfil
+                        </p>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -646,8 +666,15 @@ export default function Booking() {
                           onChange={(e) => setBuyerEmail(e.target.value)}
                           placeholder="ejemplo@correo.com"
                           data-testid="input-buyer-email"
+                          disabled={!!user}
+                          className={user ? "bg-muted" : ""}
                         />
-                        {checkingEmail && (
+                        {user && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Usando tu email de perfil
+                          </p>
+                        )}
+                        {checkingEmail && !user && (
                           <p className="text-xs text-muted-foreground mt-1">Verificando email...</p>
                         )}
                       </div>
