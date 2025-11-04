@@ -147,6 +147,89 @@ class EmailService {
     });
   }
 
+  async sendReservationApproved(
+    user: User,
+    reservation: Reservation,
+    tour: Tour,
+    paymentLink: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #22c55e; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9fafb; padding: 20px; }
+          .details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .success-box { background-color: #dcfce7; border-left: 4px solid #22c55e; padding: 15px; margin: 15px 0; }
+          .payment-box { background-color: #dbeafe; border: 2px solid #2563eb; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          .highlight { color: #2563eb; font-weight: bold; }
+          .button { display: inline-block; background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 15px 0; font-size: 16px; font-weight: bold; }
+          .button:hover { background-color: #1d4ed8; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✅ ¡Reserva Aprobada!</h1>
+          </div>
+          <div class="content">
+            <p>Estimado/a ${user.name},</p>
+            
+            <div class="success-box">
+              <h3>¡Excelentes noticias!</h3>
+              <p>Tu reserva para <strong>${tour.title}</strong> ha sido aprobada exitosamente.</p>
+              <p><strong>Código de reserva:</strong> <span class="highlight">${reservation.reservationCode}</span></p>
+            </div>
+
+            <div class="details">
+              <h3>Detalles de tu Reserva</h3>
+              <p><strong>Tour:</strong> ${tour.title}</p>
+              <p><strong>Destino:</strong> ${tour.location}</p>
+              <p><strong>Fecha de salida:</strong> ${new Date(reservation.departureDate).toLocaleDateString('es-ES')}</p>
+              <p><strong>Número de pasajeros:</strong> ${reservation.numberOfPassengers}</p>
+              <p><strong>Monto total:</strong> <span class="highlight">$${reservation.totalPrice}</span></p>
+              <p><strong>Fecha límite de pago:</strong> ${reservation.paymentDueDate ? new Date(reservation.paymentDueDate).toLocaleDateString('es-ES') : 'Por definir'}</p>
+            </div>
+
+            <div class="payment-box">
+              <h2 style="margin-top: 0; color: #2563eb;">💳 Procede con el Pago</h2>
+              <p>Para confirmar definitivamente tu reserva, realiza el pago antes de la fecha límite.</p>
+              <a href="${paymentLink}" class="button">PAGAR AHORA</a>
+              <p style="font-size: 13px; color: #666; margin-top: 15px;">
+                También puedes acceder al enlace de pago desde tu panel de cliente.
+              </p>
+            </div>
+
+            <p><strong>⚠️ Importante:</strong></p>
+            <ul>
+              <li>Debes completar el pago antes del <strong>${reservation.paymentDueDate ? new Date(reservation.paymentDueDate).toLocaleDateString('es-ES') : 'la fecha límite'}</strong></li>
+              <li>Una vez confirmado el pago, recibirás tu itinerario detallado</li>
+              <li>Si no se completa el pago a tiempo, la reserva será cancelada automáticamente</li>
+            </ul>
+
+            <p>Si tienes alguna duda o problema con el pago, no dudes en contactarnos.</p>
+
+            <p><strong>¡Estamos emocionados de acompañarte en esta aventura!</strong></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Tu Destino Tours. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: user.email,
+      subject: `✅ Reserva Aprobada - ${tour.title} - Procede con el Pago`,
+      html,
+    });
+  }
+
   async sendPaymentReminder(
     user: User,
     reservation: Reservation,
