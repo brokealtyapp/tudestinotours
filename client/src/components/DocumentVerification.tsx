@@ -25,24 +25,10 @@ export function DocumentVerification() {
   const [selectedPassenger, setSelectedPassenger] = useState<any>(null);
   const [documentNotes, setDocumentNotes] = useState("");
 
-  const { data: allPassengers } = useQuery<any[]>({ queryKey: ["/api/passengers"] });
-  const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
-  const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
-
-  // Get reservation and tour info for each passenger
-  const passengersWithDetails = useMemo(() => {
-    if (!allPassengers || !reservations || !tours) return [];
-    
-    return allPassengers.map(passenger => {
-      const reservation = reservations.find(r => r.id === passenger.reservationId);
-      const tour = tours.find(t => t.id === reservation?.tourId);
-      return {
-        ...passenger,
-        reservationCode: reservation?.code || '',
-        tourName: tour?.title || '',
-      };
-    });
-  }, [allPassengers, reservations, tours]);
+  // Fetch passengers with complete reservation and tour data (joined in backend)
+  const { data: passengersWithDetails = [] } = useQuery<any[]>({ 
+    queryKey: ["/api/passengers"] 
+  });
 
   // Filter passengers with documents
   const passengersWithDocuments = useMemo(() => {
@@ -64,7 +50,9 @@ export function DocumentVerification() {
       filtered = filtered.filter(p =>
         p.fullName.toLowerCase().includes(search) ||
         p.passportNumber.toLowerCase().includes(search) ||
-        p.reservationCode.toLowerCase().includes(search)
+        (p.reservationCode && p.reservationCode.toLowerCase().includes(search)) ||
+        (p.buyerName && p.buyerName.toLowerCase().includes(search)) ||
+        (p.buyerEmail && p.buyerEmail.toLowerCase().includes(search))
       );
     }
 
@@ -260,15 +248,42 @@ export function DocumentVerification() {
                     </div>
                   </div>
                   <div className="p-4 space-y-3">
+                    {/* Código de reserva prominente */}
+                    {passenger.reservationCode && (
+                      <div className="flex justify-center">
+                        <Badge 
+                          variant="outline" 
+                          className="font-mono text-xs px-3 py-1 bg-primary/10 border-primary/20"
+                          data-testid={`badge-code-${passenger.id}`}
+                        >
+                          {passenger.reservationCode}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {/* Información del pasajero */}
                     <div>
                       <h3 className="text-base font-semibold text-foreground mb-1">{passenger.fullName}</h3>
                       <div className="space-y-0.5 text-xs text-muted-foreground">
                         <p>Pasaporte: <span className="font-mono">{passenger.passportNumber}</span></p>
-                        <p>Reserva: <span className="font-mono">{passenger.reservationCode}</span></p>
-                        {passenger.tourName && <p>Tour: {passenger.tourName}</p>}
+                        {passenger.tourTitle && <p>Tour: {passenger.tourTitle}</p>}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+
+                    {/* Información del comprador */}
+                    {passenger.buyerName && (
+                      <div className="pt-2 border-t border-border">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Comprador</p>
+                        <div className="space-y-0.5 text-xs text-muted-foreground">
+                          <p className="font-medium text-foreground">{passenger.buyerName}</p>
+                          {passenger.buyerEmail && <p>{passenger.buyerEmail}</p>}
+                          {passenger.buyerPhone && <p>{passenger.buyerPhone}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botones de acción */}
+                    <div className="flex gap-2 pt-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -336,10 +351,10 @@ export function DocumentVerification() {
                   <span className="text-muted-foreground">Reserva:</span>
                   <span className="ml-2 font-mono">{selectedPassenger.reservationCode}</span>
                 </div>
-                {selectedPassenger.tourName && (
+                {selectedPassenger.tourTitle && (
                   <div className="col-span-2">
                     <span className="text-muted-foreground">Tour:</span>
-                    <span className="ml-2 font-medium">{selectedPassenger.tourName}</span>
+                    <span className="ml-2 font-medium">{selectedPassenger.tourTitle}</span>
                   </div>
                 )}
               </div>
