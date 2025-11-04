@@ -701,11 +701,36 @@ export class DbStorage implements IStorage {
   }
 
   // Passenger methods
-  async getAllPassengers(): Promise<Passenger[]> {
-    return await db
-      .select()
+  async getAllPassengers(): Promise<any[]> {
+    const results = await db
+      .select({
+        // Passenger data
+        id: passengers.id,
+        reservationId: passengers.reservationId,
+        fullName: passengers.fullName,
+        passportNumber: passengers.passportNumber,
+        nationality: passengers.nationality,
+        dateOfBirth: passengers.dateOfBirth,
+        passportImageUrl: passengers.passportImageUrl,
+        documentStatus: passengers.documentStatus,
+        documentNotes: passengers.documentNotes,
+        createdAt: passengers.createdAt,
+        // Reservation data
+        reservationCode: reservations.reservationCode,
+        buyerName: reservations.buyerName,
+        buyerEmail: reservations.buyerEmail,
+        buyerPhone: reservations.buyerPhone,
+        reservationDate: reservations.reservationDate,
+        paymentStatus: reservations.paymentStatus,
+        // Tour data
+        tourTitle: tours.title,
+      })
       .from(passengers)
+      .leftJoin(reservations, eq(passengers.reservationId, reservations.id))
+      .leftJoin(tours, eq(reservations.tourId, tours.id))
       .orderBy(desc(passengers.createdAt));
+    
+    return results;
   }
 
   async getPassenger(id: string): Promise<Passenger | undefined> {
