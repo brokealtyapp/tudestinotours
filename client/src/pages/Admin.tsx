@@ -76,6 +76,11 @@ export default function Admin() {
   // Diálogo de cancelación
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [reservationToCancel, setReservationToCancel] = useState<any>(null);
+  
+  // Diálogo de aprobación de reserva
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [reservationToApprove, setReservationToApprove] = useState<any>(null);
+  const [approvalPaymentLink, setApprovalPaymentLink] = useState("");
 
   const { data: tours } = useQuery<any[]>({ queryKey: ["/api/tours"] });
   const { data: reservations } = useQuery<any[]>({ queryKey: ["/api/reservations"] });
@@ -189,6 +194,45 @@ export default function Admin() {
       toast({
         title: "Error",
         description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleApproveReservation = (reservation: any) => {
+    setReservationToApprove(reservation);
+    setApprovalPaymentLink("");
+    setShowApproveDialog(true);
+  };
+
+  const confirmApproveReservation = async () => {
+    if (!reservationToApprove) return;
+    
+    if (!approvalPaymentLink.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa el enlace de pago",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await apiRequest("PUT", `/api/reservations/${reservationToApprove.id}/approve`, {
+        paymentLink: approvalPaymentLink.trim(),
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/reservations"] });
+      toast({
+        title: "Éxito",
+        description: "Reserva aprobada exitosamente. Se ha enviado un email al cliente con el enlace de pago.",
+      });
+      setShowApproveDialog(false);
+      setReservationToApprove(null);
+      setApprovalPaymentLink("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al aprobar la reserva",
         variant: "destructive",
       });
     }
@@ -749,6 +793,17 @@ export default function Admin() {
                                 <DollarSign className="h-4 w-4 mr-2" />
                                 Gestionar Pagos
                               </Button>
+                              {reservation.status === "pending" && !reservation.paymentLink && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApproveReservation(reservation)}
+                                  data-testid={`button-approve-${reservation.id}`}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <ThumbsUp className="h-4 w-4 mr-2" />
+                                  Aprobar Reserva
+                                </Button>
+                              )}
                               {reservation.paymentStatus === "pending" && 
                                reservation.status !== "vencida" && 
                                reservation.status !== "cancelada" && 
@@ -1514,6 +1569,98 @@ export default function Admin() {
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Sí, Cancelar Reserva
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo de aprobación de reserva */}
+        <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Aprobar Reserva y Enviar Enlace de Pago
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <ThumbsUp className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900 mb-1">
+                      Aprobar esta reserva
+                    </p>
+                    <p className="text-sm text-green-700">
+                      Se enviará automáticamente un email al cliente con el enlace de pago que proporciones.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {reservationToApprove && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Código de Reserva:</span>
+                    <span className="font-medium text-gray-900">{reservationToApprove.reservationCode}</span>
+                  </div>
+                  {reservationToApprove.tourTitle && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tour:</span>
+                      <span className="font-medium text-gray-900">{reservationToApprove.tourTitle}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Comprador:</span>
+                    <span className="font-medium text-gray-900">{reservationToApprove.buyerName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium text-gray-900">{reservationToApprove.buyerEmail}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total:</span>
+                    <span className="font-medium text-gray-900">${reservationToApprove.totalPrice}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="payment-link" className="text-sm font-medium text-gray-700">
+                  Enlace de Pago (Mercado Pago, PayPal, etc.) *
+                </Label>
+                <Input
+                  id="payment-link"
+                  type="url"
+                  value={approvalPaymentLink}
+                  onChange={(e) => setApprovalPaymentLink(e.target.value)}
+                  placeholder="https://www.mercadopago.com/checkout/v1/payment/..."
+                  data-testid="input-approval-payment-link"
+                  className="rounded-lg border-gray-300 focus:border-green-500"
+                />
+                <p className="text-xs text-gray-600">
+                  Pega aquí el enlace de pago generado desde tu plataforma de pagos (Mercado Pago, PayPal, Stripe, etc.)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowApproveDialog(false)}
+                data-testid="button-cancel-approve"
+                className="rounded-lg"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmApproveReservation}
+                data-testid="button-confirm-approve"
+                disabled={!approvalPaymentLink.trim()}
+                className="bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ThumbsUp className="h-4 w-4 mr-2" />
+                Aprobar y Enviar Email
               </Button>
             </div>
           </DialogContent>

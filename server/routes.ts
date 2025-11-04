@@ -1305,10 +1305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update reservation with payment link and change status to confirmed
-      const updatedReservation = await storage.updateReservation(req.params.id, {
-        paymentLink: paymentLink.trim(),
-        status: "confirmed",
-      });
+      const updatedReservation = await storage.updateReservationPaymentLink(
+        req.params.id,
+        paymentLink.trim(),
+        "confirmed"
+      );
 
       if (!updatedReservation) {
         return res.status(500).json({ error: "Error al actualizar la reserva" });

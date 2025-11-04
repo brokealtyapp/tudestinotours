@@ -89,6 +89,7 @@ export interface IStorage {
   }>): Promise<Reservation[]>;
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservationStatus(id: string, status: string, paymentStatus?: string): Promise<Reservation | undefined>;
+  updateReservationPaymentLink(id: string, paymentLink: string, status?: string): Promise<Reservation | undefined>;
   cancelReservationAtomic(reservationId: string, newStatus: string, newPaymentStatus?: string): Promise<Reservation>;
   
   // Passenger methods
@@ -691,6 +692,23 @@ export class DbStorage implements IStorage {
     const updateData: any = { status };
     if (paymentStatus) {
       updateData.paymentStatus = paymentStatus;
+    }
+    const result = await db
+      .update(reservations)
+      .set(updateData)
+      .where(eq(reservations.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateReservationPaymentLink(
+    id: string,
+    paymentLink: string,
+    status?: string
+  ): Promise<Reservation | undefined> {
+    const updateData: any = { paymentLink };
+    if (status) {
+      updateData.status = status;
     }
     const result = await db
       .update(reservations)
