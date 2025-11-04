@@ -1304,11 +1304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Reserva no encontrada" });
       }
 
-      // Update reservation with payment link and change status to confirmed
+      // Update reservation with payment link and change status to approved
       const updatedReservation = await storage.updateReservationPaymentLink(
         req.params.id,
         paymentLink.trim(),
-        "confirmed"
+        "approved"
       );
 
       if (!updatedReservation) {
@@ -1323,7 +1323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         performedBy: req.user!.userId,
         metadata: JSON.stringify({ 
           oldStatus: reservation.status, 
-          newStatus: "confirmed",
+          newStatus: "approved",
           paymentLinkProvided: true
         }),
       });
