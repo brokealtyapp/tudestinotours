@@ -82,6 +82,8 @@ export default function Dashboard() {
     switch (status) {
       case "pending":
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "approved":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case "confirmed":
         return "bg-green-500/10 text-green-500 border-green-500/20";
       case "completed":
@@ -97,6 +99,8 @@ export default function Dashboard() {
     switch (status) {
       case "pending":
         return "Pendiente";
+      case "approved":
+        return "Aprobada";
       case "confirmed":
         return "Confirmada";
       case "completed":
@@ -296,6 +300,36 @@ export default function Dashboard() {
                   )}
                 </CardHeader>
                 <CardContent>
+                  {reservation.status === "approved" && reservation.paymentLink && (
+                    <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-bold text-blue-900 mb-1 flex items-center gap-2">
+                            <CreditCard className="h-5 w-5 text-blue-600" />
+                            ¡Tu reserva ha sido aprobada!
+                          </h4>
+                          <p className="text-sm text-blue-700">
+                            Completa el pago para confirmar tu reserva. Haz clic en el botón para proceder al pago seguro.
+                          </p>
+                        </div>
+                        <Button
+                          size="lg"
+                          className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all"
+                          asChild
+                          data-testid={`button-pay-now-${reservation.id}`}
+                        >
+                          <a
+                            href={reservation.paymentLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <CreditCard className="h-5 w-5 mr-2" />
+                            Pagar Ahora
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-5 w-5 text-primary" />
