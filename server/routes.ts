@@ -1288,6 +1288,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Approve reservation and send payment link
+  app.put("/api/reservations/:id/approve", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { emailService } = await import("./services/emailService");
+      const { paymentLink } = req.body;
+
+      if (!paymentLink || typeof paymentLink !== "string" || paymentLink.trim() === "") {
+        return res.status(400).json({ error: "El enlace de pago es requerido" });
+      }
+
+      // Get current reservation
+      const reservation = await storage.getReservation(req.params.id);
+      if (!reservation) {
+        return res.status(404).json({ error: "Reserva no encontrada" });
+      }
+
+      // Update reservation with payment link and change status to confirmed
+      const updatedReservation = await storage.updateReservation(req.params.id, {
+        paymentLink: paymentLink.trim(),
+        status: "confirmed",
+      });
+
+      if (!updatedReservation) {
+        return res.status(500).json({ error: "Error al actualizar la reserva" });
+      }
+
+      // Log timeline event
+      await storage.createTimelineEvent({
+        reservationId: req.params.id,
+        eventType: "reservation_approved",
+        description: `Reserva aprobada por administrador. Enlace de pago enviado.`,
+        performedBy: req.user!.userId,
+        metadata: JSON.stringify({ 
+          oldStatus: reservation.status, 
+          newStatus: "confirmed",
+          paymentLinkProvided: true
+        }),
+      });
+
+      // Send approval email with payment link
+      if (updatedReservation.userId) {
+        const user = await storage.getUser(updatedReservation.userId);
+        const tour = updatedReservation.tourId ? await storage.getTour(updatedReservation.tourId) : null;
+
+        if (user && tour) {
+          emailService.sendReservationApproved(user, updatedReservation, tour, paymentLink.trim())
+            .catch(error => console.error("Error enviando email de aprobación:", error));
+        }
+      }
+
+      res.json(updatedReservation);
+    } catch (error: any) {
+      console.error("Error al aprobar reserva:", error);
+      res.status(500).json({ error: error.message || "Error al aprobar la reserva" });
+    }
+  });
+
   // Passenger routes
   app.get("/api/passengers", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
