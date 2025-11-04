@@ -1148,7 +1148,7 @@ export default function Admin() {
                         data-testid={`installment-${installment.id}`}
                       >
                         <div className="flex-1">
-                          <p className="font-medium">${installment.amount}</p>
+                          <p className="font-medium">${installment.amountDue}</p>
                           <p className="text-sm text-muted-foreground">
                             Vence: {new Date(installment.dueDate).toLocaleDateString('es-ES')}
                           </p>
