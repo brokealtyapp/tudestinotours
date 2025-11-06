@@ -1355,7 +1355,7 @@ export default function Booking() {
 
         <div className="flex justify-between">
           <Button
-            variant="outline"
+            variant="default"
             onClick={handleBack}
             disabled={currentStep === 1}
             data-testid="button-back"
