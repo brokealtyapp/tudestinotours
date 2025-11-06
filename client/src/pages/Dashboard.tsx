@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { ClientSidebar } from "@/components/ClientSidebar";
+import { ClientHeader } from "@/components/ClientHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [expandedReservations, setExpandedReservations] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -62,12 +64,10 @@ export default function Dashboard() {
 
   if (authLoading || reservationsLoading) {
     return (
-      <div className="min-h-screen">
-        <Header />
-        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
           Cargando tus reservas...
         </div>
-        <Footer />
       </div>
     );
   }
@@ -75,6 +75,10 @@ export default function Dashboard() {
   if (!user) {
     return null;
   }
+
+  const sidebarStyle = {
+    "--sidebar-width": "16rem",
+  };
 
   const userReservations = reservations?.filter((r) => r.userId === user.id) || [];
 
@@ -255,18 +259,20 @@ export default function Dashboard() {
     );
   };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Mis Reservas</h1>
-          <p className="text-muted-foreground">
-            Ve y gestiona tus reservas de tours
-          </p>
-        </div>
+  const renderContent = () => {
+    switch (activeSection) {
+      case "dashboard":
+      case "reservations":
+        return (
+          <div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">Mis Reservas</h1>
+              <p className="text-muted-foreground">
+                Ve y gestiona tus reservas de tours
+              </p>
+            </div>
 
-        {userReservations.length === 0 ? (
+            {userReservations.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-muted-foreground mb-6">
@@ -499,8 +505,59 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-      </main>
-      <Footer />
-    </div>
+          </div>
+        );
+      
+      case "payments":
+        return (
+          <div>
+            <h1 className="text-3xl font-bold mb-6">Mis Pagos</h1>
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-muted-foreground">
+                  Vista de pagos próximamente
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      
+      case "profile":
+        return (
+          <div>
+            <h1 className="text-3xl font-bold mb-6">Mi Perfil</h1>
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-muted-foreground">
+                  Configuración de perfil próximamente
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+      <div className="flex h-screen w-full bg-[#FAFBFC]">
+        <ClientSidebar 
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ClientHeader />
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <div className="max-w-7xl mx-auto">
+              {renderContent()}
+            </div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }

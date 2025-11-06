@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 
-export function AdminHeader() {
+export function ClientHeader() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -30,8 +30,15 @@ export function AdminHeader() {
   };
 
   const getUserInitials = () => {
-    if (!user?.email) return "AD";
-    return user.email.substring(0, 2).toUpperCase();
+    if (!user?.name) {
+      if (!user?.email) return "CL";
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    const names = user.name.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[1][0]).toUpperCase();
+    }
+    return user.name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -39,10 +46,10 @@ export function AdminHeader() {
       <div className="flex items-center gap-4">
         <SidebarTrigger className="md:hidden" data-testid="button-sidebar-toggle" />
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900" data-testid="text-admin-greeting">
-            {getGreeting()}, {user?.email?.split('@')[0] || 'Administrador'}
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900" data-testid="text-client-greeting">
+            {getGreeting()}, {user?.name || user?.email?.split('@')[0] || 'Cliente'}
           </h1>
-          <p className="text-sm text-gray-500 hidden sm:block">Bienvenido de vuelta</p>
+          <p className="text-sm text-gray-500 hidden sm:block">Bienvenido a tu panel</p>
         </div>
       </div>
 
@@ -58,9 +65,9 @@ export function AdminHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" data-testid="button-admin-menu">
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" data-testid="button-client-menu">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="" alt={user?.email || ''} />
+                <AvatarImage src="" alt={user?.name || user?.email || ''} />
                 <AvatarFallback className="bg-blue-600 text-white font-semibold">
                   {getUserInitials()}
                 </AvatarFallback>
@@ -71,6 +78,7 @@ export function AdminHeader() {
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-sm">
+              <p className="font-medium">{user?.name || 'Cliente'}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
