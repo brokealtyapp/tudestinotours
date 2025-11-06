@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -90,6 +91,7 @@ export default function Admin() {
     enabled: !!selectedReservation,
   });
   const { data: allPassengers } = useQuery<any[]>({ queryKey: ["/api/passengers"] });
+  const { data: allDepartures } = useQuery<any[]>({ queryKey: ["/api/departures"] });
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
