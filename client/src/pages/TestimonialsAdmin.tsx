@@ -44,7 +44,7 @@ export default function TestimonialsAdmin() {
   const { toast } = useToast();
 
   const { data: testimonials, isLoading } = useQuery<Testimonial[]>({
-    queryKey: ["/api/testimonials"],
+    queryKey: ["/api/admin/testimonials"],
   });
 
   const form = useForm<InsertTestimonial>({
@@ -62,10 +62,10 @@ export default function TestimonialsAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertTestimonial) => {
-      return await apiRequest("POST", "/api/testimonials", data);
+      return await apiRequest("POST", "/api/admin/testimonials", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
       toast({
         title: "Testimonio creado",
         description: "El testimonio ha sido creado exitosamente.",
@@ -83,10 +83,10 @@ export default function TestimonialsAdmin() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertTestimonial> }) => {
-      return await apiRequest("PUT", `/api/testimonials/${id}`, data);
+      return await apiRequest("PUT", `/api/admin/testimonials/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
       toast({
         title: "Testimonio actualizado",
         description: "El testimonio ha sido actualizado exitosamente.",
@@ -104,10 +104,10 @@ export default function TestimonialsAdmin() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/testimonials/${id}`);
+      return await apiRequest("DELETE", `/api/admin/testimonials/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
       toast({
         title: "Testimonio eliminado",
         description: "El testimonio ha sido eliminado exitosamente.",
