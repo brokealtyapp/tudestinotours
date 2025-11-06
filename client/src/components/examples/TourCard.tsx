@@ -7,10 +7,10 @@ export default function TourCardExample() {
       <TourCard
         image={tourImage}
         title="Molokini and Turtle Town Snorkeling Adventure Aboard"
-        location="Bali, Indonesia"
+        continent="Asia"
         rating={4.8}
         reviews="1.4k"
-        price={187}
+        minPrice={187}
         discount={20}
       />
     </div>

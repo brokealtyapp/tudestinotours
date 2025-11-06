@@ -73,10 +73,10 @@ export default function ExploreDestinations() {
               id={tour.id}
               image={tour.images?.[0] || "/placeholder-tour.jpg"}
               title={tour.title}
-              location={tour.location}
+              continent={tour.continent || ""}
               rating={parseFloat(tour.rating || "0")}
               reviews={tour.reviewCount?.toString() || "0"}
-              price={parseFloat(tour.price)}
+              minPrice={tour.minPrice}
             />
           ))}
         </div>

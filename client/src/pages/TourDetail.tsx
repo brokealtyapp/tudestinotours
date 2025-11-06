@@ -98,7 +98,7 @@ export default function TourDetail() {
   const images = tour.images && tour.images.length > 0 ? tour.images : ["/placeholder-tour.jpg"];
   const minPrice = departures && departures.length > 0 
     ? Math.min(...departures.map(d => parseFloat(d.price)))
-    : parseFloat(tour.price);
+    : null;
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -198,7 +198,7 @@ export default function TourDetail() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-2 mb-3">
               <MapPin className="h-5 w-5 text-white" />
-              <span className="text-white/90">{tour.location}</span>
+              <span className="text-white/90">{tour.continent || "Destino internacional"}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4" data-testid="text-tour-title">
               {tour.title}
@@ -292,7 +292,7 @@ export default function TourDetail() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
-                  {tour.itinerary as string}
+                  {String(tour.itinerary)}
                 </div>
               </section>
             )}
@@ -369,11 +369,19 @@ export default function TourDetail() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-center">
-                    <div className="text-sm text-muted-foreground">Desde</div>
-                    <div className="text-3xl font-bold text-primary" data-testid="text-price">
-                      ${minPrice.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">por persona</div>
+                    {minPrice !== null ? (
+                      <>
+                        <div className="text-sm text-muted-foreground">Desde</div>
+                        <div className="text-3xl font-bold text-primary" data-testid="text-price">
+                          ${minPrice.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">por persona</div>
+                      </>
+                    ) : (
+                      <div className="text-xl font-semibold text-muted-foreground" data-testid="text-price">
+                        Consultar precio
+                      </div>
+                    )}
                   </CardTitle>
                 </CardHeader>
               </Card>
@@ -504,10 +512,14 @@ export default function TourDetail() {
       {/* Sticky CTA for Mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-50">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm text-muted-foreground">Desde</div>
-            <div className="text-xl font-bold text-primary">${minPrice.toFixed(2)}</div>
-          </div>
+          {minPrice !== null ? (
+            <div>
+              <div className="text-sm text-muted-foreground">Desde</div>
+              <div className="text-xl font-bold text-primary">${minPrice.toFixed(2)}</div>
+            </div>
+          ) : (
+            <div className="text-sm font-semibold text-muted-foreground">Consultar precio</div>
+          )}
           <Button 
             size="lg"
             onClick={handleBookNow}

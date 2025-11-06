@@ -8,10 +8,10 @@ interface TourCardProps {
   id?: string;
   image: string;
   title: string;
-  location: string;
+  continent: string;
   rating: number;
   reviews: string;
-  price: number;
+  minPrice: number | null;
   discount?: number;
 }
 
@@ -19,10 +19,10 @@ export default function TourCard({
   id,
   image,
   title,
-  location,
+  continent,
   rating,
   reviews,
-  price,
+  minPrice,
   discount,
 }: TourCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -58,7 +58,7 @@ export default function TourCard({
         </h3>
         <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
           <MapPin className="h-4 w-4 text-primary" />
-          <span>{location}</span>
+          <span>{continent}</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
@@ -66,10 +66,16 @@ export default function TourCard({
             <span className="text-muted-foreground">({reviews})</span>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold text-foreground">
-              ${price}
-              <span className="text-sm font-normal text-muted-foreground">/Persona</span>
-            </div>
+            {minPrice !== null ? (
+              <div className="text-xl font-bold text-foreground">
+                desde ${minPrice}
+                <span className="text-sm font-normal text-muted-foreground">/Persona</span>
+              </div>
+            ) : (
+              <div className="text-sm font-semibold text-muted-foreground">
+                Consultar precio
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
