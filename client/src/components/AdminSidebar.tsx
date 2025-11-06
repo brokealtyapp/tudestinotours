@@ -10,6 +10,7 @@ import {
   Mail,
   Plane,
   Upload,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -79,6 +80,11 @@ const menuItems = [
     title: "Plantillas",
     icon: Mail,
     value: "templates",
+  },
+  {
+    title: "Testimonios",
+    icon: MessageSquare,
+    value: "testimonials",
   },
   {
     title: "Configuración",
