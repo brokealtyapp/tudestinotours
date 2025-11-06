@@ -52,10 +52,11 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 - **Modular Architecture**: Clear separation between frontend and backend.
 - **Database Schema**: Extensively designed for various entities like users, tours, departures, reservations, payments, and system configurations.
 - **Departure-Centric Model**: All operational data (pricing, capacity, deposit rules) managed exclusively at departure level. Tours are purely descriptive:
-  - **Tours Schema**: Contains only descriptive fields (title, description, continent, duration, images, featured, itinerary, includes/excludes, policies, FAQs). No operational data (price, capacity, location, deposits).
-  - **Departures Schema**: Contains all operational data - independent pricing, seat capacity (totalSeats/reservedSeats), flexible deposits (percentage OR fixed amount), supplements, cancellation policy overrides, payment deadlines.
+  - **Tours Schema**: Contains ONLY descriptive fields - title, description, continent, duration, images, featured, itinerary, includes/excludes, policies, FAQs. **NO operational data** (price, capacity, location, deposits, maxPassengers, reservedSeats removed in migration Nov 2025).
+  - **Departures Schema**: Contains ALL operational data - independent pricing, seat capacity (totalSeats/reservedSeats), flexible deposits (percentage OR fixed amount), supplements, cancellation policy overrides, payment deadlines.
   - **Multi-City Tours**: Tours no longer have a single "location" field since they can span multiple cities. Geographic filtering uses continent level only.
-  - **Pricing Display**: UI shows "desde $X" calculated from minimum price of active departures, not stored in tours table.
+  - **Pricing Display**: Frontend shows "desde $X/Persona" calculated dynamically from minimum price of active departures via GET /api/tours enrichment. API enriches each tour response with `minPrice` and `activeDeparturesCount`.
+  - **Dashboard KPIs**: Occupation metrics calculated from departures.totalSeats/reservedSeats, not from tours table.
   - **Flexible Deposits**: Each departure chooses between percentage-based (e.g., 20% of total) OR fixed amount (e.g., $500) with validation to prevent exceeding total.
   - **Payment Scheduling**: Client selects installment frequency (weekly/biweekly/monthly) during booking, with automatic deadline enforcement.
   - **Payment Deadlines**: Configurable full-payment deadline (default: 30 days before departure date), validated during installment generation.
