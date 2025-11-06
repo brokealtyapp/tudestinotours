@@ -1624,7 +1624,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System Configuration routes (migrado a system_settings)
-  app.get("/api/config", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  // GET endpoints son públicos para que la landing page pueda cargar continentes/ciudades
+  app.get("/api/config", async (req: Request, res) => {
     try {
       // Leer desde system_settings (todas las categorías)
       const allConfigs = await storage.getSettings();
@@ -1644,7 +1645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/config/:key", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  app.get("/api/config/:key", async (req: Request, res) => {
     try {
       const config = await storage.getSetting(req.params.key);
       if (!config) {
