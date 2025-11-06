@@ -32,6 +32,8 @@ import {
   type InsertAuditLog,
   type SystemSetting,
   type InsertSystemSetting,
+  type Testimonial,
+  type InsertTestimonial,
   users,
   tours,
   departures,
@@ -48,6 +50,7 @@ import {
   emailLogs,
   auditLogs,
   systemSettings,
+  testimonials,
   insertPaymentInstallmentSchema,
   insertPassengerSchema,
   insertDepartureSchema,
@@ -185,6 +188,14 @@ export interface IStorage {
   createSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
   updateSetting(key: string, value: string, updatedBy?: string): Promise<SystemSetting | undefined>;
   deleteSetting(key: string): Promise<void>;
+
+  // Testimonials methods
+  getTestimonials(): Promise<Testimonial[]>;
+  getActiveTestimonials(): Promise<Testimonial[]>;
+  getTestimonial(id: string): Promise<Testimonial | undefined>;
+  createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  updateTestimonial(id: string, testimonial: Partial<InsertTestimonial>): Promise<Testimonial | undefined>;
+  deleteTestimonial(id: string): Promise<void>;
 }
 
 export interface SalesReport {
@@ -1598,6 +1609,52 @@ export class DbStorage implements IStorage {
 
   async deleteSetting(key: string): Promise<void> {
     await db.delete(systemSettings).where(eq(systemSettings.key, key));
+  }
+
+  // Testimonials methods
+  async getTestimonials(): Promise<Testimonial[]> {
+    return await db
+      .select()
+      .from(testimonials)
+      .orderBy(testimonials.order, desc(testimonials.createdAt));
+  }
+
+  async getActiveTestimonials(): Promise<Testimonial[]> {
+    return await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.isActive, true))
+      .orderBy(testimonials.order, desc(testimonials.createdAt));
+  }
+
+  async getTestimonial(id: string): Promise<Testimonial | undefined> {
+    const result = await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial> {
+    const result = await db
+      .insert(testimonials)
+      .values(testimonial)
+      .returning();
+    return result[0];
+  }
+
+  async updateTestimonial(id: string, testimonial: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
+    const result = await db
+      .update(testimonials)
+      .set(testimonial)
+      .where(eq(testimonials.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteTestimonial(id: string): Promise<void> {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
   }
 
   // Initialize default system settings
