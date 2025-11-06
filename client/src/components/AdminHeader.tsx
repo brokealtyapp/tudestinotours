@@ -1,6 +1,5 @@
-import { Search, Bell, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,12 +12,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 
-interface AdminHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-}
-
-export function AdminHeader({ searchQuery, onSearchChange }: AdminHeaderProps) {
+export function AdminHeader() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -49,18 +43,6 @@ export function AdminHeader({ searchQuery, onSearchChange }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="Buscar reservas, tours, pasajeros..."
-            className="pl-10 bg-gray-50 border-gray-200 focus:bg-white"
-            data-testid="input-admin-search"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-        </div>
-
         <Button 
           variant="ghost" 
           size="icon" 

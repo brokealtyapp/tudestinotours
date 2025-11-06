@@ -536,14 +536,14 @@ export default function Admin() {
         />
         
         <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          <AdminHeader />
           <main className="flex-1 overflow-y-auto p-8">
             <div className="max-w-7xl mx-auto space-y-6">
               {activeSection === "dashboard" && <DashboardAdmin />}
 
-              {activeSection === "departures" && <DeparturesManagement searchQuery={searchQuery} />}
+              {activeSection === "departures" && <DeparturesManagement />}
 
-              {activeSection === "tours" && <ToursManagement searchQuery={searchQuery} />}
+              {activeSection === "tours" && <ToursManagement />}
 
               {activeSection === "reservations" && (
                 <div>
@@ -1086,7 +1086,7 @@ export default function Admin() {
               )}
 
               {activeSection === "documents" && (
-                <DocumentVerification searchQuery={searchQuery} />
+                <DocumentVerification />
               )}
             </div>
           </main>

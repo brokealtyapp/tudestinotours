@@ -58,11 +58,7 @@ interface Tour {
   createdAt: Date;
 }
 
-interface ToursManagementProps {
-  searchQuery?: string;
-}
-
-export default function ToursManagement({ searchQuery: globalSearchQuery = "" }: ToursManagementProps) {
+export default function ToursManagement() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [showCreateEditDialog, setShowCreateEditDialog] = useState(false);
@@ -74,9 +70,6 @@ export default function ToursManagement({ searchQuery: globalSearchQuery = "" }:
   
   // Filtros
   const [searchQuery, setSearchQuery] = useState<string>("");
-  
-  // Combinar búsqueda global y local
-  const effectiveSearchQuery = globalSearchQuery || searchQuery;
   
   // Ordenamiento
   const [sortBy, setSortBy] = useState<"title">("title");
@@ -147,9 +140,9 @@ export default function ToursManagement({ searchQuery: globalSearchQuery = "" }:
   // Filtrado y ordenamiento
   const filteredAndSortedTours = allTours
     ?.filter(t => {
-      // Filtro por búsqueda de texto (usa búsqueda global o local)
-      if (effectiveSearchQuery) {
-        const searchLower = effectiveSearchQuery.toLowerCase();
+      // Filtro por búsqueda de texto
+      if (searchQuery) {
+        const searchLower = searchQuery.toLowerCase();
         const titleMatch = t.title.toLowerCase().includes(searchLower);
         const descriptionMatch = t.description.toLowerCase().includes(searchLower);
         const continentMatch = t.continent?.toLowerCase().includes(searchLower);

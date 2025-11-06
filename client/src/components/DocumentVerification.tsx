@@ -17,11 +17,7 @@ import { Eye, ThumbsUp, ThumbsDown, X, Search, FileCheck, AlertCircle } from "lu
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-interface DocumentVerificationProps {
-  searchQuery?: string;
-}
-
-export function DocumentVerification({ searchQuery: globalSearchQuery = "" }: DocumentVerificationProps) {
+export function DocumentVerification() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,9 +35,6 @@ export function DocumentVerification({ searchQuery: globalSearchQuery = "" }: Do
     return passengersWithDetails.filter(p => p.passportImageUrl);
   }, [passengersWithDetails]);
 
-  // Combinar búsqueda global y local
-  const effectiveSearchTerm = globalSearchQuery || searchTerm;
-
   // Apply filters and search
   const filteredPassengers = useMemo(() => {
     let filtered = passengersWithDocuments;
@@ -51,9 +44,9 @@ export function DocumentVerification({ searchQuery: globalSearchQuery = "" }: Do
       filtered = filtered.filter(p => (p.documentStatus || 'pending') === activeTab);
     }
 
-    // Filter by search term (usa búsqueda global o local)
-    if (effectiveSearchTerm) {
-      const search = effectiveSearchTerm.toLowerCase();
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
       filtered = filtered.filter(p =>
         p.fullName.toLowerCase().includes(search) ||
         p.passportNumber.toLowerCase().includes(search) ||
@@ -64,7 +57,7 @@ export function DocumentVerification({ searchQuery: globalSearchQuery = "" }: Do
     }
 
     return filtered;
-  }, [passengersWithDocuments, activeTab, effectiveSearchTerm]);
+  }, [passengersWithDocuments, activeTab, searchTerm]);
 
   // Count by status
   const statusCounts = useMemo(() => {
