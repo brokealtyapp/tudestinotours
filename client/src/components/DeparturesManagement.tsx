@@ -70,7 +70,11 @@ interface Tour {
   price: string;
 }
 
-export default function DeparturesManagement() {
+interface DeparturesManagementProps {
+  searchQuery?: string;
+}
+
+export default function DeparturesManagement({ searchQuery: globalSearchQuery = "" }: DeparturesManagementProps) {
   const { toast } = useToast();
   const [showCreateEditDialog, setShowCreateEditDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -87,6 +91,9 @@ export default function DeparturesManagement() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  
+  // Combinar búsqueda global y local
+  const effectiveSearchQuery = globalSearchQuery || searchQuery;
   
   // Ordenamiento
   const [sortBy, setSortBy] = useState<"date" | "occupation" | "price">("date");
@@ -193,11 +200,11 @@ export default function DeparturesManagement() {
       // Filtro por estado
       if (filterStatus !== "all" && d.status !== filterStatus) return false;
       
-      // Filtro por búsqueda de texto
-      if (searchQuery) {
+      // Filtro por búsqueda de texto (usa búsqueda global o local)
+      if (effectiveSearchQuery) {
         const tourName = getTourName(d.tourId).toLowerCase();
         const departureDate = format(new Date(d.departureDate), "dd/MM/yyyy");
-        const searchLower = searchQuery.toLowerCase();
+        const searchLower = effectiveSearchQuery.toLowerCase();
         
         if (!tourName.includes(searchLower) && !departureDate.includes(searchLower)) {
           return false;

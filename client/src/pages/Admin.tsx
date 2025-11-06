@@ -541,9 +541,9 @@ export default function Admin() {
             <div className="max-w-7xl mx-auto space-y-6">
               {activeSection === "dashboard" && <DashboardAdmin />}
 
-              {activeSection === "departures" && <DeparturesManagement />}
+              {activeSection === "departures" && <DeparturesManagement searchQuery={searchQuery} />}
 
-              {activeSection === "tours" && <ToursManagement />}
+              {activeSection === "tours" && <ToursManagement searchQuery={searchQuery} />}
 
               {activeSection === "reservations" && (
                 <div>
@@ -1086,7 +1086,7 @@ export default function Admin() {
               )}
 
               {activeSection === "documents" && (
-                <DocumentVerification />
+                <DocumentVerification searchQuery={searchQuery} />
               )}
             </div>
           </main>
