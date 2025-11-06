@@ -45,11 +45,11 @@ export function ClientHeader() {
     <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4">
         <SidebarTrigger className="md:hidden" data-testid="button-sidebar-toggle" />
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900" data-testid="text-client-greeting">
             {getGreeting()}, {user?.name || user?.email?.split('@')[0] || 'Cliente'}
           </h1>
-          <p className="text-sm text-gray-500 hidden sm:block">Bienvenido a tu panel</p>
+          <p className="text-sm text-gray-500">Bienvenido a tu panel</p>
         </div>
       </div>
 
