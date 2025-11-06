@@ -3,11 +3,30 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Globe, Mail } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import logo from "@assets/logo tu destino tours horizontal_1761754020215.png";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+
+  const { data: config } = useQuery<any[]>({
+    queryKey: ["/api/config"],
+  });
+
+  const continents = useMemo(() => {
+    const continentsConfig = config?.find((c: any) => c.key === "CONTINENTS_AND_CITIES");
+    if (!continentsConfig?.value) return [];
+    
+    try {
+      const data = typeof continentsConfig.value === "string" 
+        ? JSON.parse(continentsConfig.value) 
+        : continentsConfig.value;
+      return Object.keys(data);
+    } catch {
+      return [];
+    }
+  }, [config]);
 
   const handleSubscribe = () => {
     console.log("Subscribe with email:", email);
@@ -61,12 +80,22 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Destinos</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">USA</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">India</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Francia</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Reino Unido</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">España</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Canadá</Link></li>
+              {continents.length > 0 ? (
+                continents.map((continent) => (
+                  <li key={continent}>
+                    <Link 
+                      href={`/tours?continent=${encodeURIComponent(continent)}`} 
+                      className="hover-elevate px-2 py-1 rounded-md inline-block"
+                    >
+                      {continent}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li><Link href="/tours" className="hover-elevate px-2 py-1 rounded-md inline-block">Todos los Tours</Link></li>
+                </>
+              )}
             </ul>
           </div>
         </div>
