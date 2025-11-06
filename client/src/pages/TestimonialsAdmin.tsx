@@ -62,7 +62,7 @@ export default function TestimonialsAdmin() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertTestimonial) => {
-      return await apiRequest("/api/testimonials", "POST", data);
+      return await apiRequest("POST", "/api/testimonials", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -83,7 +83,7 @@ export default function TestimonialsAdmin() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertTestimonial> }) => {
-      return await apiRequest(`/api/testimonials/${id}`, "PUT", data);
+      return await apiRequest("PUT", `/api/testimonials/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -104,7 +104,7 @@ export default function TestimonialsAdmin() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/testimonials/${id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/testimonials/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
