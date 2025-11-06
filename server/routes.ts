@@ -261,9 +261,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         overdue: reservations.filter(r => r.status === "overdue").length,
       };
 
-      // Calculate average occupation
-      const totalSeats = tours.reduce((sum, t) => sum + (t.maxPassengers || 0), 0);
-      const reservedSeats = tours.reduce((sum, t) => sum + (t.reservedSeats || 0), 0);
+      // Calculate average occupation from departures
+      const allDepartures = await Promise.all(
+        tours.map(t => storage.getDepartures(t.id))
+      );
+      const flatDepartures = allDepartures.flat().filter(d => d.status === 'active');
+      const totalSeats = flatDepartures.reduce((sum, d) => sum + (d.totalSeats || 0), 0);
+      const reservedSeats = flatDepartures.reduce((sum, d) => sum + (d.reservedSeats || 0), 0);
       const averageOccupation = totalSeats > 0 ? (reservedSeats / totalSeats) * 100 : 0;
 
       // Calculate pending payments
@@ -321,40 +325,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paid: reservations.filter(r => r.paymentStatus === "completed" || r.status === "confirmed").length,
       };
 
-      // Occupation by departure - group reservations by tour+date
-      const departureGroups = new Map<string, { tourId: string; tourName: string; departureDate: string; passengerCount: number; maxPassengers: number }>();
-      
-      for (const reservation of reservations.filter(r => r.status !== "cancelled")) {
-        const key = `${reservation.tourId}-${reservation.departureDate}`;
-        const tour = tours.find(t => t.id === reservation.tourId);
-        
-        if (tour && reservation.departureDate) {
-          const departureDateObj = new Date(reservation.departureDate);
-          if (departureDateObj >= now) { // Only future departures
-            const existing = departureGroups.get(key);
-            if (existing) {
-              existing.passengerCount += reservation.numberOfPassengers;
-            } else {
-              departureGroups.set(key, {
-                tourId: reservation.tourId,
-                tourName: tour.title,
-                departureDate: new Date(reservation.departureDate).toISOString(),
-                passengerCount: reservation.numberOfPassengers,
-                maxPassengers: tour.maxPassengers,
-              });
-            }
-          }
-        }
-      }
-
-      const occupationByDeparture = Array.from(departureGroups.values())
-        .map(dep => ({
-          tourName: dep.tourName,
-          departureDate: dep.departureDate,
-          occupiedSeats: dep.passengerCount,
-          maxSeats: dep.maxPassengers,
-          occupationPercentage: dep.maxPassengers > 0 ? Math.round((dep.passengerCount / dep.maxPassengers) * 100) : 0,
-        }))
+      // Occupation by departure - use actual departures data
+      const occupationByDeparture = flatDepartures
+        .filter(d => new Date(d.departureDate) >= now) // Only future departures
+        .map(dep => {
+          const tour = tours.find(t => t.id === dep.tourId);
+          return {
+            tourName: tour?.title || "Tour desconocido",
+            departureDate: new Date(dep.departureDate).toISOString(),
+            occupiedSeats: dep.reservedSeats || 0,
+            maxSeats: dep.totalSeats || 0,
+            occupationPercentage: dep.totalSeats > 0 ? Math.round(((dep.reservedSeats || 0) / dep.totalSeats) * 100) : 0,
+          };
+        })
         .sort((a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
         .slice(0, 10); // Next 10 departures
 
@@ -382,7 +365,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { location } = req.query;
       const tours = await storage.searchTours(location as string);
-      res.json(tours);
+      
+      // Enriquecer cada tour con precio mínimo de departures activas
+      const toursWithPricing = await Promise.all(
+        tours.map(async (tour) => {
+          const departures = await storage.getDepartures(tour.id);
+          const activeDepartures = departures.filter(d => d.status === 'active');
+          
+          // Calcular precio mínimo de departures activas
+          const minPrice = activeDepartures.length > 0
+            ? Math.min(...activeDepartures.map(d => parseFloat(d.price.toString())))
+            : null;
+          
+          return {
+            ...tour,
+            minPrice,
+            activeDeparturesCount: activeDepartures.length,
+          };
+        })
+      );
+      
+      res.json(toursWithPricing);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
