@@ -628,26 +628,84 @@ export default function Booking() {
                       </p>
                     </div>
 
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-4 bg-muted rounded-lg space-y-3">
                       {(() => {
                         const selectedDeparture = departures.find(d => d.id === selectedDepartureId);
-                        const price = selectedDeparture ? parseFloat(selectedDeparture.price) : 0;
+                        if (!selectedDeparture) return null;
+                        
+                        const pricePerPerson = parseFloat(selectedDeparture.price);
+                        const totalPrice = pricePerPerson * numPassengers;
+                        
+                        // Calculate deposit
+                        let depositAmount = 0;
+                        if (selectedDeparture.depositType === 'percentage' && selectedDeparture.depositPercentage) {
+                          depositAmount = (totalPrice * selectedDeparture.depositPercentage) / 100;
+                        } else if (selectedDeparture.depositType === 'fixed' && selectedDeparture.depositFixedAmount) {
+                          depositAmount = parseFloat(selectedDeparture.depositFixedAmount);
+                        }
+                        
+                        const remainingBalance = totalPrice - depositAmount;
+                        
+                        // Calculate installments
+                        const departureDate = new Date(selectedDeparture.departureDate);
+                        const paymentDeadlineDays = selectedDeparture.paymentDeadlineDays || 30;
+                        const paymentDeadline = new Date(departureDate);
+                        paymentDeadline.setDate(paymentDeadline.getDate() - paymentDeadlineDays);
+                        
+                        const today = new Date();
+                        const daysUntilDeadline = Math.floor((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        let installmentPeriodDays = 30;
+                        let frequencyLabel = "Mensual";
+                        if (installmentFrequency === 'weekly') {
+                          installmentPeriodDays = 7;
+                          frequencyLabel = "Semanal";
+                        } else if (installmentFrequency === 'biweekly') {
+                          installmentPeriodDays = 14;
+                          frequencyLabel = "Quincenal";
+                        }
+                        
+                        const numInstallments = Math.max(1, Math.floor(daysUntilDeadline / installmentPeriodDays));
+                        const installmentAmount = remainingBalance / numInstallments;
+                        
                         return (
                           <>
-                            <div className="flex justify-between mb-2">
+                            <div className="flex justify-between text-sm">
                               <span>Precio por persona:</span>
-                              <span className="font-semibold">${price}</span>
+                              <span className="font-semibold">${pricePerPerson.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between mb-2">
+                            <div className="flex justify-between text-sm">
                               <span>Número de pasajeros:</span>
                               <span className="font-semibold">{numPassengers}</span>
                             </div>
-                            <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                              <span>Total:</span>
-                              <span className="text-primary">
-                                ${(price * numPassengers).toFixed(2)}
-                              </span>
+                            <Separator />
+                            <div className="flex justify-between text-base font-semibold">
+                              <span>Costo Total del Tour:</span>
+                              <span className="text-primary">${totalPrice.toFixed(2)}</span>
                             </div>
+                            
+                            <div className="bg-blue-100 dark:bg-blue-950/30 p-2 rounded-md mt-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium">Monto de Reserva:</span>
+                                <span className="font-bold text-blue-700 dark:text-blue-400">
+                                  ${depositAmount.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between text-sm">
+                              <span>Saldo Restante:</span>
+                              <span className="font-semibold">${remainingBalance.toFixed(2)}</span>
+                            </div>
+                            
+                            {remainingBalance > 0 && (
+                              <div className="bg-background border p-2 rounded-md text-xs">
+                                <div className="flex justify-between">
+                                  <span>{numInstallments} cuota{numInstallments !== 1 ? 's' : ''} ({frequencyLabel})</span>
+                                  <span className="font-semibold">${installmentAmount.toFixed(2)} c/u</span>
+                                </div>
+                              </div>
+                            )}
                           </>
                         );
                       })()}
