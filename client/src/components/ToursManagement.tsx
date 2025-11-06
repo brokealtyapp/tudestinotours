@@ -75,19 +75,32 @@ export default function ToursManagement() {
   const [sortBy, setSortBy] = useState<"title">("title");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   
-  const [tourForm, setTourForm] = useState({
+  const [tourForm, setTourForm] = useState<{
+    title: string;
+    description: string;
+    continent: string | null;
+    duration: string;
+    images: string[];
+    featured: boolean;
+    itinerary: string;
+    includes: string[];
+    excludes: string[];
+    cancellationPolicy: string;
+    requirements: string;
+    faqs: { question: string; answer: string }[];
+  }>({
     title: "",
     description: "",
-    continent: "",
+    continent: null,
     duration: "",
-    images: [] as string[],
+    images: [],
     featured: false,
     itinerary: "",
-    includes: [] as string[],
-    excludes: [] as string[],
+    includes: [],
+    excludes: [],
     cancellationPolicy: "",
     requirements: "",
-    faqs: [] as { question: string; answer: string }[],
+    faqs: [],
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
