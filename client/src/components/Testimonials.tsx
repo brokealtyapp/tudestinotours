@@ -1,27 +1,37 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-
-const testimonials = [
-  {
-    id: 1,
-    name: "Mark Smith",
-    company: "Google Inc.",
-    rating: 5,
-    text: "Una experiencia maravillosa, el valle encantador lleno de vapor alrededor y el sol meridiano golpea la parte superior impenetrable.",
-    avatar: "",
-  },
-  {
-    id: 2,
-    name: "Charles Patterson",
-    company: "Técnico de Servicio",
-    rating: 5,
-    text: "Servicio excepcional, el valle encantador lleno de vapor alrededor y el sol meridiano golpea la parte superior impenetrable.",
-    avatar: "",
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 export default function Testimonials() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const { data: testimonials = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/testimonials"],
+  });
+
+  const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + 2);
+
+  const handlePrevious = () => {
+    setCurrentIndex(prev => (prev - 2 < 0 ? Math.max(0, testimonials.length - 2) : prev - 2));
+  };
+
+  const handleNext = () => {
+    setCurrentIndex(prev => (prev + 2 >= testimonials.length ? 0 : prev + 2));
+  };
+
+  useEffect(() => {
+    if (testimonials.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 2 >= testimonials.length ? 0 : prev + 2));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]);
+
+  if (isLoading || testimonials.length === 0) {
+    return null;
+  }
   return (
     <section className="py-16 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,8 +50,9 @@ export default function Testimonials() {
                 variant="outline"
                 size="icon"
                 className="rounded-full bg-destructive text-destructive-foreground hover-elevate active-elevate-2"
-                onClick={() => console.log("Previous testimonial")}
+                onClick={handlePrevious}
                 data-testid="button-prev-testimonial"
+                disabled={testimonials.length <= 2}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -49,23 +60,36 @@ export default function Testimonials() {
                 variant="outline"
                 size="icon"
                 className="rounded-full"
-                onClick={() => console.log("Next testimonial")}
+                onClick={handleNext}
                 data-testid="button-next-testimonial"
+                disabled={testimonials.length <= 2}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground">
-                Hay muchas variaciones
+                {currentIndex + 1} - {Math.min(currentIndex + 2, testimonials.length)} de {testimonials.length}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {testimonials.map((testimonial) => (
+            {visibleTestimonials.map((testimonial) => (
               <Card key={testimonial.id} className="bg-card" data-testid={`card-testimonial-${testimonial.id}`}>
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary/20 mb-4"></div>
+                    {testimonial.imageUrl ? (
+                      <img 
+                        src={testimonial.imageUrl} 
+                        alt={testimonial.name}
+                        className="w-16 h-16 rounded-full object-cover mb-4"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-primary/20 mb-4 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-primary">
+                          {testimonial.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                     <h3 className="font-semibold mb-1">{testimonial.name}</h3>
                     <p className="text-sm text-muted-foreground mb-4">
                       {testimonial.company}
@@ -77,7 +101,7 @@ export default function Testimonials() {
                       {testimonial.text}
                     </p>
                     <div className="flex gap-1">
-                      {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      {Array.from({ length: testimonial.rating || 5 }).map((_, i) => (
                         <Star
                           key={i}
                           className="h-4 w-4 fill-destructive text-destructive"
