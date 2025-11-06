@@ -288,11 +288,23 @@ export default function TourDetail() {
             <Separator />
 
             {/* Itinerary */}
-            {tour.itinerary && typeof tour.itinerary === 'string' && tour.itinerary.trim().length > 0 && (
+            {tour.itinerary && Array.isArray(tour.itinerary) && tour.itinerary.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-4">Itinerario</h2>
-                <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line">
-                  {String(tour.itinerary)}
+                <div className="space-y-4">
+                  {tour.itinerary.map((day: { day: string; title: string; description: string }, idx: number) => (
+                    <div key={idx} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold mb-1">{day.title}</h3>
+                          <p className="text-muted-foreground whitespace-pre-line">{day.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             )}

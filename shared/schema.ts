@@ -34,12 +34,12 @@ export const tours = pgTable("tours", {
   featured: boolean("featured").notNull().default(false),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   reviewCount: integer("review_count").default(0),
-  itinerary: jsonb("itinerary"),
+  itinerary: jsonb("itinerary").$type<{ day: string; title: string; description: string }[] | null>(),
   includes: text("includes").array().default(sql`ARRAY[]::text[]`),
   excludes: text("excludes").array().default(sql`ARRAY[]::text[]`),
   cancellationPolicy: text("cancellation_policy"),
   requirements: text("requirements"),
-  faqs: jsonb("faqs"),
+  faqs: jsonb("faqs").$type<{ question: string; answer: string }[] | null>(),
   createdAt: timestampDate("created_at").defaultNow().notNull(),
 });
 
