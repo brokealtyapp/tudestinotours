@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -756,6 +757,11 @@ export default function DeparturesManagement() {
             <DialogTitle>
               {editingDeparture ? "Editar Salida" : "Nueva Salida"}
             </DialogTitle>
+            <DialogDescription>
+              {editingDeparture
+                ? "Modifica los detalles de la salida. Los campos marcados con * son obligatorios."
+                : "Completa la información para crear una nueva salida de un tour. Los campos marcados con * son obligatorios."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

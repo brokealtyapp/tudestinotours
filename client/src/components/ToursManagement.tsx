@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -608,6 +609,11 @@ export default function ToursManagement() {
             <DialogTitle>
               {editingTour ? "Editar Tour" : "Nuevo Tour"}
             </DialogTitle>
+            <DialogDescription>
+              {editingTour 
+                ? "Modifica los detalles del tour. Los campos marcados con * son obligatorios." 
+                : "Completa la información para crear un nuevo tour. Los campos marcados con * son obligatorios."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
