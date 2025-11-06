@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import TourCard from "./TourCard";
-import { SlidersHorizontal } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 
@@ -60,32 +59,26 @@ export default function ExploreDestinations() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-4 mb-8 overflow-x-auto pb-2">
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={!activeContinent ? "default" : "outline"}
-              className={!activeContinent ? "bg-foreground text-background" : ""}
-              onClick={() => setActiveContinent(null)}
-              data-testid="button-category-todos"
-            >
-              Todos
-            </Button>
-            {continents.map((continent) => (
-              <Button
-                key={continent}
-                variant={activeContinent === continent ? "default" : "outline"}
-                className={activeContinent === continent ? "bg-foreground text-background" : ""}
-                onClick={() => setActiveContinent(continent)}
-                data-testid={`button-category-${continent.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {continent}
-              </Button>
-            ))}
-          </div>
-          <Button variant="outline" className="gap-2 flex-shrink-0" data-testid="button-filters">
-            Filtros
-            <SlidersHorizontal className="h-4 w-4" />
+        <div className="flex gap-2 flex-wrap mb-8 overflow-x-auto pb-2">
+          <Button
+            variant={!activeContinent ? "default" : "outline"}
+            className={!activeContinent ? "bg-foreground text-background" : ""}
+            onClick={() => setActiveContinent(null)}
+            data-testid="button-category-todos"
+          >
+            Todos
           </Button>
+          {continents.map((continent) => (
+            <Button
+              key={continent}
+              variant={activeContinent === continent ? "default" : "outline"}
+              className={activeContinent === continent ? "bg-foreground text-background" : ""}
+              onClick={() => setActiveContinent(continent)}
+              data-testid={`button-category-${continent.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {continent}
+            </Button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
