@@ -169,11 +169,13 @@ export default function ContactSection() {
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Oficina principal</h3>
+                    <h3 className="font-semibold mb-1">Nuestra oficina</h3>
                     <p className="text-muted-foreground">
-                      123 Avenida Principal
+                      260 Madison ave FL8
                       <br />
-                      Ciudad, País 12345
+                      New York NY 10016
+                      <br />
+                      United States
                     </p>
                   </div>
                 </div>

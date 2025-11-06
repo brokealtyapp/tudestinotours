@@ -28,8 +28,8 @@ export default function Footer() {
             <div className="flex items-center gap-2 mb-6">
               <Globe className="h-5 w-5 text-primary" />
               <div>
-                <p className="font-semibold text-sm">Nuestras Oficinas Internacionales</p>
-                <p className="text-sm text-muted-foreground">Australia, Nepal, USA</p>
+                <p className="font-semibold text-sm">Nuestra oficina</p>
+                <p className="text-sm text-muted-foreground">260 Madison ave FL8<br />New York NY 10016<br />United States</p>
               </div>
             </div>
           </div>
