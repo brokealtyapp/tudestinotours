@@ -2417,6 +2417,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Testimonials routes
+  app.get("/api/testimonials", async (req, res) => {
+    try {
+      // Return only active testimonials for public view
+      const testimonials = await storage.getActiveTestimonials();
+      res.json(testimonials);
+    } catch (error: any) {
+      console.error("Error obteniendo testimonios:", error);
+      res.status(500).json({ error: "Error obteniendo testimonios" });
+    }
+  });
+
+  app.get("/api/admin/testimonials", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      // Return all testimonials for admin
+      const testimonials = await storage.getTestimonials();
+      res.json(testimonials);
+    } catch (error: any) {
+      console.error("Error obteniendo testimonios:", error);
+      res.status(500).json({ error: "Error obteniendo testimonios" });
+    }
+  });
+
+  app.get("/api/admin/testimonials/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const testimonial = await storage.getTestimonial(req.params.id);
+      if (!testimonial) {
+        return res.status(404).json({ error: "Testimonio no encontrado" });
+      }
+      res.json(testimonial);
+    } catch (error: any) {
+      console.error("Error obteniendo testimonio:", error);
+      res.status(500).json({ error: "Error obteniendo testimonio" });
+    }
+  });
+
+  app.post("/api/admin/testimonials", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const testimonial = await storage.createTestimonial(req.body);
+      res.json(testimonial);
+    } catch (error: any) {
+      console.error("Error creando testimonio:", error);
+      res.status(500).json({ error: "Error creando testimonio" });
+    }
+  });
+
+  app.put("/api/admin/testimonials/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const testimonial = await storage.updateTestimonial(req.params.id, req.body);
+      if (!testimonial) {
+        return res.status(404).json({ error: "Testimonio no encontrado" });
+      }
+      res.json(testimonial);
+    } catch (error: any) {
+      console.error("Error actualizando testimonio:", error);
+      res.status(500).json({ error: "Error actualizando testimonio" });
+    }
+  });
+
+  app.delete("/api/admin/testimonials/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      await storage.deleteTestimonial(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error eliminando testimonio:", error);
+      res.status(500).json({ error: "Error eliminando testimonio" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
