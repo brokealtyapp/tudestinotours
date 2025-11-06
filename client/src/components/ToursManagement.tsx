@@ -639,16 +639,16 @@ export default function ToursManagement() {
               <div>
                 <Label>Continente (Opcional)</Label>
                 <Select
-                  value={tourForm.continent}
+                  value={tourForm.continent || "none"}
                   onValueChange={(value) => {
-                    setTourForm({ ...tourForm, continent: value });
+                    setTourForm({ ...tourForm, continent: value === "none" ? null : value });
                   }}
                 >
                   <SelectTrigger data-testid="select-continent">
                     <SelectValue placeholder="Selecciona un continente" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin continente</SelectItem>
+                    <SelectItem value="none">Sin continente</SelectItem>
                     {continents.map((continent: string) => (
                       <SelectItem key={continent} value={continent}>
                         {continent}
