@@ -209,8 +209,8 @@ const InvoiceDocument = ({ reservation, tour, passengers, installments, user }: 
             <Text style={styles.value}>{tour.title}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Ubicación:</Text>
-            <Text style={styles.value}>{tour.location}</Text>
+            <Text style={styles.label}>Continente:</Text>
+            <Text style={styles.value}>{tour.continent || 'No especificado'}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Duración:</Text>
@@ -350,7 +350,7 @@ const ItineraryDocument = ({ reservation, tour, passengers, user }: ItineraryDat
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Destino:</Text>
-            <Text style={styles.value}>{tour.location}</Text>
+            <Text style={styles.value}>{tour.continent || 'No especificado'}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Fecha de Salida:</Text>
@@ -522,7 +522,7 @@ const TourBrochureDocument = ({ tour }: TourBrochureData) => {
           <Text style={styles.companyName}>Tu Destino Tours</Text>
           <Text style={styles.companyTagline}>Tu próxima aventura comienza aquí</Text>
           <Text style={styles.documentTitle}>{tour.title}</Text>
-          <Text style={styles.documentSubtitle}>{tour.location}</Text>
+          <Text style={styles.documentSubtitle}>{tour.continent || 'Destino internacional'}</Text>
         </View>
 
         {/* Overview */}
@@ -541,24 +541,31 @@ const TourBrochureDocument = ({ tour }: TourBrochureData) => {
             <Text style={styles.value}>{tour.duration}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Ubicación:</Text>
-            <Text style={styles.value}>{tour.location}</Text>
+            <Text style={styles.label}>Continente:</Text>
+            <Text style={styles.value}>{tour.continent || 'No especificado'}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Precio desde:</Text>
+            <Text style={styles.label}>Información de precio:</Text>
             <Text style={{ ...styles.value, color: '#dc2626', fontWeight: 'bold' }}>
-              ${parseFloat(tour.price).toFixed(2)} por persona
+              Consultar salidas disponibles
             </Text>
           </View>
         </View>
 
         {/* Itinerary */}
-        {tour.itinerary && (
+        {tour.itinerary && Array.isArray(tour.itinerary) && tour.itinerary.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Itinerario</Text>
-            <Text style={{ fontSize: 9, lineHeight: 1.6, color: '#475569' }}>
-              {tour.itinerary}
-            </Text>
+            {tour.itinerary.map((day, index) => (
+              <View key={index} style={styles.itineraryItem}>
+                <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 4, color: '#2563eb' }}>
+                  Día {index + 1}: {day.title}
+                </Text>
+                <Text style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
+                  {day.description}
+                </Text>
+              </View>
+            ))}
           </View>
         )}
 
