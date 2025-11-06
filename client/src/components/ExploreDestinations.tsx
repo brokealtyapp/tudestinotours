@@ -2,30 +2,44 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import TourCard from "./TourCard";
 import { SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
-
-const categories = [
-  "Destino Popular",
-  "Islas",
-  "Surf",
-  "Parques Nacionales",
-  "Lago",
-  "Playa",
-  "Camping",
-];
 
 export default function ExploreDestinations() {
   const [, setLocation] = useLocation();
-  const [activeCategory, setActiveCategory] = useState("Destino Popular");
+  const [activeContinent, setActiveContinent] = useState<string | null>(null);
 
-  const { data: tours, isLoading } = useQuery<any[]>({
+  const { data: tours, isLoading: toursLoading } = useQuery<any[]>({
     queryKey: ["/api/tours"],
   });
 
-  const displayedTours = tours?.slice(0, 6) || [];
+  const { data: config, isLoading: configLoading } = useQuery<any[]>({
+    queryKey: ["/api/config"],
+  });
 
-  if (isLoading) {
+  const continents = useMemo(() => {
+    const continentsConfig = config?.find((c: any) => c.key === "CONTINENTS_AND_CITIES");
+    if (!continentsConfig?.value) return [];
+    
+    try {
+      const data = typeof continentsConfig.value === "string" 
+        ? JSON.parse(continentsConfig.value) 
+        : continentsConfig.value;
+      return Object.keys(data);
+    } catch {
+      return [];
+    }
+  }, [config]);
+
+  const filteredTours = useMemo(() => {
+    if (!tours) return [];
+    if (!activeContinent) return tours;
+    return tours.filter((tour: any) => tour.continent === activeContinent);
+  }, [tours, activeContinent]);
+
+  const displayedTours = filteredTours.slice(0, 6);
+
+  if (toursLoading || configLoading) {
     return (
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,15 +62,23 @@ export default function ExploreDestinations() {
 
         <div className="flex items-center justify-between gap-4 mb-8 overflow-x-auto pb-2">
           <div className="flex gap-2 flex-wrap">
-            {categories.map((category) => (
+            <Button
+              variant={!activeContinent ? "default" : "outline"}
+              className={!activeContinent ? "bg-foreground text-background" : ""}
+              onClick={() => setActiveContinent(null)}
+              data-testid="button-category-todos"
+            >
+              Todos
+            </Button>
+            {continents.map((continent) => (
               <Button
-                key={category}
-                variant={activeCategory === category ? "default" : "outline"}
-                className={activeCategory === category ? "bg-foreground text-background" : ""}
-                onClick={() => setActiveCategory(category)}
-                data-testid={`button-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                key={continent}
+                variant={activeContinent === continent ? "default" : "outline"}
+                className={activeContinent === continent ? "bg-foreground text-background" : ""}
+                onClick={() => setActiveContinent(continent)}
+                data-testid={`button-category-${continent.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                {category}
+                {continent}
               </Button>
             ))}
           </div>
