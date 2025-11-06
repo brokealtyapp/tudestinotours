@@ -379,3 +379,23 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit
 
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+
+export const testimonials = pgTable("testimonials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  company: text("company").notNull(),
+  rating: integer("rating").notNull().default(5),
+  text: text("text").notNull(),
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").notNull().default(true),
+  order: integer("order").notNull().default(0),
+  createdAt: timestampDate("created_at").defaultNow().notNull(),
+});
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+export type Testimonial = typeof testimonials.$inferSelect;
