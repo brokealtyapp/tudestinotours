@@ -1104,8 +1104,15 @@ export default function Admin() {
               </DialogTitle>
             </DialogHeader>
             
-            <Tabs defaultValue="installments" className="mt-4">
-              <TabsList className="grid w-full grid-cols-4 bg-white rounded-lg p-1 shadow-sm">
+            <Tabs defaultValue="summary" className="mt-4">
+              <TabsList className="grid w-full grid-cols-5 bg-white rounded-lg p-1 shadow-sm">
+                <TabsTrigger 
+                  value="summary" 
+                  data-testid="tab-summary"
+                  className="rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Resumen
+                </TabsTrigger>
                 <TabsTrigger 
                   value="installments" 
                   data-testid="tab-installments"
@@ -1135,6 +1142,268 @@ export default function Admin() {
                   Auditoría
                 </TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="summary" className="space-y-6">
+                {selectedReservation && (() => {
+                  const reservation = selectedReservation;
+                  const tour = tours?.find((t: any) => t.id === reservation.tourId);
+                  const departure = allDepartures?.find((d: any) => d.id === reservation.departureId);
+                  const passengers = allPassengers?.filter((p: any) => p.reservationId === reservation.id) || [];
+                  
+                  // Calculate deposit and remaining balance
+                  let depositAmount = 0;
+                  if (departure?.depositType === 'percentage' && departure?.depositPercentage) {
+                    depositAmount = (parseFloat(reservation.totalPrice) * departure.depositPercentage) / 100;
+                  } else if (departure?.depositType === 'fixed' && departure?.depositFixedAmount) {
+                    depositAmount = parseFloat(departure.depositFixedAmount);
+                  }
+                  const remainingBalance = parseFloat(reservation.totalPrice) - depositAmount;
+                  
+                  return (
+                    <div className="space-y-6">
+                      {/* Información General */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Información de la Reserva</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Código:</span>
+                              <span className="font-mono font-semibold">#{reservation.reservationCode}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Estado:</span>
+                              <Badge variant={
+                                reservation.status === 'confirmed' ? 'default' : 
+                                reservation.status === 'pending' ? 'secondary' : 
+                                'destructive'
+                              }>
+                                {reservation.status === 'confirmed' ? 'Confirmada' : 
+                                 reservation.status === 'pending' ? 'Pendiente' : 
+                                 reservation.status === 'cancelled' ? 'Cancelada' : reservation.status}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Fecha de Reserva:</span>
+                              <span className="font-medium">{new Date(reservation.createdAt).toLocaleDateString('es-ES')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Estado de Pago:</span>
+                              <Badge variant={
+                                reservation.paymentStatus === 'paid' ? 'default' : 
+                                reservation.paymentStatus === 'partial' ? 'secondary' : 
+                                'outline'
+                              }>
+                                {reservation.paymentStatus === 'paid' ? 'Pagado' : 
+                                 reservation.paymentStatus === 'partial' ? 'Pago Parcial' : 
+                                 'Pendiente'}
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Comprador</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Nombre:</span>
+                              <span className="font-semibold">{reservation.buyerName}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Email:</span>
+                              <span className="font-medium">{reservation.buyerEmail}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Teléfono:</span>
+                              <span className="font-medium">{reservation.buyerPhone}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Información del Tour y Salida */}
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Detalles del Tour</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <span className="text-muted-foreground text-sm block mb-1">Tour:</span>
+                            <span className="font-semibold text-base">{tour?.title || 'Tour no encontrado'}</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Fecha de Salida:</span>
+                              <span className="font-medium">
+                                {departure ? new Date(departure.departureDate).toLocaleDateString('es-ES', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                }) : 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Fecha de Regreso:</span>
+                              <span className="font-medium">
+                                {departure?.returnDate ? new Date(departure.returnDate).toLocaleDateString('es-ES', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                }) : 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1">Pasajeros:</span>
+                              <span className="font-semibold text-primary">{passengers.length}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Desglose Financiero */}
+                      <Card className="border-primary/20">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Desglose Financiero</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Precio por Persona:</span>
+                              <span className="font-medium">${departure ? parseFloat(departure.price).toFixed(2) : '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Número de Pasajeros:</span>
+                              <span className="font-medium">{passengers.length}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between text-base font-semibold pt-2">
+                              <span>Costo Total del Tour:</span>
+                              <span className="text-primary">${parseFloat(reservation.totalPrice).toFixed(2)}</span>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="font-medium">Monto de Depósito/Reserva:</span>
+                              <span className="font-bold text-blue-700 dark:text-blue-400">
+                                ${depositAmount.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {departure?.depositType === 'percentage' 
+                                ? `${departure.depositPercentage}% del total`
+                                : 'Monto fijo'}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Saldo Restante:</span>
+                            <span className="font-semibold">${remainingBalance.toFixed(2)}</span>
+                          </div>
+
+                          {reservation.installmentFrequency && (
+                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 rounded-md space-y-2">
+                              <div className="text-sm font-medium mb-1">Configuración de Cuotas Seleccionada:</div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Frecuencia:</span>
+                                <span className="font-semibold capitalize">
+                                  {reservation.installmentFrequency === 'weekly' ? 'Semanal' : 
+                                   reservation.installmentFrequency === 'biweekly' ? 'Quincenal' : 
+                                   'Mensual'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Pago completo antes del:</span>
+                                <span className="font-semibold">
+                                  {departure ? new Date(new Date(departure.departureDate).getTime() - 
+                                    (departure.paymentDeadlineDays || 30) * 24 * 60 * 60 * 1000)
+                                    .toLocaleDateString('es-ES', {
+                                      day: 'numeric',
+                                      month: 'long',
+                                      year: 'numeric'
+                                    }) : 'N/A'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Lista de Pasajeros */}
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Pasajeros ({passengers.length})</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {passengers.length > 0 ? (
+                            <div className="space-y-3">
+                              {passengers.map((passenger: any, index: number) => (
+                                <div key={passenger.id} className="bg-muted/50 p-4 rounded-lg">
+                                  <div className="flex justify-between items-start mb-3">
+                                    <span className="font-semibold">Pasajero {index + 1}</span>
+                                    <Badge variant={
+                                      passenger.documentStatus === 'approved' ? 'default' : 
+                                      passenger.documentStatus === 'rejected' ? 'destructive' : 
+                                      'secondary'
+                                    }>
+                                      {passenger.documentStatus === 'approved' ? '✓ Aprobado' : 
+                                       passenger.documentStatus === 'rejected' ? '✗ Rechazado' : 
+                                       'Pendiente'}
+                                    </Badge>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground block mb-0.5">Nombre:</span>
+                                      <span className="font-medium">{passenger.fullName}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground block mb-0.5">Fecha de Nacimiento:</span>
+                                      <span className="font-medium">
+                                        {new Date(passenger.dateOfBirth).toLocaleDateString('es-ES')}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground block mb-0.5">Nacionalidad:</span>
+                                      <span className="font-medium">{passenger.nationality}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground block mb-0.5">Pasaporte:</span>
+                                      <span className="font-medium font-mono">{passenger.passportNumber}</span>
+                                    </div>
+                                    {passenger.passportImageUrl && (
+                                      <div className="col-span-2">
+                                        <span className="text-muted-foreground block mb-0.5">Documento:</span>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => handleViewDocument(passenger)}
+                                          className="mt-1"
+                                        >
+                                          <Eye className="h-3 w-3 mr-1" />
+                                          Ver Documento
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No hay pasajeros registrados
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                })()}
+              </TabsContent>
               
               <TabsContent value="installments" className="space-y-6">
                 <div>
