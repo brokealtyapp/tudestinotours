@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Pencil, Trash2, Star } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTestimonialSchema, type InsertTestimonial, type SelectTestimonial } from "@shared/schema";
+import { insertTestimonialSchema, type InsertTestimonial, type Testimonial } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -40,30 +40,29 @@ import { es } from "date-fns/locale";
 export default function TestimonialsAdmin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTestimonial, setEditingTestimonial] = useState<SelectTestimonial | null>(null);
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
   const { toast } = useToast();
 
-  const { data: testimonials, isLoading } = useQuery<SelectTestimonial[]>({
+  const { data: testimonials, isLoading } = useQuery<Testimonial[]>({
     queryKey: ["/api/testimonials"],
   });
 
   const form = useForm<InsertTestimonial>({
     resolver: zodResolver(insertTestimonialSchema),
     defaultValues: {
-      customerName: "",
-      tourName: "",
-      content: "",
+      name: "",
+      company: "",
+      text: "",
       rating: 5,
-      featured: false,
+      imageUrl: "",
+      isActive: true,
+      order: 0,
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertTestimonial) => {
-      return apiRequest("/api/testimonials", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("/api/testimonials", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -83,11 +82,8 @@ export default function TestimonialsAdmin() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertTestimonial> }) => {
-      return apiRequest(`/api/testimonials/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertTestimonial> }) => {
+      return await apiRequest(`/api/testimonials/${id}`, "PUT", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -107,10 +103,8 @@ export default function TestimonialsAdmin() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest(`/api/testimonials/${id}`, {
-        method: "DELETE",
-      });
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/testimonials/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -135,30 +129,34 @@ export default function TestimonialsAdmin() {
     const query = searchQuery.toLowerCase();
     return testimonials.filter(
       (testimonial) =>
-        testimonial.customerName.toLowerCase().includes(query) ||
-        testimonial.tourName.toLowerCase().includes(query) ||
-        testimonial.content.toLowerCase().includes(query)
+        testimonial.name.toLowerCase().includes(query) ||
+        testimonial.company.toLowerCase().includes(query) ||
+        testimonial.text.toLowerCase().includes(query)
     );
   }, [testimonials, searchQuery]);
 
-  const handleOpenDialog = (testimonial?: SelectTestimonial) => {
+  const handleOpenDialog = (testimonial?: Testimonial) => {
     if (testimonial) {
       setEditingTestimonial(testimonial);
       form.reset({
-        customerName: testimonial.customerName,
-        tourName: testimonial.tourName,
-        content: testimonial.content,
+        name: testimonial.name,
+        company: testimonial.company,
+        text: testimonial.text,
         rating: testimonial.rating,
-        featured: testimonial.featured,
+        imageUrl: testimonial.imageUrl || "",
+        isActive: testimonial.isActive,
+        order: testimonial.order,
       });
     } else {
       setEditingTestimonial(null);
       form.reset({
-        customerName: "",
-        tourName: "",
-        content: "",
+        name: "",
+        company: "",
+        text: "",
         rating: 5,
-        featured: false,
+        imageUrl: "",
+        isActive: true,
+        order: 0,
       });
     }
     setIsDialogOpen(true);
@@ -178,7 +176,7 @@ export default function TestimonialsAdmin() {
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este testimonio?")) {
       deleteMutation.mutate(id);
     }
@@ -246,11 +244,12 @@ export default function TestimonialsAdmin() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Tour</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Empresa/Tour</TableHead>
                     <TableHead>Testimonio</TableHead>
                     <TableHead>Calificación</TableHead>
-                    <TableHead>Destacado</TableHead>
+                    <TableHead>Activo</TableHead>
+                    <TableHead>Orden</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -258,19 +257,20 @@ export default function TestimonialsAdmin() {
                 <TableBody>
                   {filteredTestimonials.map((testimonial) => (
                     <TableRow key={testimonial.id}>
-                      <TableCell className="font-medium">{testimonial.customerName}</TableCell>
-                      <TableCell>{testimonial.tourName}</TableCell>
+                      <TableCell className="font-medium">{testimonial.name}</TableCell>
+                      <TableCell>{testimonial.company}</TableCell>
                       <TableCell className="max-w-md">
-                        <p className="truncate">{testimonial.content}</p>
+                        <p className="truncate">{testimonial.text}</p>
                       </TableCell>
                       <TableCell>{renderStars(testimonial.rating)}</TableCell>
                       <TableCell>
-                        {testimonial.featured && (
-                          <Badge variant="default" className="bg-primary">
-                            Destacado
+                        {testimonial.isActive && (
+                          <Badge variant="default" className="bg-green-600">
+                            Activo
                           </Badge>
                         )}
                       </TableCell>
+                      <TableCell>{testimonial.order}</TableCell>
                       <TableCell>
                         {format(new Date(testimonial.createdAt), "dd MMM yyyy", { locale: es })}
                       </TableCell>
@@ -315,7 +315,7 @@ export default function TestimonialsAdmin() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="customerName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nombre del Cliente</FormLabel>
@@ -323,7 +323,7 @@ export default function TestimonialsAdmin() {
                       <Input
                         placeholder="Juan Pérez"
                         {...field}
-                        data-testid="input-customer-name"
+                        data-testid="input-name"
                       />
                     </FormControl>
                     <FormMessage />
@@ -333,15 +333,15 @@ export default function TestimonialsAdmin() {
 
               <FormField
                 control={form.control}
-                name="tourName"
+                name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre del Tour</FormLabel>
+                    <FormLabel>Empresa o Tour</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Tour por París"
                         {...field}
-                        data-testid="input-tour-name"
+                        data-testid="input-company"
                       />
                     </FormControl>
                     <FormMessage />
@@ -351,7 +351,7 @@ export default function TestimonialsAdmin() {
 
               <FormField
                 control={form.control}
-                name="content"
+                name="text"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Testimonio</FormLabel>
@@ -360,7 +360,7 @@ export default function TestimonialsAdmin() {
                         placeholder="Escribe el testimonio del cliente..."
                         rows={5}
                         {...field}
-                        data-testid="input-content"
+                        data-testid="input-text"
                       />
                     </FormControl>
                     <FormMessage />
@@ -368,20 +368,61 @@ export default function TestimonialsAdmin() {
                 )}
               />
 
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="rating"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calificación (1-5)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={5}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          data-testid="input-rating"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Orden de Aparición</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          data-testid="input-order"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="rating"
+                name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Calificación (1-5)</FormLabel>
+                    <FormLabel>URL de Imagen (Opcional)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min={1}
-                        max={5}
+                        placeholder="https://ejemplo.com/imagen.jpg"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        data-testid="input-rating"
+                        value={field.value || ""}
+                        data-testid="input-image-url"
                       />
                     </FormControl>
                     <FormMessage />
@@ -391,7 +432,7 @@ export default function TestimonialsAdmin() {
 
               <FormField
                 control={form.control}
-                name="featured"
+                name="isActive"
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2">
                     <FormControl>
@@ -400,10 +441,10 @@ export default function TestimonialsAdmin() {
                         checked={field.value}
                         onChange={field.onChange}
                         className="h-4 w-4"
-                        data-testid="input-featured"
+                        data-testid="input-is-active"
                       />
                     </FormControl>
-                    <FormLabel className="!mt-0">Marcar como destacado</FormLabel>
+                    <FormLabel className="!mt-0">Mostrar en la página principal</FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}
