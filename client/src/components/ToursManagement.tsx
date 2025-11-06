@@ -49,7 +49,7 @@ interface Tour {
   featured: boolean;
   rating: string | null;
   reviewCount: number | null;
-  itinerary: string | null;
+  itinerary: { day: string; title: string; description: string }[] | null;
   includes: string[];
   excludes: string[];
   cancellationPolicy: string | null;
@@ -82,7 +82,7 @@ export default function ToursManagement() {
     duration: string;
     images: string[];
     featured: boolean;
-    itinerary: string;
+    itinerary: { day: string; title: string; description: string }[];
     includes: string[];
     excludes: string[];
     cancellationPolicy: string;
@@ -95,7 +95,7 @@ export default function ToursManagement() {
     duration: "",
     images: [],
     featured: false,
-    itinerary: "",
+    itinerary: [],
     includes: [],
     excludes: [],
     cancellationPolicy: "",
@@ -220,11 +220,11 @@ export default function ToursManagement() {
     setTourForm({
       title: "",
       description: "",
-      continent: "",
+      continent: null,
       duration: "",
       images: [],
       featured: false,
-      itinerary: "",
+      itinerary: [],
       includes: [],
       excludes: [],
       cancellationPolicy: "",
@@ -250,7 +250,7 @@ export default function ToursManagement() {
       duration: tour.duration,
       images: tour.images || [],
       featured: tour.featured || false,
-      itinerary: tour.itinerary || "",
+      itinerary: tour.itinerary || [],
       includes: tour.includes || [],
       excludes: tour.excludes || [],
       cancellationPolicy: tour.cancellationPolicy || "",
@@ -295,7 +295,9 @@ export default function ToursManagement() {
       duration: tourForm.duration,
       images: tourForm.images.filter(img => img && img.trim() !== ''),
       featured: tourForm.featured,
-      itinerary: tourForm.itinerary || null,
+      itinerary: tourForm.itinerary.filter(day => day.title && day.description).length > 0 
+        ? tourForm.itinerary.filter(day => day.title && day.description) 
+        : null,
       includes: tourForm.includes.filter(item => item && item.trim() !== ''),
       excludes: tourForm.excludes.filter(item => item && item.trim() !== ''),
       cancellationPolicy: tourForm.cancellationPolicy || null,
@@ -829,15 +831,64 @@ export default function ToursManagement() {
               <div className="space-y-4">
                 <div>
                   <Label>Itinerario</Label>
-                  <Textarea
-                    value={tourForm.itinerary}
-                    onChange={(e) => setTourForm({ ...tourForm, itinerary: e.target.value })}
-                    rows={6}
-                    placeholder="Describe el itinerario día por día del tour..."
-                    data-testid="input-itinerary"
-                  />
+                  {tourForm.itinerary.map((day, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 mb-3 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <Label className="text-sm font-semibold">Día {idx + 1}</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setTourForm({ 
+                              ...tourForm, 
+                              itinerary: tourForm.itinerary.filter((_, i) => i !== idx) 
+                            });
+                          }}
+                          data-testid={`button-remove-day-${idx}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={day.title}
+                        onChange={(e) => {
+                          const newItinerary = [...tourForm.itinerary];
+                          newItinerary[idx] = { ...newItinerary[idx], title: e.target.value };
+                          setTourForm({ ...tourForm, itinerary: newItinerary });
+                        }}
+                        placeholder="Título del día (ej: Llegada a la ciudad)"
+                        data-testid={`input-day-title-${idx}`}
+                      />
+                      <Textarea
+                        value={day.description}
+                        onChange={(e) => {
+                          const newItinerary = [...tourForm.itinerary];
+                          newItinerary[idx] = { ...newItinerary[idx], description: e.target.value };
+                          setTourForm({ ...tourForm, itinerary: newItinerary });
+                        }}
+                        rows={3}
+                        placeholder="Descripción de actividades del día..."
+                        data-testid={`input-day-description-${idx}`}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTourForm({ 
+                      ...tourForm, 
+                      itinerary: [...tourForm.itinerary, { day: `Día ${tourForm.itinerary.length + 1}`, title: "", description: "" }] 
+                    })}
+                    data-testid="button-add-day"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Día
+                  </Button>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Describe cada día del tour con actividades y detalles
+                    Agrega cada día del tour con su título y actividades
                   </p>
                 </div>
 
