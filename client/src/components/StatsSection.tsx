@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import islandImage1 from "@assets/generated_images/Aerial_tropical_island_view_e3f7dcd3.png";
 import islandImage2 from "@assets/generated_images/Sandbar_between_tropical_islands_9f61d263.png";
 
@@ -48,8 +49,11 @@ export default function StatsSection() {
             <Button 
               className="bg-primary text-primary-foreground hover-elevate active-elevate-2"
               data-testid="button-find-place"
+              asChild
             >
-              Descubre Nuevos Lugares
+              <Link href="/tours">
+                Descubre Nuevos Lugares
+              </Link>
             </Button>
           </div>
         </div>
