@@ -213,10 +213,10 @@ export default function Hero() {
   });
 
   // Extraer continentes únicos de los tours (fallback si no hay configuración)
-  const uniqueContinents = Object.keys(continentsData).length > 0
+  const uniqueContinents: string[] = Object.keys(continentsData).length > 0
     ? Object.keys(continentsData).sort()
     : tours 
-      ? Array.from(new Set(tours.map(tour => tour.continent).filter(Boolean))).sort()
+      ? Array.from(new Set(tours.map(tour => tour.continent).filter((c): c is string => Boolean(c)))).sort()
       : [];
 
   // Filtrar ciudades según el continente seleccionado
@@ -239,6 +239,12 @@ export default function Hero() {
     // Construir query params para la búsqueda
     const params = new URLSearchParams();
     
+    // Agregar continente si está seleccionado
+    if (selectedContinent) {
+      params.append("continent", selectedContinent);
+    }
+    
+    // Agregar ciudad si está seleccionada (opcional)
     if (selectedLocation) {
       params.append("location", selectedLocation);
     }

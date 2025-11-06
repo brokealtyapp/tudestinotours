@@ -20,6 +20,8 @@ export default function Tours() {
   const queryParams = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
+      continent: params.get("continent"),
+      location: params.get("location"),
       tourId: params.get("tourId"),
       checkIn: params.get("checkIn"),
       checkOut: params.get("checkOut"),
@@ -45,17 +47,28 @@ export default function Tours() {
       filtered = filtered.filter(tour => tour.id.toString() === queryParams.tourId);
     }
     
-    // Filtrar por ubicación de búsqueda local
+    // Filtrar por continente (desde Hero)
+    if (queryParams.continent) {
+      filtered = filtered.filter(tour => tour.continent === queryParams.continent);
+    }
+    
+    // Filtrar por ciudad específica (desde Hero) - solo si se proporcionó
+    if (queryParams.location) {
+      filtered = filtered.filter(tour => tour.location === queryParams.location);
+    }
+    
+    // Filtrar por ubicación de búsqueda local (barra de búsqueda en Tours)
     if (searchLocation) {
       filtered = filtered.filter(tour => 
         tour.title?.toLowerCase().includes(searchLocation.toLowerCase()) ||
         tour.location?.toLowerCase().includes(searchLocation.toLowerCase()) ||
+        tour.continent?.toLowerCase().includes(searchLocation.toLowerCase()) ||
         tour.description?.toLowerCase().includes(searchLocation.toLowerCase())
       );
     }
     
     return filtered;
-  }, [tours, queryParams.tourId, searchLocation]);
+  }, [tours, queryParams.tourId, queryParams.continent, queryParams.location, searchLocation]);
 
   const handleSearch = () => {
     // La búsqueda local ya está manejada por el estado searchLocation
@@ -68,7 +81,7 @@ export default function Tours() {
   };
 
   const totalGuests = queryParams.adults + queryParams.youth + queryParams.children + queryParams.babies;
-  const hasFilters = queryParams.tourId || queryParams.checkIn || queryParams.checkOut || totalGuests > 0 || searchLocation;
+  const hasFilters = queryParams.continent || queryParams.location || queryParams.tourId || queryParams.checkIn || queryParams.checkOut || totalGuests > 0 || searchLocation;
 
   return (
     <div className="min-h-screen">
@@ -123,6 +136,18 @@ export default function Tours() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {queryParams.continent && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Search className="h-3 w-3" />
+                      Continente: {queryParams.continent}
+                    </Badge>
+                  )}
+                  {queryParams.location && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Search className="h-3 w-3" />
+                      Ciudad: {queryParams.location}
+                    </Badge>
+                  )}
                   {queryParams.checkIn && (
                     <Badge variant="secondary" className="gap-1">
                       <Calendar className="h-3 w-3" />
@@ -148,7 +173,7 @@ export default function Tours() {
                   {searchLocation && (
                     <Badge variant="secondary" className="gap-1">
                       <Search className="h-3 w-3" />
-                      Ubicación: {searchLocation}
+                      Búsqueda: {searchLocation}
                     </Badge>
                   )}
                 </div>
