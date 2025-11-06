@@ -24,7 +24,7 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 
 ### Feature Specifications
 - **Authentication**: JWT-based with role-based access control (Administrator, Client). Login rejects inactive users, and tokens of deactivated users are rejected.
-- **Tour Management (Admin)**: CRUD for tours with comprehensive filtering, dynamic sorting, real-time validations, visual badges (COMPLETO, CASI LLENO), detailed modal views, and contextual empty states. Prevents deletion of tours with active departures.
+- **Tour Management (Admin)**: CRUD for tours with search filtering (title, description, continent), detailed modal views, and contextual empty states. Tours are purely descriptive - no pricing, capacity, or location management. Prevents deletion of tours with active departures.
 - **Departures Management (Admin)**: Create, manage, and duplicate tour departures with individual pricing, dates, capacity, flexible deposit configuration (percentage OR fixed amount), supplements, cancellation policy overrides, and payment deadlines. Includes real-time seat tracking and prevents deletion of departures with active reservations. **Pricing and capacity are managed exclusively at the departure level** - tour-level prices/seats are informational only.
 - **Booking System (Client)**: Multi-step wizard for tour/departure selection, passenger info, passport uploads, and booking submission.
 - **Reservation Management**: Tracks reservation states, automates payment due dates, and handles automatic cancellations for non-payment. Implements atomic transactions for creating and canceling reservations to prevent overbooking and ensure data consistency.
@@ -51,12 +51,14 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
 ### System Design Choices
 - **Modular Architecture**: Clear separation between frontend and backend.
 - **Database Schema**: Extensively designed for various entities like users, tours, departures, reservations, payments, and system configurations.
-- **Departure-Centric Model**: All operational data (pricing, capacity, deposit rules) managed exclusively at departure level. Each departure can have:
-  - **Independent Pricing**: Per-departure price overrides tour base price
-  - **Flexible Deposits**: Choose between percentage-based (e.g., 20% of total) OR fixed amount (e.g., $500) deposit per departure
-  - **Capacity Management**: Real-time seat tracking at departure level, not tour level
-  - **Payment Scheduling**: Client selects installment frequency (weekly/biweekly/monthly) during booking
-  - **Payment Deadlines**: Configurable full-payment deadline (default: 30 days before departure date)
+- **Departure-Centric Model**: All operational data (pricing, capacity, deposit rules) managed exclusively at departure level. Tours are purely descriptive:
+  - **Tours Schema**: Contains only descriptive fields (title, description, continent, duration, images, featured, itinerary, includes/excludes, policies, FAQs). No operational data (price, capacity, location, deposits).
+  - **Departures Schema**: Contains all operational data - independent pricing, seat capacity (totalSeats/reservedSeats), flexible deposits (percentage OR fixed amount), supplements, cancellation policy overrides, payment deadlines.
+  - **Multi-City Tours**: Tours no longer have a single "location" field since they can span multiple cities. Geographic filtering uses continent level only.
+  - **Pricing Display**: UI shows "desde $X" calculated from minimum price of active departures, not stored in tours table.
+  - **Flexible Deposits**: Each departure chooses between percentage-based (e.g., 20% of total) OR fixed amount (e.g., $500) with validation to prevent exceeding total.
+  - **Payment Scheduling**: Client selects installment frequency (weekly/biweekly/monthly) during booking, with automatic deadline enforcement.
+  - **Payment Deadlines**: Configurable full-payment deadline (default: 30 days before departure date), validated during installment generation.
 - **Event-Driven Tracking**: Automatic event system for comprehensive auditing and visibility of reservation lifecycle actions.
 - **Error Handling**: Comprehensive and localized error messages.
 - **Atomic Transactions**: Implemented for critical operations like reservation creation and cancellation to ensure data integrity and prevent race conditions.
