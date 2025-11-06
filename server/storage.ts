@@ -1021,15 +1021,64 @@ export class DbStorage implements IStorage {
     paymentDueDate: Date,
     numberOfInstallments: number = 3
   ): Promise<PaymentInstallment[]> {
-    // Obtener configuración de depósito mínimo
-    const minDepositSetting = await this.getSetting('MIN_DEPOSIT_PERCENTAGE');
-    const minDepositPercentage = minDepositSetting ? parseFloat(minDepositSetting.value) : 30;
+    // Obtener la reserva para conocer la salida y frecuencia
+    const reservation = await this.getReservation(reservationId);
+    if (!reservation) {
+      throw new Error("Reserva no encontrada");
+    }
 
-    // Calcular depósito inicial (30% por defecto)
-    const depositAmount = (totalAmount * minDepositPercentage) / 100;
+    // Obtener la salida para conocer la configuración de depósito y deadline
+    const departure = reservation.departureId 
+      ? await this.getDeparture(reservation.departureId)
+      : null;
+
+    // Obtener configuración global de deadline de pago
+    const paymentDeadlineSetting = await this.getSetting('PAYMENT_DEADLINE_DAYS');
+    const paymentDeadlineDays = paymentDeadlineSetting ? parseInt(paymentDeadlineSetting.value) : 30;
+
+    // Calcular fecha límite para el pago completo (X días antes de la salida)
+    const departureDate = reservation.departureDate ? new Date(reservation.departureDate) : null;
+    const finalPaymentDeadline = departureDate 
+      ? new Date(departureDate.getTime() - (paymentDeadlineDays * 24 * 60 * 60 * 1000))
+      : null;
+
+    // Calcular depósito inicial basado en la configuración de la salida
+    let depositAmount: number;
+    let depositPercentage: number;
+
+    if (departure) {
+      if (departure.depositType === 'fixed' && departure.depositFixedAmount) {
+        // Depósito de monto fijo - validar que no exceda el total
+        const rawDepositAmount = parseFloat(departure.depositFixedAmount.toString());
+        depositAmount = Math.min(rawDepositAmount, totalAmount);
+        depositPercentage = Math.round((depositAmount / totalAmount) * 100);
+        
+        // Si el depósito fijo es mayor o igual al total, no hay cuotas adicionales
+        if (depositAmount >= totalAmount) {
+          const depositInstallment = await this.createPaymentInstallment({
+            reservationId,
+            installmentNumber: 0,
+            amountDue: totalAmount.toFixed(2),
+            percentageDue: 100,
+            dueDate: paymentDueDate,
+            status: 'pending',
+            description: 'Pago completo',
+          });
+          return [depositInstallment];
+        }
+      } else {
+        // Depósito por porcentaje (por defecto)
+        depositPercentage = departure.depositPercentage || 20;
+        depositAmount = (totalAmount * depositPercentage) / 100;
+      }
+    } else {
+      // Fallback: usar configuración global
+      const minDepositSetting = await this.getSetting('MIN_DEPOSIT_PERCENTAGE');
+      depositPercentage = minDepositSetting ? parseFloat(minDepositSetting.value) : 20;
+      depositAmount = (totalAmount * depositPercentage) / 100;
+    }
+
     const remainingAmount = totalAmount - depositAmount;
-
-    // Calcular monto de cada cuota
     const installmentAmount = remainingAmount / numberOfInstallments;
 
     const installments: PaymentInstallment[] = [];
@@ -1039,21 +1088,31 @@ export class DbStorage implements IStorage {
       reservationId,
       installmentNumber: 0,
       amountDue: depositAmount.toFixed(2),
-      percentageDue: minDepositPercentage,
+      percentageDue: depositPercentage,
       dueDate: paymentDueDate,
       status: 'pending',
       description: 'Depósito inicial',
     });
     installments.push(depositInstallment);
 
+    // Determinar días entre cuotas según frecuencia
+    const frequency = reservation.installmentFrequency || 'monthly';
+    const daysBetweenInstallments = frequency === 'weekly' ? 7 : frequency === 'biweekly' ? 14 : 30;
+
     // Calcular porcentaje de cada cuota
     const installmentPercentage = Math.round(((remainingAmount / numberOfInstallments) / totalAmount) * 100);
 
     // Crear cuotas restantes
     for (let i = 1; i <= numberOfInstallments; i++) {
-      // Calcular fecha de vencimiento escalonada (cada 30 días después del depósito inicial)
+      // Calcular fecha de vencimiento escalonada según la frecuencia elegida
       const installmentDueDate = new Date(paymentDueDate);
-      installmentDueDate.setDate(installmentDueDate.getDate() + (i * 30));
+      installmentDueDate.setDate(installmentDueDate.getDate() + (i * daysBetweenInstallments));
+
+      // Validar que la cuota no venza después del deadline final
+      if (finalPaymentDeadline && installmentDueDate > finalPaymentDeadline) {
+        // Ajustar la fecha al deadline final
+        installmentDueDate.setTime(finalPaymentDeadline.getTime());
+      }
 
       const installment = await this.createPaymentInstallment({
         reservationId,

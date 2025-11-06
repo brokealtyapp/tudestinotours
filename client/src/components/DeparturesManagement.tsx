@@ -53,6 +53,9 @@ interface Departure {
   totalSeats: number;
   reservedSeats: number;
   price: string;
+  depositType: string;
+  depositPercentage: number | null;
+  depositFixedAmount: string | null;
   supplements: any;
   cancellationPolicyOverride: string | null;
   paymentDeadlineDays: number;
@@ -94,6 +97,9 @@ export default function DeparturesManagement() {
     returnDate: "",
     totalSeats: "",
     price: "",
+    depositType: "percentage",
+    depositPercentage: "20",
+    depositFixedAmount: "",
     supplements: "",
     cancellationPolicyOverride: "",
     paymentDeadlineDays: "30",
@@ -148,6 +154,17 @@ export default function DeparturesManagement() {
     
     if (!departureForm.price || parseFloat(departureForm.price) <= 0) {
       errors.price = "El precio debe ser mayor a 0";
+    }
+    
+    // Validar configuración de depósito
+    if (departureForm.depositType === "percentage") {
+      if (!departureForm.depositPercentage || parseInt(departureForm.depositPercentage) < 0 || parseInt(departureForm.depositPercentage) > 100) {
+        errors.depositPercentage = "El porcentaje debe estar entre 0 y 100";
+      }
+    } else if (departureForm.depositType === "fixed") {
+      if (!departureForm.depositFixedAmount || parseFloat(departureForm.depositFixedAmount) <= 0) {
+        errors.depositFixedAmount = "El monto fijo debe ser mayor a 0";
+      }
     }
     
     if (!departureForm.paymentDeadlineDays || parseInt(departureForm.paymentDeadlineDays) < 1) {
@@ -299,6 +316,9 @@ export default function DeparturesManagement() {
       returnDate: "",
       totalSeats: "",
       price: "",
+      depositType: "percentage",
+      depositPercentage: "20",
+      depositFixedAmount: "",
       supplements: "",
       cancellationPolicyOverride: "",
       paymentDeadlineDays: "30",
@@ -320,6 +340,9 @@ export default function DeparturesManagement() {
       returnDate: departure.returnDate ? format(new Date(departure.returnDate), "yyyy-MM-dd") : "",
       totalSeats: departure.totalSeats.toString(),
       price: departure.price.toString(),
+      depositType: departure.depositType || "percentage",
+      depositPercentage: departure.depositPercentage?.toString() || "20",
+      depositFixedAmount: departure.depositFixedAmount?.toString() || "",
       supplements: departure.supplements ? JSON.stringify(departure.supplements, null, 2) : "",
       cancellationPolicyOverride: departure.cancellationPolicyOverride || "",
       paymentDeadlineDays: departure.paymentDeadlineDays.toString(),
@@ -349,6 +372,9 @@ export default function DeparturesManagement() {
       departureDate: departureForm.departureDate,
       totalSeats: parseInt(departureForm.totalSeats),
       price: departureForm.price,
+      depositType: departureForm.depositType,
+      depositPercentage: departureForm.depositType === "percentage" ? parseInt(departureForm.depositPercentage) : null,
+      depositFixedAmount: departureForm.depositType === "fixed" ? departureForm.depositFixedAmount : null,
       paymentDeadlineDays: parseInt(departureForm.paymentDeadlineDays),
       status: departureForm.status,
     };
@@ -829,6 +855,71 @@ export default function DeparturesManagement() {
                   <p className="text-sm text-destructive mt-1">{formErrors.price}</p>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+              <Label className="text-base font-semibold">Configuración de Depósito Inicial *</Label>
+              
+              <div>
+                <Label>Tipo de Depósito</Label>
+                <Select
+                  value={departureForm.depositType}
+                  onValueChange={(value) => {
+                    setDepartureForm({ 
+                      ...departureForm, 
+                      depositType: value,
+                      depositPercentage: value === "percentage" ? "20" : "",
+                      depositFixedAmount: value === "fixed" ? "" : ""
+                    });
+                  }}
+                >
+                  <SelectTrigger data-testid="select-deposit-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Porcentaje del precio</SelectItem>
+                    <SelectItem value="fixed">Monto fijo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {departureForm.depositType === "percentage" && (
+                <div>
+                  <Label>Porcentaje de Depósito Inicial (%) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={departureForm.depositPercentage}
+                    onChange={(e) =>
+                      setDepartureForm({ ...departureForm, depositPercentage: e.target.value })
+                    }
+                    data-testid="input-deposit-percentage"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Porcentaje del precio total que el cliente debe pagar como depósito inicial (ej: 20%)
+                  </p>
+                </div>
+              )}
+
+              {departureForm.depositType === "fixed" && (
+                <div>
+                  <Label>Monto Fijo de Depósito Inicial ($) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={departureForm.depositFixedAmount}
+                    onChange={(e) =>
+                      setDepartureForm({ ...departureForm, depositFixedAmount: e.target.value })
+                    }
+                    data-testid="input-deposit-fixed"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Monto fijo en dólares que el cliente debe pagar como depósito inicial (ej: $500)
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

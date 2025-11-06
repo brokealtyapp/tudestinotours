@@ -58,6 +58,7 @@ export default function Booking() {
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [numPassengers, setNumPassengers] = useState(1);
   const [selectedDepartureId, setSelectedDepartureId] = useState<string>(initialDepartureId);
+  const [installmentFrequency, setInstallmentFrequency] = useState<string>("monthly");
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [paymentUrl, setPaymentUrl] = useState("");
   
@@ -378,6 +379,7 @@ export default function Booking() {
         departureDate: new Date(selectedDeparture.departureDate).toISOString(),
         numberOfPassengers: numPassengers,
         totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
+        installmentFrequency,
         status: "pending",
         paymentStatus: "pending",
         paymentLink: null,
@@ -599,6 +601,29 @@ export default function Booking() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div>
+                      <Label htmlFor="installment-frequency">
+                        Frecuencia de Cuotas de Pago
+                      </Label>
+                      <Select
+                        value={installmentFrequency}
+                        onValueChange={setInstallmentFrequency}
+                      >
+                        <SelectTrigger id="installment-frequency" data-testid="select-installment-frequency">
+                          <SelectValue placeholder="Selecciona frecuencia de pago" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="weekly">Semanal</SelectItem>
+                          <SelectItem value="biweekly">Quincenal</SelectItem>
+                          <SelectItem value="monthly">Mensual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Define cada cuánto tiempo quieres realizar los pagos de las cuotas
+                      </p>
+                    </div>
+
                     <div className="p-4 bg-muted rounded-lg">
                       {(() => {
                         const selectedDeparture = departures.find(d => d.id === selectedDepartureId);
