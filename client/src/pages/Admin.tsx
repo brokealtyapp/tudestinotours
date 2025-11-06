@@ -539,7 +539,7 @@ export default function Admin() {
           <AdminHeader />
           <main className="flex-1 overflow-y-auto p-8">
             <div className="max-w-7xl mx-auto space-y-6">
-              {activeSection === "dashboard" && <DashboardAdmin />}
+              {activeSection === "dashboard" && <DashboardAdmin onNavigate={setActiveSection} />}
 
               {activeSection === "departures" && <DeparturesManagement />}
 

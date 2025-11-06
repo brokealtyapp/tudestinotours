@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Users, TrendingUp, AlertCircle, ArrowRight } from "lucide-react";
 import FunnelChart from "./FunnelChart";
 import UpcomingDeadlinesTable from "./UpcomingDeadlinesTable";
 import OccupationChart from "./OccupationChart";
@@ -52,7 +53,11 @@ interface DashboardKPIs {
   occupationByDeparture: DepartureOccupation[];
 }
 
-export default function DashboardAdmin() {
+interface DashboardAdminProps {
+  onNavigate?: (section: string) => void;
+}
+
+export default function DashboardAdmin({ onNavigate }: DashboardAdminProps) {
   const { data: kpis, isLoading } = useQuery<DashboardKPIs>({
     queryKey: ["/api/dashboard/kpis"],
   });
@@ -116,9 +121,21 @@ export default function DashboardAdmin() {
             <div className="text-3xl font-bold text-gray-900" data-testid="text-gmv-amount">
               {formatCurrency(kpis.gmv)}
             </div>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-1 mb-3">
               Ventas confirmadas y completadas
             </p>
+            {onNavigate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onNavigate("reports")}
+                className="w-full justify-between text-primary hover:text-primary"
+                data-testid="button-navigate-reports"
+              >
+                Ver Reportes
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -132,11 +149,23 @@ export default function DashboardAdmin() {
             <div className="text-3xl font-bold text-gray-900" data-testid="text-reservations-count">
               {totalActiveReservations}
             </div>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-1 mb-3">
               Pendientes: {kpis.reservationsByStatus.pending} | 
               Aprobadas: {kpis.reservationsByStatus.approved} | 
               Confirmadas: {kpis.reservationsByStatus.confirmed}
             </p>
+            {onNavigate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onNavigate("reservations")}
+                className="w-full justify-between text-primary hover:text-primary"
+                data-testid="button-navigate-reservations"
+              >
+                Ver Todas
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -150,9 +179,21 @@ export default function DashboardAdmin() {
             <div className="text-3xl font-bold text-gray-900" data-testid="text-occupation-percentage">
               {kpis.averageOccupation.toFixed(1)}%
             </div>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-1 mb-3">
               De todos los tours disponibles
             </p>
+            {onNavigate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onNavigate("departures")}
+                className="w-full justify-between text-primary hover:text-primary"
+                data-testid="button-navigate-departures"
+              >
+                Ver Salidas
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -166,9 +207,21 @@ export default function DashboardAdmin() {
             <div className="text-3xl font-bold text-gray-900" data-testid="text-pending-payments-amount">
               {formatCurrency(kpis.pendingPayments.amount)}
             </div>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-1 mb-3">
               {kpis.pendingPayments.count} reserva{kpis.pendingPayments.count !== 1 ? 's' : ''} pendiente{kpis.pendingPayments.count !== 1 ? 's' : ''}
             </p>
+            {onNavigate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onNavigate("payments")}
+                className="w-full justify-between text-primary hover:text-primary"
+                data-testid="button-navigate-payments"
+              >
+                Gestionar
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
