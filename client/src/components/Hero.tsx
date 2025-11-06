@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar as CalendarIcon, MapPin, Search, Users, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Search, Users, Minus, Plus, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -184,6 +184,7 @@ function CustomCalendar({
 }
 
 export default function Hero() {
+  const [selectedContinent, setSelectedContinent] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
@@ -197,14 +198,29 @@ export default function Hero() {
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
 
+  // Cargar configuración de continentes y ciudades
+  const { data: configData } = useQuery<any[]>({ queryKey: ["/api/config"] });
+  
+  const continentsConfig = configData?.find(c => c.key === 'CONTINENTS_AND_CITIES');
+  const continentsData: Record<string, string[]> = continentsConfig 
+    ? JSON.parse(continentsConfig.value) 
+    : {};
+
   // Cargar tours desde la API
   const { data: tours, isLoading } = useQuery<Tour[]>({
     queryKey: ["/api/tours"],
   });
 
-  // Extraer ciudades únicas de los tours
-  const uniqueLocations = tours 
-    ? Array.from(new Set(tours.map(tour => tour.location).filter(Boolean))).sort()
+  // Extraer continentes únicos de los tours (fallback si no hay configuración)
+  const uniqueContinents = Object.keys(continentsData).length > 0
+    ? Object.keys(continentsData).sort()
+    : tours 
+      ? Array.from(new Set(tours.map(tour => tour.continent).filter(Boolean))).sort()
+      : [];
+
+  // Filtrar ciudades según el continente seleccionado
+  const availableCities = selectedContinent && continentsData[selectedContinent]
+    ? continentsData[selectedContinent]
     : [];
 
   const totalGuests = guestCounts.adults + guestCounts.youth + guestCounts.children + guestCounts.babies;
@@ -261,36 +277,73 @@ export default function Hero() {
           de Aventura en el Mundo!
         </h1>
 
-        <Card className="mt-12 p-6 max-w-4xl mx-auto bg-white/95 backdrop-blur shadow-xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Selector de Destino */}
+        <Card className="mt-12 p-6 max-w-5xl mx-auto bg-white/95 backdrop-blur shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Selector de Continente */}
+            <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
+              <Globe className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Continente
+                </label>
+                <Select 
+                  value={selectedContinent} 
+                  onValueChange={(value) => {
+                    setSelectedContinent(value);
+                    setSelectedLocation(""); // Resetear ciudad al cambiar continente
+                  }}
+                >
+                  <SelectTrigger 
+                    className="border-0 p-0 h-auto focus:ring-0 font-medium"
+                    data-testid="select-continent"
+                  >
+                    <SelectValue placeholder="Selecciona continente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniqueContinents.length > 0 ? (
+                      uniqueContinents.map((continent) => (
+                        <SelectItem key={continent} value={continent}>
+                          {continent}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-continents" disabled>
+                        No hay continentes disponibles
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Selector de Ciudad */}
             <div className="flex items-start gap-3 p-4 border rounded-lg bg-background">
               <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Destino
+                  Ciudad
                 </label>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                <Select 
+                  value={selectedLocation} 
+                  onValueChange={setSelectedLocation}
+                  disabled={!selectedContinent}
+                >
                   <SelectTrigger 
                     className="border-0 p-0 h-auto focus:ring-0 font-medium"
                     data-testid="select-destination"
                   >
-                    <SelectValue placeholder="Selecciona destino" />
+                    <SelectValue placeholder={selectedContinent ? "Selecciona ciudad" : "Primero elige continente"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {isLoading ? (
-                      <SelectItem value="loading" disabled>
-                        Cargando ciudades...
-                      </SelectItem>
-                    ) : uniqueLocations.length > 0 ? (
-                      uniqueLocations.map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {location}
+                    {availableCities.length > 0 ? (
+                      availableCities.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-locations" disabled>
-                        No hay ciudades disponibles
+                      <SelectItem value="no-cities" disabled>
+                        No hay ciudades en este continente
                       </SelectItem>
                     )}
                   </SelectContent>
