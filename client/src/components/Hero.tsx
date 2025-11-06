@@ -23,6 +23,7 @@ import heroImage from "@assets/generated_images/Tropical_beach_paradise_hero_36b
 type Tour = {
   id: string;
   title: string;
+  continent?: string | null;
   location: string;
   maxPassengers: number;
   reservedSeats: number;

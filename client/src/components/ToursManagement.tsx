@@ -42,6 +42,7 @@ interface Tour {
   id: string;
   title: string;
   description: string;
+  continent?: string | null;
   location: string;
   price: string;
   duration: string;
@@ -85,6 +86,7 @@ export default function ToursManagement() {
   const [tourForm, setTourForm] = useState({
     title: "",
     description: "",
+    continent: "",
     location: "",
     price: "",
     duration: "",
@@ -109,8 +111,15 @@ export default function ToursManagement() {
   const { data: allTours } = useQuery<Tour[]>({ queryKey: ["/api/tours"] });
   const { data: configData } = useQuery<any[]>({ queryKey: ["/api/config"] });
   
-  const availableCities = configData?.find(c => c.key === 'AVAILABLE_CITIES');
-  const cities = availableCities ? JSON.parse(availableCities.value) : [];
+  const continentsConfig = configData?.find(c => c.key === 'CONTINENTS_AND_CITIES');
+  const continentsData: Record<string, string[]> = continentsConfig 
+    ? JSON.parse(continentsConfig.value) 
+    : {};
+  
+  const continents = Object.keys(continentsData).sort();
+  const cities = tourForm.continent && continentsData[tourForm.continent]
+    ? continentsData[tourForm.continent]
+    : [];
 
   const getOccupationPercentage = (reserved: number, total: number) => {
     return total > 0 ? Math.round((reserved / total) * 100) : 0;
@@ -127,8 +136,12 @@ export default function ToursManagement() {
       errors.description = "La descripción es obligatoria";
     }
     
+    if (!tourForm.continent.trim()) {
+      errors.continent = "El continente es obligatorio";
+    }
+    
     if (!tourForm.location.trim()) {
-      errors.location = "La ubicación es obligatoria";
+      errors.location = "La ciudad es obligatoria";
     }
     
     if (!tourForm.price || parseFloat(tourForm.price) <= 0) {
@@ -264,6 +277,7 @@ export default function ToursManagement() {
     setTourForm({
       title: "",
       description: "",
+      continent: "",
       location: "",
       price: "",
       duration: "",
@@ -294,6 +308,7 @@ export default function ToursManagement() {
     setTourForm({
       title: tour.title,
       description: tour.description,
+      continent: tour.continent || "",
       location: tour.location,
       price: tour.price,
       duration: tour.duration,
@@ -811,13 +826,37 @@ export default function ToursManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Ubicación *</Label>
+                <Label>Continente *</Label>
+                <Select
+                  value={tourForm.continent}
+                  onValueChange={(value) => {
+                    setTourForm({ ...tourForm, continent: value, location: "" });
+                  }}
+                >
+                  <SelectTrigger data-testid="select-continent">
+                    <SelectValue placeholder="Selecciona un continente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {continents.map((continent: string) => (
+                      <SelectItem key={continent} value={continent}>
+                        {continent}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formErrors.continent && (
+                  <p className="text-xs text-destructive mt-1">{formErrors.continent}</p>
+                )}
+              </div>
+              <div>
+                <Label>Ciudad *</Label>
                 <Select
                   value={tourForm.location}
                   onValueChange={(value) => setTourForm({ ...tourForm, location: value })}
+                  disabled={!tourForm.continent || cities.length === 0}
                 >
                   <SelectTrigger data-testid="select-location">
-                    <SelectValue placeholder="Selecciona una ciudad" />
+                    <SelectValue placeholder={tourForm.continent ? "Selecciona una ciudad" : "Primero elige continente"} />
                   </SelectTrigger>
                   <SelectContent>
                     {cities.map((city: string) => (
