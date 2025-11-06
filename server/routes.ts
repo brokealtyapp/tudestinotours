@@ -1623,14 +1623,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // System Configuration routes (migrado a system_settings)
   app.get("/api/config", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
-      // Leer desde system_settings en categoría 'payments'
-      const configs = await storage.getSettings('payments');
+      // Leer desde system_settings (todas las categorías)
+      const allConfigs = await storage.getSettings();
       
       // Convertir formato para compatibilidad con frontend
-      const formattedConfigs = configs.map(setting => ({
+      const formattedConfigs = allConfigs.map(setting => ({
         key: setting.key,
         value: setting.value,
         description: setting.description,
+        category: setting.category,
         updatedAt: setting.updatedAt,
       }));
       
@@ -1674,14 +1675,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           key: updated!.key,
           value: updated!.value,
           description: updated!.description,
+          category: updated!.category,
           updatedAt: updated!.updatedAt,
         });
       } else {
-        // Crear nuevo
+        // Crear nuevo - determinar categoría basada en el key
+        const category = key.startsWith('CONTINENTS_') ? 'destinations' : 'payments';
         const created = await storage.createSetting({
           key,
           value,
-          category: 'payments',
+          category,
           description,
           dataType: 'string',
           updatedBy: req.user?.userId,

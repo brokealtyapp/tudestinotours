@@ -28,6 +28,7 @@ export const tours = pgTable("tours", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  continent: text("continent"),
   location: text("location").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: text("duration").notNull(),

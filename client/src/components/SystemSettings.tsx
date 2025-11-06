@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Settings } from "lucide-react";
-import CitiesManagement from "./CitiesManagement";
+import ContinentsManagement from "./ContinentsManagement";
 
 interface SystemSetting {
   id: string;
@@ -193,7 +193,7 @@ export default function SystemSettings() {
 
   return (
     <div className="space-y-6">
-      <CitiesManagement />
+      <ContinentsManagement />
       
       <Card>
         <CardHeader>
