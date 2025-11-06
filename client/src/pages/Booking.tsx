@@ -648,12 +648,17 @@ export default function Booking() {
                         
                         // Calculate installments
                         const departureDate = new Date(selectedDeparture.departureDate);
+                        departureDate.setHours(0, 0, 0, 0); // Normalize to midnight
+                        
                         const paymentDeadlineDays = selectedDeparture.paymentDeadlineDays || 30;
                         const paymentDeadline = new Date(departureDate);
                         paymentDeadline.setDate(paymentDeadline.getDate() - paymentDeadlineDays);
+                        paymentDeadline.setHours(0, 0, 0, 0); // Normalize to midnight
                         
                         const today = new Date();
-                        const daysUntilDeadline = Math.floor((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        today.setHours(0, 0, 0, 0); // Normalize to midnight
+                        
+                        const daysUntilDeadline = Math.max(0, Math.ceil((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
                         
                         let installmentPeriodDays = 30;
                         let frequencyLabel = "Mensual";
@@ -665,7 +670,8 @@ export default function Booking() {
                           frequencyLabel = "Quincenal";
                         }
                         
-                        const numInstallments = Math.max(1, Math.floor(daysUntilDeadline / installmentPeriodDays));
+                        // Calculate number of installments based on available days
+                        const numInstallments = Math.max(1, Math.ceil(daysUntilDeadline / installmentPeriodDays));
                         const installmentAmount = remainingBalance / numInstallments;
                         
                         return (
@@ -699,10 +705,38 @@ export default function Booking() {
                             </div>
                             
                             {remainingBalance > 0 && (
-                              <div className="bg-background border p-2 rounded-md text-xs">
-                                <div className="flex justify-between">
-                                  <span>{numInstallments} cuota{numInstallments !== 1 ? 's' : ''} ({frequencyLabel})</span>
-                                  <span className="font-semibold">${installmentAmount.toFixed(2)} c/u</span>
+                              <div className="space-y-2">
+                                <Separator className="my-2" />
+                                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 rounded-md space-y-2">
+                                  <div className="flex justify-between items-start text-xs">
+                                    <span className="text-muted-foreground">Pago completo antes del:</span>
+                                    <span className="font-semibold text-right">
+                                      {paymentDeadline.toLocaleDateString('es-ES', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs">
+                                    <span className="text-muted-foreground">Días disponibles:</span>
+                                    <span className="font-bold text-amber-700 dark:text-amber-400">
+                                      {daysUntilDeadline} días
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="bg-background border p-3 rounded-md">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm font-medium">Plan de Cuotas ({frequencyLabel}):</span>
+                                    <span className="text-sm font-bold text-primary">
+                                      {numInstallments} cuota{numInstallments !== 1 ? 's' : ''}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                    <span>Monto por cuota:</span>
+                                    <span className="font-semibold text-foreground">${installmentAmount.toFixed(2)}</span>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -1207,12 +1241,17 @@ export default function Booking() {
                           
                           // Calculate installments
                           const departureDate = new Date(selectedDeparture.departureDate);
+                          departureDate.setHours(0, 0, 0, 0); // Normalize to midnight
+                          
                           const paymentDeadlineDays = selectedDeparture.paymentDeadlineDays || 30;
                           const paymentDeadline = new Date(departureDate);
                           paymentDeadline.setDate(paymentDeadline.getDate() - paymentDeadlineDays);
+                          paymentDeadline.setHours(0, 0, 0, 0); // Normalize to midnight
                           
                           const today = new Date();
-                          const daysUntilDeadline = Math.floor((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          today.setHours(0, 0, 0, 0); // Normalize to midnight
+                          
+                          const daysUntilDeadline = Math.max(0, Math.ceil((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
                           
                           let installmentPeriodDays = 30;
                           let frequencyLabel = "Mensual";
@@ -1224,7 +1263,8 @@ export default function Booking() {
                             frequencyLabel = "Quincenal";
                           }
                           
-                          const numInstallments = Math.max(1, Math.floor(daysUntilDeadline / installmentPeriodDays));
+                          // Calculate number of installments based on available days
+                          const numInstallments = Math.max(1, Math.ceil(daysUntilDeadline / installmentPeriodDays));
                           const installmentAmount = remainingBalance / numInstallments;
                           
                           return (
@@ -1265,31 +1305,41 @@ export default function Booking() {
                               </div>
                               
                               {remainingBalance > 0 && (
-                                <>
+                                <div className="space-y-2">
                                   <Separator className="my-3" />
                                   
-                                  <div className="bg-muted p-3 rounded-md space-y-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                      <span className="font-medium">Plan de Cuotas ({frequencyLabel}):</span>
-                                      <span className="font-semibold">
+                                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 rounded-md space-y-2">
+                                    <div className="flex justify-between items-start text-xs">
+                                      <span className="text-muted-foreground">Pago completo antes del:</span>
+                                      <span className="font-semibold text-right">
+                                        {paymentDeadline.toLocaleDateString('es-ES', {
+                                          day: 'numeric',
+                                          month: 'long',
+                                          year: 'numeric'
+                                        })}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-muted-foreground">Días disponibles:</span>
+                                      <span className="font-bold text-amber-700 dark:text-amber-400">
+                                        {daysUntilDeadline} días
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="bg-muted p-3 rounded-md">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-sm font-medium">Plan de Cuotas ({frequencyLabel}):</span>
+                                      <span className="text-sm font-bold text-primary">
                                         {numInstallments} cuota{numInstallments !== 1 ? 's' : ''}
                                       </span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground">
                                       <span>Monto por cuota:</span>
-                                      <span className="font-semibold text-primary">
-                                        ${installmentAmount.toFixed(2)}
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                      Pago completo antes del: {paymentDeadline.toLocaleDateString('es-ES', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric'
-                                      })}
+                                      <span className="font-semibold text-foreground">${installmentAmount.toFixed(2)}</span>
                                     </div>
                                   </div>
-                                </>
+                                </div>
                               )}
                             </>
                           );
