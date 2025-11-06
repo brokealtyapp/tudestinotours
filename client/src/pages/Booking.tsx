@@ -42,6 +42,10 @@ interface Departure {
   totalSeats: number;
   reservedSeats: number;
   price: string;
+  depositType: string;
+  depositPercentage: number | null;
+  depositFixedAmount: string | null;
+  paymentDeadlineDays: number;
   status: string;
 }
 
@@ -1128,8 +1132,42 @@ export default function Booking() {
                       <div className="space-y-2">
                         {(() => {
                           const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
-                          const pricePerPerson = selectedDeparture ? parseFloat(selectedDeparture.price) : 0;
+                          if (!selectedDeparture) return null;
+                          
+                          const pricePerPerson = parseFloat(selectedDeparture.price);
                           const totalPrice = pricePerPerson * numPassengers;
+                          
+                          // Calculate deposit
+                          let depositAmount = 0;
+                          if (selectedDeparture.depositType === 'percentage' && selectedDeparture.depositPercentage) {
+                            depositAmount = (totalPrice * selectedDeparture.depositPercentage) / 100;
+                          } else if (selectedDeparture.depositType === 'fixed' && selectedDeparture.depositFixedAmount) {
+                            depositAmount = parseFloat(selectedDeparture.depositFixedAmount);
+                          }
+                          
+                          const remainingBalance = totalPrice - depositAmount;
+                          
+                          // Calculate installments
+                          const departureDate = new Date(selectedDeparture.departureDate);
+                          const paymentDeadlineDays = selectedDeparture.paymentDeadlineDays || 30;
+                          const paymentDeadline = new Date(departureDate);
+                          paymentDeadline.setDate(paymentDeadline.getDate() - paymentDeadlineDays);
+                          
+                          const today = new Date();
+                          const daysUntilDeadline = Math.floor((paymentDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          
+                          let installmentPeriodDays = 30;
+                          let frequencyLabel = "Mensual";
+                          if (installmentFrequency === 'weekly') {
+                            installmentPeriodDays = 7;
+                            frequencyLabel = "Semanal";
+                          } else if (installmentFrequency === 'biweekly') {
+                            installmentPeriodDays = 14;
+                            frequencyLabel = "Quincenal";
+                          }
+                          
+                          const numInstallments = Math.max(1, Math.floor(daysUntilDeadline / installmentPeriodDays));
+                          const installmentAmount = remainingBalance / numInstallments;
                           
                           return (
                             <>
@@ -1142,10 +1180,59 @@ export default function Booking() {
                                 <span className="font-semibold">{numPassengers}</span>
                               </div>
                               <Separator />
-                              <div className="flex justify-between text-lg font-bold pt-2">
-                                <span>Total a Pagar:</span>
+                              <div className="flex justify-between text-base font-semibold pt-2">
+                                <span>Costo Total del Tour:</span>
                                 <span className="text-primary">${totalPrice.toFixed(2)}</span>
                               </div>
+                              
+                              <Separator className="my-3" />
+                              
+                              <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="font-medium">Monto de Reserva:</span>
+                                  <span className="font-bold text-blue-700 dark:text-blue-400">
+                                    ${depositAmount.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {selectedDeparture.depositType === 'percentage' 
+                                    ? `${selectedDeparture.depositPercentage}% del total`
+                                    : 'Monto fijo'}
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between text-sm">
+                                <span>Saldo Restante:</span>
+                                <span className="font-semibold">${remainingBalance.toFixed(2)}</span>
+                              </div>
+                              
+                              {remainingBalance > 0 && (
+                                <>
+                                  <Separator className="my-3" />
+                                  
+                                  <div className="bg-muted p-3 rounded-md space-y-2">
+                                    <div className="flex justify-between items-center text-sm">
+                                      <span className="font-medium">Plan de Cuotas ({frequencyLabel}):</span>
+                                      <span className="font-semibold">
+                                        {numInstallments} cuota{numInstallments !== 1 ? 's' : ''}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                      <span>Monto por cuota:</span>
+                                      <span className="font-semibold text-primary">
+                                        ${installmentAmount.toFixed(2)}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-2">
+                                      Pago completo antes del: {paymentDeadline.toLocaleDateString('es-ES', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                      })}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                             </>
                           );
                         })()}
