@@ -60,6 +60,7 @@ The platform utilizes a modern, clean interface with a blue, red, and white colo
   - **Flexible Deposits**: Each departure chooses between percentage-based (e.g., 20% of total) OR fixed amount (e.g., $500) with validation to prevent exceeding total.
   - **Payment Scheduling**: Client selects installment frequency (weekly/biweekly/monthly) during booking, with automatic deadline enforcement.
   - **Payment Deadlines**: Configurable full-payment deadline (default: 30 days before departure date), validated during installment generation.
+  - **Structured Itinerary**: Tours.itinerary stored as JSONB array `{day, title, description}[]`. Admin interface provides add/remove days functionality. Client-facing pages and PDFs render itinerary with day numbers, titles, and descriptions. Empty days automatically filtered on save.
 - **Event-Driven Tracking**: Automatic event system for comprehensive auditing and visibility of reservation lifecycle actions.
 - **Error Handling**: Comprehensive and localized error messages.
 - **Atomic Transactions**: Implemented for critical operations like reservation creation and cancellation to ensure data integrity and prevent race conditions.
