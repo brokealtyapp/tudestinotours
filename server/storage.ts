@@ -108,10 +108,6 @@ export interface IStorage {
   createReservationNotification(notification: InsertReservationNotification): Promise<ReservationNotification>;
   getReservationNotifications(reservationId: string): Promise<ReservationNotification[]>;
   
-  // Seat management methods
-  incrementReservedSeats(tourId: string, count: number): Promise<void>;
-  decrementReservedSeats(tourId: string, count: number): Promise<void>;
-  
   // Reservation automation methods
   getReservationsForReminders(): Promise<Reservation[]>;
   getReservationsForCancellation(): Promise<Reservation[]>;
@@ -308,7 +304,7 @@ export class DbStorage implements IStorage {
     return await db
       .select()
       .from(tours)
-      .where(ilike(tours.location, `%${location}%`))
+      .where(ilike(tours.continent, `%${location}%`))
       .orderBy(desc(tours.createdAt));
   }
 
@@ -409,7 +405,7 @@ export class DbStorage implements IStorage {
         createdAt: reservations.createdAt,
         tour: {
           title: tours.title,
-          location: tours.location,
+          continent: tours.continent,
         },
       })
       .from(reservations)
@@ -491,21 +487,6 @@ export class DbStorage implements IStorage {
         .set({ reservedSeats: departure.reservedSeats + numberOfPassengers })
         .where(eq(departures.id, departureId));
 
-      // 5. También actualizar cupos del tour (para compatibilidad)
-      const tourResult = await tx
-        .select()
-        .from(tours)
-        .where(eq(tours.id, departure.tourId))
-        .for('update');
-      
-      const tour = tourResult[0];
-      if (tour) {
-        await tx
-          .update(tours)
-          .set({ reservedSeats: tour.reservedSeats + numberOfPassengers })
-          .where(eq(tours.id, departure.tourId));
-      }
-
       return newReservation;
     });
   }
@@ -582,21 +563,6 @@ export class DbStorage implements IStorage {
         
         // Update cached departure
         departure.reservedSeats += reservation.numberOfPassengers;
-        
-        // Update tour seats
-        const tourResult = await tx
-          .select()
-          .from(tours)
-          .where(eq(tours.id, reservation.tourId))
-          .for('update');
-        
-        const tour = tourResult[0];
-        if (tour) {
-          await tx
-            .update(tours)
-            .set({ reservedSeats: tour.reservedSeats + reservation.numberOfPassengers })
-            .where(eq(tours.id, reservation.tourId));
-        }
       }
       
       return createdReservations;
@@ -659,24 +625,6 @@ export class DbStorage implements IStorage {
             .update(departures)
             .set({ reservedSeats: newReservedSeats })
             .where(eq(departures.id, reservation.departureId));
-        }
-      }
-
-      // 4. Liberar cupos del tour (para compatibilidad)
-      if (reservation.tourId) {
-        const tourResult = await tx
-          .select()
-          .from(tours)
-          .where(eq(tours.id, reservation.tourId))
-          .for('update');
-        
-        const tour = tourResult[0];
-        if (tour) {
-          const newReservedSeats = Math.max(0, tour.reservedSeats - reservation.numberOfPassengers);
-          await tx
-            .update(tours)
-            .set({ reservedSeats: newReservedSeats })
-            .where(eq(tours.id, reservation.tourId));
         }
       }
 
@@ -834,21 +782,6 @@ export class DbStorage implements IStorage {
       .orderBy(desc(reservationNotifications.sentAt));
   }
 
-  // Seat management methods
-  async incrementReservedSeats(tourId: string, count: number): Promise<void> {
-    await db
-      .update(tours)
-      .set({ reservedSeats: sql`${tours.reservedSeats} + ${count}` })
-      .where(eq(tours.id, tourId));
-  }
-
-  async decrementReservedSeats(tourId: string, count: number): Promise<void> {
-    await db
-      .update(tours)
-      .set({ reservedSeats: sql`GREATEST(${tours.reservedSeats} - ${count}, 0)` })
-      .where(eq(tours.id, tourId));
-  }
-
   // Reservation automation methods
   async getReservationsForReminders(): Promise<Reservation[]> {
     const now = new Date();
@@ -937,24 +870,6 @@ export class DbStorage implements IStorage {
               .update(departures)
               .set({ reservedSeats: newReservedSeats })
               .where(eq(departures.id, reservation.departureId));
-          }
-        }
-
-        // Liberar cupos del tour (para compatibilidad)
-        if (reservation.tourId) {
-          const tourResult = await tx
-            .select()
-            .from(tours)
-            .where(eq(tours.id, reservation.tourId))
-            .for('update');
-          
-          const tour = tourResult[0];
-          if (tour) {
-            const newReservedSeats = Math.max(0, tour.reservedSeats - reservation.numberOfPassengers);
-            await tx
-              .update(tours)
-              .set({ reservedSeats: newReservedSeats })
-              .where(eq(tours.id, reservation.tourId));
           }
         }
       }
