@@ -26,6 +26,7 @@ import UserManagement from "@/components/UserManagement";
 import SystemSettings from "@/components/SystemSettings";
 import { DocumentVerification } from "@/components/DocumentVerification";
 import CSVImport from "@/components/CSVImport";
+import TestimonialsAdmin from "@/pages/TestimonialsAdmin";
 import {
   Dialog,
   DialogContent,
@@ -879,6 +880,8 @@ export default function Admin() {
               )}
 
               {activeSection === "reports" && <Reports />}
+
+              {activeSection === "testimonials" && <TestimonialsAdmin />}
 
               {activeSection === "templates" && (
             <Tabs defaultValue="email-templates" className="space-y-4">
