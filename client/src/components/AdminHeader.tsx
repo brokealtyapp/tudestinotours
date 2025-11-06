@@ -13,7 +13,12 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}
+
+export function AdminHeader({ searchQuery, onSearchChange }: AdminHeaderProps) {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -51,6 +56,8 @@ export function AdminHeader() {
             placeholder="Buscar reservas, tours, pasajeros..."
             className="pl-10 bg-gray-50 border-gray-200 focus:bg-white"
             data-testid="input-admin-search"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
 
