@@ -432,7 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Generate QR code for tour URL
-      const tourUrl = `${req.protocol}://${req.get('host')}/tours/${tour.id}`;
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const tourUrl = `${baseUrl}/tours/${tour.id}`;
       const qrCodeDataUrl = await QRCode.toDataURL(tourUrl, {
         errorCorrectionLevel: 'M',
         type: 'image/png',
@@ -440,10 +441,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         margin: 1,
       });
 
+      // Convert relative image URLs to absolute URLs for PDF rendering
+      const tourWithAbsoluteUrls = {
+        ...tour,
+        images: tour.images?.map(img => img.startsWith('http') ? img : `${baseUrl}${img}`) || [],
+        itinerary: tour.itinerary ? (tour.itinerary as any[]).map((day: any) => ({
+          ...day,
+          image: day.image && !day.image.startsWith('http') ? `${baseUrl}${day.image}` : day.image,
+        })) : null,
+      };
+
+      console.log('[PDF DEBUG] Tour images:', tourWithAbsoluteUrls.images);
+      console.log('[PDF DEBUG] Agency logo:', agencyConfig.logoUrl);
+
+      // Convert logo URL to absolute if needed
+      const agencyConfigWithAbsoluteUrls = {
+        ...agencyConfig,
+        logoUrl: agencyConfig.logoUrl && !agencyConfig.logoUrl.startsWith('http') 
+          ? `${baseUrl}${agencyConfig.logoUrl}` 
+          : agencyConfig.logoUrl,
+      };
+
       const pdfBuffer = await generateTourBrochurePDF({ 
-        tour, 
+        tour: tourWithAbsoluteUrls, 
         departures: activeDepartures,
-        agencyConfig,
+        agencyConfig: agencyConfigWithAbsoluteUrls,
         tourUrl,
         qrCodeDataUrl,
       });

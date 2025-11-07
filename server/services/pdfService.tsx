@@ -563,7 +563,7 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
         </View>
 
         {/* Hero Image */}
-        {tour.images && tour.images.length > 0 && (
+        {tour.images && tour.images.length > 0 && tour.images[0] && (
           <View style={{ marginBottom: 15 }}>
             <Image 
               src={tour.images[0]} 
@@ -717,7 +717,7 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Galería de Fotos</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              {galleryImages.map((image, index) => (
+              {galleryImages.filter(img => img && img.length > 0).map((image, index) => (
                 <Image 
                   key={index}
                   src={image} 
