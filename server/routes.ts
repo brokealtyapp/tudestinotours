@@ -441,63 +441,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         margin: 1,
       });
 
-      // Convert relative image URLs to signed GCS URLs for PDF rendering
+      // Convert relative image URLs to base64 data URLs for PDF rendering
       const objectStorageService = new ObjectStorageService();
       
-      const convertToSignedUrl = async (imagePath: string): Promise<string> => {
-        if (imagePath.startsWith('http')) {
-          return imagePath; // Already absolute URL
+      const convertToDataUrl = async (imagePath: string): Promise<string | undefined> => {
+        if (!imagePath) return undefined;
+        
+        if (imagePath.startsWith('data:')) {
+          return imagePath; // Already data URL
         }
+        
+        if (imagePath.startsWith('http')) {
+          // For external URLs, keep as is (though this won't work well in PDFs)
+          return imagePath;
+        }
+        
         // Extract filename from path like /api/tours/images/tour-xxx.webp
         const filename = imagePath.split('/').pop();
-        if (!filename) return imagePath;
+        if (!filename) return undefined;
         
         try {
-          return await objectStorageService.getTourImageSignedUrl(filename);
+          return await objectStorageService.getTourImageAsDataUrl(filename);
         } catch (error) {
-          console.error(`Error getting signed URL for ${filename}:`, error);
-          return imagePath; // Fallback to original
+          console.error(`Error converting image to data URL for ${filename}:`, error);
+          return undefined; // Return undefined if conversion fails
         }
       };
 
-      // Convert tour images to signed URLs
-      const tourImages = await Promise.all(
-        (tour.images || []).map(img => convertToSignedUrl(img))
-      );
+      // Convert tour images to data URLs
+      const tourImagesPromises = (tour.images || []).map(img => convertToDataUrl(img));
+      const tourImagesDataUrls = await Promise.all(tourImagesPromises);
+      const tourImages = tourImagesDataUrls.filter((url): url is string => url !== undefined);
 
-      // Convert itinerary images to signed URLs
-      const itineraryWithSignedUrls = tour.itinerary 
+      // Convert itinerary images to data URLs
+      const itineraryWithDataUrls = tour.itinerary 
         ? await Promise.all(
             (tour.itinerary as any[]).map(async (day: any) => ({
               ...day,
-              image: day.image ? await convertToSignedUrl(day.image) : undefined,
+              image: day.image ? await convertToDataUrl(day.image) : undefined,
             }))
           )
         : null;
 
-      const tourWithSignedUrls = {
+      const tourWithDataUrls = {
         ...tour,
         images: tourImages,
-        itinerary: itineraryWithSignedUrls,
+        itinerary: itineraryWithDataUrls,
       };
 
-      // Convert logo URL to signed URL if needed
-      const logoSignedUrl = agencyConfig.logoUrl 
-        ? await convertToSignedUrl(agencyConfig.logoUrl)
+      // Convert logo URL to data URL if needed
+      const logoDataUrl = agencyConfig.logoUrl 
+        ? await convertToDataUrl(agencyConfig.logoUrl)
         : undefined;
 
-      const agencyConfigWithSignedUrls = {
+      const agencyConfigWithDataUrls = {
         ...agencyConfig,
-        logoUrl: logoSignedUrl,
+        logoUrl: logoDataUrl,
       };
 
-      console.log('[PDF DEBUG] Tour images (signed):', tourWithSignedUrls.images);
-      console.log('[PDF DEBUG] Agency logo (signed):', logoSignedUrl);
+      console.log('[PDF DEBUG] Tour images count:', tourImages.length);
+      console.log('[PDF DEBUG] Logo available:', !!logoDataUrl);
 
       const pdfBuffer = await generateTourBrochurePDF({ 
-        tour: tourWithSignedUrls, 
+        tour: tourWithDataUrls, 
         departures: activeDepartures,
-        agencyConfig: agencyConfigWithSignedUrls,
+        agencyConfig: agencyConfigWithDataUrls,
         tourUrl,
         qrCodeDataUrl,
       });

@@ -202,6 +202,35 @@ export class ObjectStorageService {
     });
   }
 
+  // Download image from GCS and convert to base64 data URL for PDF generation
+  async getTourImageAsDataUrl(imageFilename: string): Promise<string> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+    
+    const publicPath = publicSearchPaths[0];
+    const fullPath = `${publicPath}/tours/${imageFilename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    
+    // Download file to buffer
+    const [buffer] = await file.download();
+    
+    // Determine mime type from filename extension
+    const ext = imageFilename.split('.').pop()?.toLowerCase();
+    let mimeType = 'image/jpeg'; // default
+    if (ext === 'png') mimeType = 'image/png';
+    else if (ext === 'webp') mimeType = 'image/webp';
+    else if (ext === 'gif') mimeType = 'image/gif';
+    
+    // Convert to base64 data URL
+    const base64 = buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
