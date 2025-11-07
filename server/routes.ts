@@ -2528,12 +2528,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buffer = Buffer.from(base64Data, 'base64');
 
       const objectStorageService = new ObjectStorageService();
-      const logoPath = await objectStorageService.uploadTourImage('agency-logo.png', buffer);
+      // Upload logo and get public signed URL (long-lived)
+      const logoUrl = await objectStorageService.uploadAgencyLogo(buffer);
       
-      // Save logo path to system settings
-      await storage.updateSetting('AGENCY_LOGO_URL', logoPath, req.user?.userId);
+      // Save public URL to system settings
+      await storage.updateSetting('AGENCY_LOGO_URL', logoUrl, req.user?.userId);
       
-      res.json({ logoPath });
+      res.json({ logoUrl });
     } catch (error: any) {
       console.error("Error subiendo logo de agencia:", error);
       res.status(500).json({ error: "Error subiendo logo de agencia" });
