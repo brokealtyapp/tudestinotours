@@ -2514,6 +2514,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agency Logo upload endpoint
+  app.post("/api/settings/agency-logo", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const { imageData } = req.body; // Base64 encoded image
+      
+      if (!imageData) {
+        return res.status(400).json({ error: "No se proporcionó imagen" });
+      }
+
+      // Decode base64 image
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      const objectStorageService = new ObjectStorageService();
+      const logoPath = await objectStorageService.uploadTourImage('agency-logo.png', buffer);
+      
+      // Save logo path to system settings
+      await storage.updateSetting('AGENCY_LOGO_URL', logoPath, req.user?.userId);
+      
+      res.json({ logoPath });
+    } catch (error: any) {
+      console.error("Error subiendo logo de agencia:", error);
+      res.status(500).json({ error: "Error subiendo logo de agencia" });
+    }
+  });
+
   // Testimonials routes
   app.get("/api/testimonials", async (req, res) => {
     try {

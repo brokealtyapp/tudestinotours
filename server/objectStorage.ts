@@ -203,6 +203,7 @@ export class ObjectStorageService {
   }
 
   // Download image from GCS and convert to base64 data URL for PDF generation
+  // @react-pdf/renderer only supports PNG and JPEG, so we convert WebP to PNG
   async getTourImageAsDataUrl(imageFilename: string): Promise<string> {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     if (publicSearchPaths.length === 0) {
@@ -219,15 +220,38 @@ export class ObjectStorageService {
     // Download file to buffer
     const [buffer] = await file.download();
     
-    // Determine mime type from filename extension
+    // Determine extension from filename
     const ext = imageFilename.split('.').pop()?.toLowerCase();
-    let mimeType = 'image/jpeg'; // default
-    if (ext === 'png') mimeType = 'image/png';
-    else if (ext === 'webp') mimeType = 'image/webp';
-    else if (ext === 'gif') mimeType = 'image/gif';
+    
+    // @react-pdf/renderer only supports PNG and JPEG
+    // Convert WebP and other formats to PNG
+    let finalBuffer: Buffer;
+    let mimeType: string;
+    
+    if (ext === 'webp' || ext === 'gif' || ext === 'svg' || ext === 'bmp') {
+      console.log(`[PDF] Converting ${ext} image to PNG: ${imageFilename}`);
+      
+      // Convert to PNG using Sharp
+      finalBuffer = await sharp(buffer)
+        .png({
+          quality: 90,
+          compressionLevel: 6,
+        })
+        .toBuffer();
+      
+      mimeType = 'image/png';
+    } else if (ext === 'png') {
+      // PNG is supported, use as is
+      finalBuffer = buffer;
+      mimeType = 'image/png';
+    } else {
+      // JPEG/JPG - supported, use as is
+      finalBuffer = buffer;
+      mimeType = 'image/jpeg';
+    }
     
     // Convert to base64 data URL
-    const base64 = buffer.toString('base64');
+    const base64 = finalBuffer.toString('base64');
     return `data:${mimeType};base64,${base64}`;
   }
 
