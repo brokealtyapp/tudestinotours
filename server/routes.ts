@@ -2536,9 +2536,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[LOGO_ENDPOINT] Guardando logo como base64 en la base de datos...');
       
-      // Store the base64 data URL directly in the database
-      // This works in both development and production without external dependencies
-      const setting = await storage.updateSetting('AGENCY_LOGO_URL', imageData, req.user?.userId);
+      // Try to update first, if it doesn't exist, create it
+      let setting = await storage.updateSetting('AGENCY_LOGO_URL', imageData, req.user?.userId);
+      
+      if (!setting) {
+        console.log('[LOGO_ENDPOINT] El registro no existe, creándolo...');
+        setting = await storage.createSetting({
+          key: 'AGENCY_LOGO_URL',
+          value: imageData,
+          category: 'general',
+          description: 'Logo de la agencia en formato base64',
+          dataType: 'string',
+          updatedBy: req.user?.userId,
+        });
+      }
+      
       console.log('[LOGO_ENDPOINT] Logo guardado exitosamente en DB');
       
       console.log('[LOGO_ENDPOINT] ✅ Proceso completado exitosamente');
