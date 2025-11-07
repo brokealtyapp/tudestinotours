@@ -2528,10 +2528,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buffer = Buffer.from(base64Data, 'base64');
 
       const objectStorageService = new ObjectStorageService();
-      // Upload logo and get public signed URL (long-lived)
+      // Upload logo and get relative path (served publicly via /api/tours/images endpoint)
       const logoUrl = await objectStorageService.uploadAgencyLogo(buffer);
       
-      // Save public URL to system settings
+      // Save logo path to system settings
       await storage.updateSetting('AGENCY_LOGO_URL', logoUrl, req.user?.userId);
       
       res.json({ logoUrl });
