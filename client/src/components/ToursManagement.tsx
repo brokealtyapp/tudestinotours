@@ -425,6 +425,98 @@ export default function ToursManagement() {
     }
   };
 
+  const handleItineraryImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, dayIndex: number) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Solo se permiten archivos JPG, PNG o WEBP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setUploadProgress(0);
+
+      // Paso 1: Comprimir imagen en el navegador
+      const options = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type,
+      };
+
+      let compressedFile = file;
+      
+      if (file.size > 1024 * 1024) {
+        toast({
+          title: "Optimizando imagen...",
+          description: "Comprimiendo para mejorar el rendimiento",
+        });
+        
+        compressedFile = await imageCompression(file, options);
+      }
+
+      setUploadProgress(20);
+
+      // Paso 2: Obtener URL de subida
+      const response = await apiRequest("POST", "/api/tours/upload-url", {
+        filename: file.name,
+      });
+      const { uploadURL, imagePath } = await response.json() as { 
+        uploadURL: string; 
+        imagePath: string; 
+      };
+
+      setUploadProgress(40);
+
+      // Paso 3: Subir archivo comprimido a Object Storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": compressedFile.type,
+        },
+        body: compressedFile,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Error al subir la imagen");
+      }
+
+      setUploadProgress(90);
+
+      // Paso 4: Actualizar imagen del día en el itinerario
+      const newItinerary = [...tourForm.itinerary];
+      newItinerary[dayIndex] = { ...newItinerary[dayIndex], image: imagePath };
+      setTourForm({ ...tourForm, itinerary: newItinerary });
+
+      setUploadProgress(100);
+
+      toast({
+        title: "Éxito",
+        description: "Imagen del día subida correctamente",
+      });
+
+      // Resetear input
+      event.target.value = "";
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al subir la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress(0);
+    }
+  };
+
 
   return (
     <Card>
@@ -832,7 +924,7 @@ export default function ToursManagement() {
                 <div>
                   <Label>Itinerario</Label>
                   {tourForm.itinerary.map((day, idx) => (
-                    <div key={idx} className="border rounded-lg p-4 mb-3 space-y-2">
+                    <div key={idx} className="border rounded-lg p-4 mb-3 space-y-3">
                       <div className="flex justify-between items-start">
                         <Label className="text-sm font-semibold">Día {idx + 1}</Label>
                         <Button
@@ -872,6 +964,54 @@ export default function ToursManagement() {
                         placeholder="Descripción de actividades del día..."
                         data-testid={`input-day-description-${idx}`}
                       />
+                      
+                      {/* Imagen del día */}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Imagen del día (opcional)</Label>
+                        {day.image ? (
+                          <div className="relative group">
+                            <img 
+                              src={day.image} 
+                              alt={`Día ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded-lg border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                              onClick={() => {
+                                const newItinerary = [...tourForm.itinerary];
+                                newItinerary[idx] = { ...newItinerary[idx], image: undefined };
+                                setTourForm({ ...tourForm, itinerary: newItinerary });
+                              }}
+                              data-testid={`button-remove-day-image-${idx}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              className="hidden"
+                              id={`day-image-upload-${idx}`}
+                              onChange={(e) => handleItineraryImageUpload(e, idx)}
+                              data-testid={`input-day-image-upload-${idx}`}
+                            />
+                            <label
+                              htmlFor={`day-image-upload-${idx}`}
+                              className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                            >
+                              <Upload className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Subir imagen del día
+                              </span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   <Button
