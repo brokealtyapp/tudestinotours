@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Settings } from "lucide-react";
 import ContinentsManagement from "./ContinentsManagement";
+import AgencySettings from "./AgencySettings";
 
 interface SystemSetting {
   id: string;
@@ -193,6 +194,8 @@ export default function SystemSettings() {
 
   return (
     <div className="space-y-6">
+      <AgencySettings />
+      
       <ContinentsManagement />
       
       <Card>
