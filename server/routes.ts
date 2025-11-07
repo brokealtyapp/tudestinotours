@@ -26,6 +26,7 @@ import { generateInvoicePDF, generateItineraryPDF, generateTourBrochurePDF } fro
 import { captureBeforeState, createAuditLog } from "./middleware/auditMiddleware";
 import { smtpService } from "./services/smtpService";
 import { PERMISSIONS, getPermissionsForRole } from "./permissions";
+import QRCode from 'qrcode';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply audit middleware globally for all API routes
@@ -431,7 +432,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Generate QR code for tour URL
-      const QRCode = require('qrcode');
       const tourUrl = `${req.protocol}://${req.get('host')}/tours/${tour.id}`;
       const qrCodeDataUrl = await QRCode.toDataURL(tourUrl, {
         errorCorrectionLevel: 'M',
