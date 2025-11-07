@@ -255,6 +255,56 @@ export class ObjectStorageService {
     return `data:${mimeType};base64,${base64}`;
   }
 
+  // Upload agency logo and return public signed URL (long-lived for persistent display)
+  async uploadAgencyLogo(buffer: Buffer): Promise<string> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+    
+    const publicPath = publicSearchPaths[0];
+    const uniqueFilename = `agency-logo-${randomUUID()}.png`;
+    const fullPath = `${publicPath}/tours/${uniqueFilename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    // Optimize logo but preserve PNG format (for transparency)
+    const optimizedBuffer = await sharp(buffer)
+      .resize({
+        width: 400,
+        height: 400,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .png({
+        quality: 90,
+        compressionLevel: 6,
+      })
+      .toBuffer();
+    
+    console.log(`Logo optimizado: ${(buffer.length / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB`);
+    
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    
+    await file.save(optimizedBuffer, {
+      metadata: {
+        contentType: 'image/png',
+        cacheControl: 'public, max-age=31536000', // Cache por 1 año
+      },
+    });
+    
+    // Return long-lived signed URL (1 year) for persistent public access
+    const signedUrl = await signObjectURL({
+      bucketName,
+      objectName,
+      method: "GET",
+      ttlSec: 31536000, // 1 year
+    });
+    
+    console.log(`Logo subido exitosamente: ${uniqueFilename}`);
+    return signedUrl;
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
