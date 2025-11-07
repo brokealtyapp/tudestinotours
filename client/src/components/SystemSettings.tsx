@@ -181,6 +181,10 @@ export default function SystemSettings() {
     return CATEGORIES.find(c => c.value === category)?.label || category;
   };
 
+  const getDataTypeLabel = (dataType: string) => {
+    return DATA_TYPES.find(dt => dt.value === dataType)?.label || dataType;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -253,7 +257,7 @@ export default function SystemSettings() {
                         {setting.key}
                       </h3>
                       <Badge variant="outline">{getCategoryLabel(setting.category)}</Badge>
-                      <Badge variant="secondary">{setting.dataType}</Badge>
+                      <Badge variant="secondary">{getDataTypeLabel(setting.dataType)}</Badge>
                     </div>
                     {setting.description && (
                       <p className="text-sm text-muted-foreground">
