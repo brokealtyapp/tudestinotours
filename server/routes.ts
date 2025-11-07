@@ -2553,6 +2553,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TEMPORARY DEBUG ENDPOINT - Remove after fixing logo issue in production
+  app.post("/api/admin/debug/clear-logo", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      console.log('[DEBUG_CLEAR_LOGO] Iniciando limpieza de logo obsoleto...');
+      
+      // Check if the setting exists
+      const existingSetting = await storage.getSetting('AGENCY_LOGO_URL');
+      
+      if (!existingSetting) {
+        console.log('[DEBUG_CLEAR_LOGO] No se encontró AGENCY_LOGO_URL en la base de datos');
+        return res.json({ 
+          success: true, 
+          message: 'AGENCY_LOGO_URL no existe en la base de datos',
+          previousValue: null
+        });
+      }
+      
+      console.log(`[DEBUG_CLEAR_LOGO] Valor actual: ${existingSetting.value}`);
+      
+      // Delete the setting
+      await storage.deleteSetting('AGENCY_LOGO_URL');
+      
+      console.log('[DEBUG_CLEAR_LOGO] ✅ AGENCY_LOGO_URL eliminado exitosamente');
+      
+      res.json({ 
+        success: true, 
+        message: 'Logo obsoleto eliminado correctamente',
+        previousValue: existingSetting.value
+      });
+    } catch (error: any) {
+      console.error("[DEBUG_CLEAR_LOGO] ❌ Error eliminando logo:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Error eliminando logo de agencia" 
+      });
+    }
+  });
+
   // Testimonials routes
   app.get("/api/testimonials", async (req, res) => {
     try {
