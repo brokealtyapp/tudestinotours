@@ -49,7 +49,7 @@ interface Tour {
   featured: boolean;
   rating: string | null;
   reviewCount: number | null;
-  itinerary: { day: string; title: string; description: string }[] | null;
+  itinerary: { day: string; title: string; description: string; image?: string }[] | null;
   includes: string[];
   excludes: string[];
   cancellationPolicy: string | null;
@@ -82,7 +82,7 @@ export default function ToursManagement() {
     duration: string;
     images: string[];
     featured: boolean;
-    itinerary: { day: string; title: string; description: string }[];
+    itinerary: { day: string; title: string; description: string; image?: string }[];
     includes: string[];
     excludes: string[];
     cancellationPolicy: string;
