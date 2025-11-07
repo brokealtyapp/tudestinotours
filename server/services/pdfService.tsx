@@ -549,16 +549,20 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header with Logo */}
-        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.companyName}>{agencyName}</Text>
-            <Text style={styles.companyTagline}>{agencyTagline}</Text>
-          </View>
-          {agencyConfig?.logoUrl && (
-            <Image 
-              src={agencyConfig.logoUrl} 
-              style={{ width: 60, height: 60, objectFit: 'contain' }}
-            />
+        <View style={styles.header}>
+          {agencyConfig?.logoUrl ? (
+            <View style={{ alignItems: 'flex-start', marginBottom: 5 }}>
+              <Image 
+                src={agencyConfig.logoUrl} 
+                style={{ width: 120, height: 60, objectFit: 'contain', marginBottom: 5 }}
+              />
+              <Text style={styles.companyTagline}>{agencyTagline}</Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.companyName}>{agencyName}</Text>
+              <Text style={styles.companyTagline}>{agencyTagline}</Text>
+            </View>
           )}
         </View>
 
