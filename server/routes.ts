@@ -2517,39 +2517,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Agency Logo upload endpoint
+  // Agency Logo upload endpoint - Simplified version that stores base64 directly in DB
   app.post("/api/settings/agency-logo", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
     try {
       console.log('[LOGO_ENDPOINT] Recibida petición de subida de logo');
-      const { imageData } = req.body; // Base64 encoded image
+      const { imageData } = req.body; // Base64 encoded image (data:image/...;base64,...)
       
       if (!imageData) {
         console.log('[LOGO_ENDPOINT] ERROR: No se proporcionó imagen');
         return res.status(400).json({ error: "No se proporcionó imagen" });
       }
 
-      console.log('[LOGO_ENDPOINT] Decodificando imagen base64...');
-      // Decode base64 image
-      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-      console.log(`[LOGO_ENDPOINT] Buffer decodificado: ${(buffer.length / 1024).toFixed(0)}KB`);
+      // Validate it's a proper base64 data URL
+      if (!imageData.startsWith('data:image/')) {
+        console.log('[LOGO_ENDPOINT] ERROR: Formato de imagen inválido');
+        return res.status(400).json({ error: "Formato de imagen inválido" });
+      }
 
-      const objectStorageService = new ObjectStorageService();
-      console.log('[LOGO_ENDPOINT] Llamando a uploadAgencyLogo()...');
-      // Upload logo and get relative path (served publicly via /api/tours/images endpoint)
-      const logoUrl = await objectStorageService.uploadAgencyLogo(buffer);
-      console.log(`[LOGO_ENDPOINT] Logo subido, URL recibida: ${logoUrl}`);
+      console.log('[LOGO_ENDPOINT] Guardando logo como base64 en la base de datos...');
       
-      // Save logo path to system settings
-      console.log('[LOGO_ENDPOINT] Guardando URL en system_settings...');
-      const setting = await storage.updateSetting('AGENCY_LOGO_URL', logoUrl, req.user?.userId);
-      console.log(`[LOGO_ENDPOINT] Setting guardado en DB:`, setting);
+      // Store the base64 data URL directly in the database
+      // This works in both development and production without external dependencies
+      const setting = await storage.updateSetting('AGENCY_LOGO_URL', imageData, req.user?.userId);
+      console.log('[LOGO_ENDPOINT] Logo guardado exitosamente en DB');
       
       console.log('[LOGO_ENDPOINT] ✅ Proceso completado exitosamente');
-      res.json({ logoUrl });
+      res.json({ logoUrl: imageData });
     } catch (error: any) {
-      console.error("[LOGO_ENDPOINT] ❌ Error subiendo logo de agencia:", error);
-      res.status(500).json({ error: "Error subiendo logo de agencia" });
+      console.error("[LOGO_ENDPOINT] ❌ Error guardando logo de agencia:", error);
+      res.status(500).json({ error: "Error guardando logo de agencia" });
     }
   });
 
