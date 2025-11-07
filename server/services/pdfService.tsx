@@ -1,6 +1,7 @@
 import React from 'react';
-import ReactPDF, { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
-import type { Reservation, Tour, Passenger, PaymentInstallment, User } from '@shared/schema';
+import ReactPDF, { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
+import type { Reservation, Tour, Passenger, PaymentInstallment, User, Departure, SystemSetting } from '@shared/schema';
+import QRCode from 'qrcode';
 
 const styles = StyleSheet.create({
   page: {
@@ -509,20 +510,108 @@ export async function generateItineraryPDF(data: ItineraryData): Promise<Buffer>
 // Tour Brochure PDF (Marketing Material)
 interface TourBrochureData {
   tour: Tour;
+  departures?: Departure[];
+  agencyConfig?: {
+    name: string;
+    tagline: string;
+    logoUrl?: string;
+    website: string;
+    email: string;
+    phone: string;
+    emergencyPhone?: string;
+  };
+  tourUrl?: string;
+  qrCodeDataUrl?: string;
 }
 
-const TourBrochureDocument = ({ tour }: TourBrochureData) => {
+const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qrCodeDataUrl }: TourBrochureData) => {
   const faqs = tour.faqs as Array<{question: string; answer: string}> | null;
+  const itinerary = tour.itinerary as Array<{day: string; title: string; description: string; image?: string}> | null;
+  
+  // Calculate minimum price from active departures
+  const minPrice = departures.length > 0 
+    ? Math.min(...departures.map(d => Number(d.price)))
+    : null;
+  
+  // Agency defaults
+  const agencyName = agencyConfig?.name || 'Tu Destino Tours';
+  const agencyTagline = agencyConfig?.tagline || 'Tu próxima aventura comienza aquí';
+  const agencyWebsite = agencyConfig?.website || 'www.tudestinotours.com';
+  const agencyEmail = agencyConfig?.email || 'info@tudestinotours.com';
+  const agencyPhone = agencyConfig?.phone || '+1 (555) 123-4567';
+  
+  // Get up to 3 images for gallery (excluding first which is hero)
+  const galleryImages = tour.images && tour.images.length > 1 
+    ? tour.images.slice(1, 4) 
+    : [];
   
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.companyName}>Tu Destino Tours</Text>
-          <Text style={styles.companyTagline}>Tu próxima aventura comienza aquí</Text>
+        {/* Header with Logo */}
+        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.companyName}>{agencyName}</Text>
+            <Text style={styles.companyTagline}>{agencyTagline}</Text>
+          </View>
+          {agencyConfig?.logoUrl && (
+            <Image 
+              src={agencyConfig.logoUrl} 
+              style={{ width: 60, height: 60, objectFit: 'contain' }}
+            />
+          )}
+        </View>
+
+        {/* Hero Image */}
+        {tour.images && tour.images.length > 0 && (
+          <View style={{ marginBottom: 15 }}>
+            <Image 
+              src={tour.images[0]} 
+              style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 4 }}
+            />
+          </View>
+        )}
+
+        {/* Title and Subtitle */}
+        <View style={{ marginBottom: 15 }}>
           <Text style={styles.documentTitle}>{tour.title}</Text>
           <Text style={styles.documentSubtitle}>{tour.continent || 'Destino internacional'}</Text>
+        </View>
+
+        {/* Rating and Reviews */}
+        {tour.rating && tour.reviewCount && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={{ fontSize: 10, color: '#f59e0b', marginRight: 5 }}>
+              {'★'.repeat(Math.round(Number(tour.rating)))}{'☆'.repeat(5 - Math.round(Number(tour.rating)))}
+            </Text>
+            <Text style={{ fontSize: 9, color: '#64748b' }}>
+              {Number(tour.rating).toFixed(1)} ({tour.reviewCount} reseñas)
+            </Text>
+          </View>
+        )}
+
+        {/* Price */}
+        <View style={[styles.highlight, { backgroundColor: '#dbeafe', padding: 12, marginBottom: 15 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <Text style={{ fontSize: 10, color: '#1e40af', marginBottom: 2 }}>Precio por persona:</Text>
+              {minPrice !== null ? (
+                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#dc2626' }}>
+                  Desde ${minPrice.toFixed(2)}
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
+                  Consultar salidas disponibles
+                </Text>
+              )}
+            </View>
+            {qrCodeDataUrl && (
+              <View style={{ alignItems: 'center' }}>
+                <Image src={qrCodeDataUrl} style={{ width: 60, height: 60 }} />
+                <Text style={{ fontSize: 7, color: '#64748b', marginTop: 2 }}>Reserva Online</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Overview */}
@@ -544,26 +633,34 @@ const TourBrochureDocument = ({ tour }: TourBrochureData) => {
             <Text style={styles.label}>Continente:</Text>
             <Text style={styles.value}>{tour.continent || 'No especificado'}</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Información de precio:</Text>
-            <Text style={{ ...styles.value, color: '#dc2626', fontWeight: 'bold' }}>
-              Consultar salidas disponibles
-            </Text>
-          </View>
+          {departures.length > 0 && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Salidas disponibles:</Text>
+              <Text style={styles.value}>{departures.length} fecha(s)</Text>
+            </View>
+          )}
         </View>
 
-        {/* Itinerary */}
-        {tour.itinerary && Array.isArray(tour.itinerary) && tour.itinerary.length > 0 && (
+        {/* Itinerary with Images */}
+        {itinerary && itinerary.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Itinerario</Text>
-            {tour.itinerary.map((day, index) => (
-              <View key={index} style={styles.itineraryItem}>
-                <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 4, color: '#2563eb' }}>
-                  Día {index + 1}: {day.title}
-                </Text>
-                <Text style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
-                  {day.description}
-                </Text>
+            {itinerary.map((day, index) => (
+              <View key={index} style={{ marginBottom: 12 }}>
+                {day.image && (
+                  <Image 
+                    src={day.image} 
+                    style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 4, marginBottom: 6 }}
+                  />
+                )}
+                <View style={styles.itineraryItem}>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 4, color: '#2563eb' }}>
+                    Día {index + 1}: {day.title}
+                  </Text>
+                  <Text style={{ fontSize: 9, color: '#475569', lineHeight: 1.5 }}>
+                    {day.description}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
@@ -615,6 +712,28 @@ const TourBrochureDocument = ({ tour }: TourBrochureData) => {
           </View>
         )}
 
+        {/* Photo Gallery */}
+        {galleryImages.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Galería de Fotos</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              {galleryImages.map((image, index) => (
+                <Image 
+                  key={index}
+                  src={image} 
+                  style={{ 
+                    width: galleryImages.length === 1 ? '100%' : '48%', 
+                    height: 100, 
+                    objectFit: 'cover', 
+                    borderRadius: 4,
+                    marginBottom: 8
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* FAQs */}
         {faqs && faqs.length > 0 && (
           <View style={styles.section}>
@@ -638,14 +757,20 @@ const TourBrochureDocument = ({ tour }: TourBrochureData) => {
             ¿Listo para reservar?
           </Text>
           <Text style={{ fontSize: 9, color: '#92400e' }}>
-            Visita nuestro sitio web o contáctanos para más información y disponibilidad de fechas.
+            {tourUrl 
+              ? `Escanea el código QR o visita: ${tourUrl}` 
+              : `Visita ${agencyWebsite} o contáctanos para más información y disponibilidad de fechas.`
+            }
           </Text>
         </View>
 
-        {/* Footer */}
+        {/* Footer with Dynamic Contact Info */}
         <View style={styles.footer}>
-          <Text>Tu Destino Tours | www.tudestinotours.com</Text>
-          <Text>Email: info@tudestinotours.com | Tel: +1 (555) 123-4567</Text>
+          <Text>{agencyName} | {agencyWebsite}</Text>
+          <Text>Email: {agencyEmail} | Tel: {agencyPhone}</Text>
+          {agencyConfig?.emergencyPhone && (
+            <Text>Emergencias 24/7: {agencyConfig.emergencyPhone}</Text>
+          )}
           <Text style={{ marginTop: 4, fontSize: 7 }}>
             Documento generado el {new Date().toLocaleDateString('es-ES', {
               year: 'numeric',

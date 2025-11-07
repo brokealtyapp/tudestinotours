@@ -411,7 +411,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Tour no encontrado" });
       }
 
-      const pdfBuffer = await generateTourBrochurePDF({ tour });
+      // Get active departures for this tour (only future departures with status 'active')
+      const allDepartures = await storage.getDepartures(tour.id);
+      const now = new Date();
+      const activeDepartures = allDepartures.filter(d => 
+        d.status === 'active' && new Date(d.departureDate) > now
+      );
+
+      // Get agency configuration from system settings
+      const agencySettings = await storage.getSettings();
+      const agencyConfig = {
+        name: agencySettings.find((s: any) => s.key === 'AGENCY_NAME')?.value || 'Tu Destino Tours',
+        tagline: agencySettings.find((s: any) => s.key === 'AGENCY_TAGLINE')?.value || 'Tu próxima aventura comienza aquí',
+        logoUrl: agencySettings.find((s: any) => s.key === 'AGENCY_LOGO_URL')?.value || undefined,
+        website: agencySettings.find((s: any) => s.key === 'AGENCY_WEBSITE')?.value || 'www.tudestinotours.com',
+        email: agencySettings.find((s: any) => s.key === 'AGENCY_EMAIL')?.value || 'info@tudestinotours.com',
+        phone: agencySettings.find((s: any) => s.key === 'AGENCY_PHONE')?.value || '+1 (555) 123-4567',
+        emergencyPhone: agencySettings.find((s: any) => s.key === 'AGENCY_EMERGENCY_PHONE')?.value || undefined,
+      };
+
+      // Generate QR code for tour URL
+      const QRCode = require('qrcode');
+      const tourUrl = `${req.protocol}://${req.get('host')}/tours/${tour.id}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(tourUrl, {
+        errorCorrectionLevel: 'M',
+        type: 'image/png',
+        width: 200,
+        margin: 1,
+      });
+
+      const pdfBuffer = await generateTourBrochurePDF({ 
+        tour, 
+        departures: activeDepartures,
+        agencyConfig,
+        tourUrl,
+        qrCodeDataUrl,
+      });
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="folleto-${tour.title.replace(/\s+/g, '-')}.pdf"`);
