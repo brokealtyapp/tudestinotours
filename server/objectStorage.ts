@@ -255,7 +255,7 @@ export class ObjectStorageService {
     return `data:${mimeType};base64,${base64}`;
   }
 
-  // Upload agency logo and return public signed URL (long-lived for persistent display)
+  // Upload agency logo and return relative path (served publicly via backend)
   async uploadAgencyLogo(buffer: Buffer): Promise<string> {
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     if (publicSearchPaths.length === 0) {
@@ -293,16 +293,10 @@ export class ObjectStorageService {
       },
     });
     
-    // Return long-lived signed URL (1 year) for persistent public access
-    const signedUrl = await signObjectURL({
-      bucketName,
-      objectName,
-      method: "GET",
-      ttlSec: 31536000, // 1 year
-    });
-    
-    console.log(`Logo subido exitosamente: ${uniqueFilename}`);
-    return signedUrl;
+    // Return relative path to be served through backend endpoint (publicly accessible)
+    const relativePath = `/api/tours/images/${uniqueFilename}`;
+    console.log(`Logo subido exitosamente: ${relativePath}`);
+    return relativePath;
   }
 
   async getObjectEntityFile(objectPath: string): Promise<File> {
