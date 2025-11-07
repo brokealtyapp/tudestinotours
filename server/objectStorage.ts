@@ -183,6 +183,25 @@ export class ObjectStorageService {
     return relativePath;
   }
 
+  // Get signed URL for reading an image (for PDF generation)
+  async getTourImageSignedUrl(imageFilename: string): Promise<string> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+    
+    const publicPath = publicSearchPaths[0];
+    const fullPath = `${publicPath}/tours/${imageFilename}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    return signObjectURL({
+      bucketName,
+      objectName,
+      method: "GET",
+      ttlSec: 3600, // 1 hour validity for PDF generation
+    });
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();

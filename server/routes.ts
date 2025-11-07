@@ -441,31 +441,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         margin: 1,
       });
 
-      // Convert relative image URLs to absolute URLs for PDF rendering
-      const tourWithAbsoluteUrls = {
+      // Convert relative image URLs to signed GCS URLs for PDF rendering
+      const objectStorageService = new ObjectStorageService();
+      
+      const convertToSignedUrl = async (imagePath: string): Promise<string> => {
+        if (imagePath.startsWith('http')) {
+          return imagePath; // Already absolute URL
+        }
+        // Extract filename from path like /api/tours/images/tour-xxx.webp
+        const filename = imagePath.split('/').pop();
+        if (!filename) return imagePath;
+        
+        try {
+          return await objectStorageService.getTourImageSignedUrl(filename);
+        } catch (error) {
+          console.error(`Error getting signed URL for ${filename}:`, error);
+          return imagePath; // Fallback to original
+        }
+      };
+
+      // Convert tour images to signed URLs
+      const tourImages = await Promise.all(
+        (tour.images || []).map(img => convertToSignedUrl(img))
+      );
+
+      // Convert itinerary images to signed URLs
+      const itineraryWithSignedUrls = tour.itinerary 
+        ? await Promise.all(
+            (tour.itinerary as any[]).map(async (day: any) => ({
+              ...day,
+              image: day.image ? await convertToSignedUrl(day.image) : undefined,
+            }))
+          )
+        : null;
+
+      const tourWithSignedUrls = {
         ...tour,
-        images: tour.images?.map(img => img.startsWith('http') ? img : `${baseUrl}${img}`) || [],
-        itinerary: tour.itinerary ? (tour.itinerary as any[]).map((day: any) => ({
-          ...day,
-          image: day.image && !day.image.startsWith('http') ? `${baseUrl}${day.image}` : day.image,
-        })) : null,
+        images: tourImages,
+        itinerary: itineraryWithSignedUrls,
       };
 
-      console.log('[PDF DEBUG] Tour images:', tourWithAbsoluteUrls.images);
-      console.log('[PDF DEBUG] Agency logo:', agencyConfig.logoUrl);
+      // Convert logo URL to signed URL if needed
+      const logoSignedUrl = agencyConfig.logoUrl 
+        ? await convertToSignedUrl(agencyConfig.logoUrl)
+        : undefined;
 
-      // Convert logo URL to absolute if needed
-      const agencyConfigWithAbsoluteUrls = {
+      const agencyConfigWithSignedUrls = {
         ...agencyConfig,
-        logoUrl: agencyConfig.logoUrl && !agencyConfig.logoUrl.startsWith('http') 
-          ? `${baseUrl}${agencyConfig.logoUrl}` 
-          : agencyConfig.logoUrl,
+        logoUrl: logoSignedUrl,
       };
+
+      console.log('[PDF DEBUG] Tour images (signed):', tourWithSignedUrls.images);
+      console.log('[PDF DEBUG] Agency logo (signed):', logoSignedUrl);
 
       const pdfBuffer = await generateTourBrochurePDF({ 
-        tour: tourWithAbsoluteUrls, 
+        tour: tourWithSignedUrls, 
         departures: activeDepartures,
-        agencyConfig: agencyConfigWithAbsoluteUrls,
+        agencyConfig: agencyConfigWithSignedUrls,
         tourUrl,
         qrCodeDataUrl,
       });
