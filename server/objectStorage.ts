@@ -257,6 +257,9 @@ export class ObjectStorageService {
 
   // Upload agency logo and return relative path (served publicly via backend)
   async uploadAgencyLogo(buffer: Buffer): Promise<string> {
+    console.log('[LOGO_UPLOAD] Iniciando proceso de subida de logo...');
+    console.log(`[LOGO_UPLOAD] Tamaño buffer recibido: ${(buffer.length / 1024).toFixed(0)}KB`);
+    
     const publicSearchPaths = this.getPublicObjectSearchPaths();
     if (publicSearchPaths.length === 0) {
       throw new Error("No public search paths configured");
@@ -266,6 +269,10 @@ export class ObjectStorageService {
     const uniqueFilename = `agency-logo-${randomUUID()}.png`;
     const fullPath = `${publicPath}/tours/${uniqueFilename}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
+    
+    console.log(`[LOGO_UPLOAD] Archivo destino: ${uniqueFilename}`);
+    console.log(`[LOGO_UPLOAD] Bucket: ${bucketName}`);
+    console.log(`[LOGO_UPLOAD] Object path: ${objectName}`);
     
     // Optimize logo but preserve PNG format (for transparency)
     const optimizedBuffer = await sharp(buffer)
@@ -281,11 +288,12 @@ export class ObjectStorageService {
       })
       .toBuffer();
     
-    console.log(`Logo optimizado: ${(buffer.length / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB`);
+    console.log(`[LOGO_UPLOAD] Logo optimizado: ${(buffer.length / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB`);
     
     const bucket = objectStorageClient.bucket(bucketName);
     const file = bucket.file(objectName);
     
+    console.log('[LOGO_UPLOAD] Guardando archivo en GCS...');
     await file.save(optimizedBuffer, {
       metadata: {
         contentType: 'image/png',
@@ -293,9 +301,11 @@ export class ObjectStorageService {
       },
     });
     
+    console.log('[LOGO_UPLOAD] Archivo guardado en GCS exitosamente');
+    
     // Return relative path to be served through backend endpoint (publicly accessible)
     const relativePath = `/api/tours/images/${uniqueFilename}`;
-    console.log(`Logo subido exitosamente: ${relativePath}`);
+    console.log(`[LOGO_UPLOAD] Retornando ruta relativa: ${relativePath}`);
     return relativePath;
   }
 
