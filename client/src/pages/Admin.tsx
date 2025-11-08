@@ -25,7 +25,6 @@ import AuditLog from "@/components/AuditLog";
 import UserManagement from "@/components/UserManagement";
 import SystemSettings from "@/components/SystemSettings";
 import { DocumentVerification } from "@/components/DocumentVerification";
-import CSVImport from "@/components/CSVImport";
 import TestimonialsAdmin from "@/pages/TestimonialsAdmin";
 import {
   Dialog,
@@ -841,12 +840,6 @@ export default function Admin() {
                     })}
                   </div>
                   )}
-                </div>
-              )}
-
-              {activeSection === "import-csv" && (
-                <div>
-                  <CSVImport />
                 </div>
               )}
 
