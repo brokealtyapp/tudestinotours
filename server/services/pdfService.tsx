@@ -530,7 +530,10 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
   
   // Calculate minimum price from active departures
   const minPrice = departures.length > 0 
-    ? Math.min(...departures.map(d => Number(d.price)))
+    ? Math.min(...departures.flatMap(d => 
+        [d.pricing.double, d.pricing.triple, d.pricing.single]
+          .filter((p): p is number => p !== undefined && p > 0)
+      ))
     : null;
   
   // Agency defaults
@@ -689,8 +692,12 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: 7, color: '#64748b' }}>Desde</Text>
                       <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#dc2626' }}>
-                        ${Number(departure.price).toFixed(2)}
+                        ${Math.min(
+                          ...[departure.pricing.double, departure.pricing.triple, departure.pricing.single]
+                            .filter((p): p is number => p !== undefined && p > 0)
+                        ).toLocaleString()}
                       </Text>
                       <Text style={{ fontSize: 7, color: '#64748b' }}>por persona</Text>
                     </View>

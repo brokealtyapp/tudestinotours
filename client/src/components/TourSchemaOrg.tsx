@@ -24,25 +24,13 @@ export default function TourSchemaOrg({ tour, departure }: TourSchemaOrgProps) {
       ...(tour.duration && {
         duration: `P${tour.duration}D`,
       }),
-      ...(tour.location && {
-        itinerary: {
-          "@type": "ItemList",
-          itemListElement: [
-            {
-              "@type": "ListItem",
-              position: 1,
-              item: {
-                "@type": "Place",
-                name: tour.location,
-              },
-            },
-          ],
-        },
-      }),
       ...(departure && {
         offers: {
           "@type": "Offer",
-          price: departure.price,
+          price: Math.min(
+            ...[departure.pricing.double, departure.pricing.triple, departure.pricing.single]
+              .filter((p): p is number => p !== undefined && p > 0)
+          ),
           priceCurrency: "USD",
           availability: seatsAvailable > 0 
             ? "https://schema.org/InStock" 

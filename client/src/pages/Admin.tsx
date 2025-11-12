@@ -1269,8 +1269,20 @@ export default function Admin() {
                         <CardContent className="space-y-4">
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
+                              <span className="text-muted-foreground">Tipo de Ocupación:</span>
+                              <span className="font-medium">
+                                {reservation.occupancyType === 'double' ? 'Habitación Doble' : 
+                                 reservation.occupancyType === 'triple' ? 'Habitación Triple' : 
+                                 reservation.occupancyType === 'single' ? 'Habitación Sencilla' : 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
                               <span className="text-muted-foreground">Precio por Persona:</span>
-                              <span className="font-medium">${departure ? parseFloat(departure.price).toFixed(2) : '0.00'}</span>
+                              <span className="font-medium">
+                                ${departure && reservation.occupancyType 
+                                  ? departure.pricing[reservation.occupancyType]?.toFixed(2) 
+                                  : (reservation.totalPrice / passengers.length).toFixed(2)}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Número de Pasajeros:</span>

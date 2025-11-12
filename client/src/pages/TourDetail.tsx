@@ -97,7 +97,10 @@ export default function TourDetail() {
 
   const images = tour.images && tour.images.length > 0 ? tour.images : ["/placeholder-tour.jpg"];
   const minPrice = departures && departures.length > 0 
-    ? Math.min(...departures.map(d => parseFloat(d.price)))
+    ? Math.min(...departures.flatMap(d => 
+        [d.pricing.double, d.pricing.triple, d.pricing.single]
+          .filter((p): p is number => p !== undefined && p > 0)
+      ))
     : null;
 
   const nextImage = () => {
@@ -457,9 +460,15 @@ export default function TourDetail() {
                                 <Users className="h-3 w-3" />
                                 {availableSeats} cupos disponibles
                               </span>
-                              <span className="font-bold text-primary">
-                                ${parseFloat(departure.price).toFixed(2)}
-                              </span>
+                              <div className="text-right">
+                                <div className="text-xs text-muted-foreground">Desde</div>
+                                <span className="font-bold text-primary">
+                                  ${Math.min(
+                                    ...[departure.pricing.double, departure.pricing.triple, departure.pricing.single]
+                                      .filter((p): p is number => p !== undefined && p > 0)
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
                             </div>
                             
                             <div className="space-y-1">
