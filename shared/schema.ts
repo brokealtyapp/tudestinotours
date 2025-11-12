@@ -60,7 +60,7 @@ export const departures = pgTable("departures", {
   returnDate: timestampDate("return_date"),
   totalSeats: integer("total_seats").notNull(),
   reservedSeats: integer("reserved_seats").notNull().default(0),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  pricing: jsonb("pricing").$type<{ double?: number; triple?: number; single?: number }>().notNull(),
   depositType: text("deposit_type").notNull().default("percentage"),
   depositPercentage: integer("deposit_percentage"),
   depositFixedAmount: decimal("deposit_fixed_amount", { precision: 10, scale: 2 }),
@@ -80,6 +80,14 @@ export const insertDepartureSchema = createInsertSchema(departures)
   .extend({
     departureDate: z.coerce.date(),
     returnDate: z.coerce.date().nullable().optional(),
+    pricing: z.object({
+      double: z.number().positive().optional(),
+      triple: z.number().positive().optional(),
+      single: z.number().positive().optional(),
+    }).refine(
+      (data) => data.double || data.triple || data.single,
+      { message: "Al menos un tipo de ocupación debe tener precio" }
+    ),
   });
 
 export type InsertDeparture = z.infer<typeof insertDepartureSchema>;
@@ -105,6 +113,7 @@ export const reservations = pgTable("reservations", {
   adminAlertSent: boolean("admin_alert_sent").default(false),
   tripReminderSent: boolean("trip_reminder_sent").default(false),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  occupancyType: text("occupancy_type").notNull(),
   installmentFrequency: text("installment_frequency").notNull().default("monthly"),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("pending"),
