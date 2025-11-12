@@ -41,7 +41,11 @@ interface Departure {
   returnDate: Date | null;
   totalSeats: number;
   reservedSeats: number;
-  price: string;
+  pricing: {
+    double?: number;
+    triple?: number;
+    single?: number;
+  };
   depositType: string;
   depositPercentage: number | null;
   depositFixedAmount: string | null;
@@ -62,6 +66,7 @@ export default function Booking() {
   const [currentStep, setCurrentStep] = useState<BookingStep>(1);
   const [numPassengers, setNumPassengers] = useState(1);
   const [selectedDepartureId, setSelectedDepartureId] = useState<string>(initialDepartureId);
+  const [occupancyType, setOccupancyType] = useState<'double' | 'triple' | 'single'>('double');
   const [installmentFrequency, setInstallmentFrequency] = useState<string>("monthly");
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
   const [paymentUrl, setPaymentUrl] = useState("");
@@ -369,6 +374,17 @@ export default function Booking() {
         return;
       }
 
+      // Calcular el precio total según el tipo de ocupación seleccionado
+      const pricePerPerson = selectedDeparture.pricing[occupancyType];
+      if (!pricePerPerson) {
+        toast({
+          title: "Error",
+          description: `El tipo de ocupación seleccionado no está disponible para esta salida`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reservationData = {
         tourId,
         departureId: selectedDepartureId,
@@ -382,7 +398,8 @@ export default function Booking() {
         reservationDate: new Date().toISOString(),
         departureDate: new Date(selectedDeparture.departureDate).toISOString(),
         numberOfPassengers: numPassengers,
-        totalPrice: parseFloat(selectedDeparture.price) * numPassengers,
+        totalPrice: pricePerPerson * numPassengers,
+        occupancyType,
         installmentFrequency,
         status: "pending",
         paymentStatus: "pending",
@@ -559,9 +576,13 @@ export default function Booking() {
                                     </Badge>
                                   </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right space-y-1">
+                                  <div className="text-sm font-medium text-muted-foreground">Desde</div>
                                   <div className="text-2xl font-bold text-primary">
-                                    ${departure.price}
+                                    ${Math.min(
+                                      ...[departure.pricing.double, departure.pricing.triple, departure.pricing.single]
+                                        .filter((p): p is number => p !== undefined && p > 0)
+                                    ).toLocaleString()}
                                   </div>
                                   <div className="text-xs text-muted-foreground">
                                     por persona
@@ -578,6 +599,46 @@ export default function Booking() {
 
                 {selectedDepartureId && departures && (
                   <>
+                    <div>
+                      <Label htmlFor="occupancy-type">
+                        Tipo de Habitación *
+                      </Label>
+                      <Select
+                        value={occupancyType}
+                        onValueChange={(value) => setOccupancyType(value as 'double' | 'triple' | 'single')}
+                      >
+                        <SelectTrigger id="occupancy-type" data-testid="select-occupancy-type">
+                          <SelectValue placeholder="Selecciona tipo de habitación" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const selectedDeparture = departures.find(d => d.id === selectedDepartureId);
+                            if (!selectedDeparture) return null;
+                            
+                            return (
+                              <>
+                                {selectedDeparture.pricing.double && (
+                                  <SelectItem value="double">
+                                    Habitación Doble - ${selectedDeparture.pricing.double.toLocaleString()}/persona
+                                  </SelectItem>
+                                )}
+                                {selectedDeparture.pricing.triple && (
+                                  <SelectItem value="triple">
+                                    Habitación Triple - ${selectedDeparture.pricing.triple.toLocaleString()}/persona
+                                  </SelectItem>
+                                )}
+                                {selectedDeparture.pricing.single && (
+                                  <SelectItem value="single">
+                                    Habitación Sencilla - ${selectedDeparture.pricing.single.toLocaleString()}/persona
+                                  </SelectItem>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
                       <Label htmlFor="num-passengers">
                         Número de Pasajeros
@@ -633,7 +694,7 @@ export default function Booking() {
                         const selectedDeparture = departures.find(d => d.id === selectedDepartureId);
                         if (!selectedDeparture) return null;
                         
-                        const pricePerPerson = parseFloat(selectedDeparture.price);
+                        const pricePerPerson = selectedDeparture.pricing[occupancyType] || 0;
                         const totalPrice = pricePerPerson * numPassengers;
                         
                         // Calculate deposit
@@ -1226,7 +1287,7 @@ export default function Booking() {
                           const selectedDeparture = departures?.find(d => d.id === selectedDepartureId);
                           if (!selectedDeparture) return null;
                           
-                          const pricePerPerson = parseFloat(selectedDeparture.price);
+                          const pricePerPerson = selectedDeparture.pricing[occupancyType] || 0;
                           const totalPrice = pricePerPerson * numPassengers;
                           
                           // Calculate deposit

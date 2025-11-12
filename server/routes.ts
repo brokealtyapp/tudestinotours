@@ -376,9 +376,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const departures = await storage.getDepartures(tour.id);
           const activeDepartures = departures.filter(d => d.status === 'active');
           
-          // Calcular precio mínimo de departures activas
+          // Calcular precio mínimo de todas las opciones de pricing
           const minPrice = activeDepartures.length > 0
-            ? Math.min(...activeDepartures.map(d => parseFloat(d.price.toString())))
+            ? Math.min(...activeDepartures.flatMap(d => {
+                const prices: number[] = [];
+                if (d.pricing.double) prices.push(d.pricing.double);
+                if (d.pricing.triple) prices.push(d.pricing.triple);
+                if (d.pricing.single) prices.push(d.pricing.single);
+                return prices;
+              }))
             : null;
           
           return {
@@ -687,7 +693,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           departureDate: new Date(date),
           returnDate: original.returnDate ? new Date(new Date(date).getTime() + (new Date(original.returnDate).getTime() - new Date(original.departureDate).getTime())) : undefined,
           totalSeats: original.totalSeats,
-          price: original.price,
+          pricing: original.pricing,
+          depositType: original.depositType,
+          depositPercentage: original.depositPercentage,
+          depositFixedAmount: original.depositFixedAmount,
           supplements: original.supplements as any,
           cancellationPolicyOverride: original.cancellationPolicyOverride,
           paymentDeadlineDays: original.paymentDeadlineDays,
@@ -770,8 +779,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Calculate total price using departure price
-      const totalPrice = parseFloat(departure.price) * validatedData.numberOfPassengers;
+      // Validar que se haya seleccionado un tipo de ocupación
+      if (!validatedData.occupancyType) {
+        return res.status(400).json({ error: "Debe seleccionar un tipo de ocupación (doble, triple o sencilla)" });
+      }
+
+      // Validar que el tipo de ocupación esté disponible en la salida
+      const occupancyType = validatedData.occupancyType as 'double' | 'triple' | 'single';
+      const pricePerPerson = departure.pricing[occupancyType];
+      
+      if (!pricePerPerson) {
+        return res.status(400).json({ 
+          error: `La ocupación "${validatedData.occupancyType}" no está disponible para esta salida` 
+        });
+      }
+
+      // Calculate total price using selected occupancy type price
+      const totalPrice = pricePerPerson * validatedData.numberOfPassengers;
 
       // Calculate payment due date using departure's deadline days
       const departureDate = new Date(departure.departureDate);
