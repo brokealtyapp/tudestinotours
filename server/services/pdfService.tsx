@@ -645,6 +645,65 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
           )}
         </View>
 
+        {/* Departures Schedule */}
+        {departures.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Fechas de Salida Disponibles</Text>
+            <View style={{ marginTop: 8 }}>
+              {departures.map((departure, index) => {
+                const departureDate = new Date(departure.departureDate);
+                const availableSeats = departure.totalSeats - departure.reservedSeats;
+                const isAlmostFull = availableSeats <= 5 && availableSeats > 0;
+                const isFull = availableSeats === 0;
+                
+                return (
+                  <View 
+                    key={index} 
+                    style={{ 
+                      flexDirection: 'row', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: 8,
+                      marginBottom: 6,
+                      backgroundColor: isFull ? '#fee2e2' : isAlmostFull ? '#fef3c7' : '#f0fdf4',
+                      borderRadius: 4,
+                      borderLeft: `3px solid ${isFull ? '#dc2626' : isAlmostFull ? '#f59e0b' : '#059669'}`
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1e293b', marginBottom: 2 }}>
+                        {departureDate.toLocaleDateString('es-ES', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </Text>
+                      <Text style={{ fontSize: 8, color: '#64748b' }}>
+                        {isFull 
+                          ? 'Cupos agotados' 
+                          : isAlmostFull 
+                          ? `¡Últimos ${availableSeats} cupos!` 
+                          : `${availableSeats} cupos disponibles`
+                        }
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#dc2626' }}>
+                        ${Number(departure.price).toFixed(2)}
+                      </Text>
+                      <Text style={{ fontSize: 7, color: '#64748b' }}>por persona</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+            <Text style={{ fontSize: 8, color: '#64748b', marginTop: 8, fontStyle: 'italic' }}>
+              * Los precios están sujetos a disponibilidad. Reserve pronto para asegurar su lugar.
+            </Text>
+          </View>
+        )}
+
         {/* Itinerary with Images */}
         {itinerary && itinerary.length > 0 && (
           <View style={styles.section}>
