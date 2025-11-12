@@ -53,7 +53,11 @@ interface Departure {
   returnDate: Date | null;
   totalSeats: number;
   reservedSeats: number;
-  price: string;
+  pricing: {
+    double?: number;
+    triple?: number;
+    single?: number;
+  };
   depositType: string;
   depositPercentage: number | null;
   depositFixedAmount: string | null;
@@ -97,7 +101,9 @@ export default function DeparturesManagement() {
     departureDate: "",
     returnDate: "",
     totalSeats: "",
-    price: "",
+    priceDouble: "",
+    priceTriple: "",
+    priceSingle: "",
     depositType: "percentage",
     depositPercentage: "20",
     depositFixedAmount: "",
@@ -122,6 +128,11 @@ export default function DeparturesManagement() {
 
   const getOccupationPercentage = (reserved: number, total: number) => {
     return total > 0 ? Math.round((reserved / total) * 100) : 0;
+  };
+
+  const getMinPrice = (pricing: { double?: number; triple?: number; single?: number }) => {
+    const prices = [pricing.double, pricing.triple, pricing.single].filter((p): p is number => p !== undefined && p > 0);
+    return prices.length > 0 ? Math.min(...prices) : 0;
   };
 
   const validateForm = () => {
@@ -153,8 +164,24 @@ export default function DeparturesManagement() {
       errors.totalSeats = "Los cupos deben ser al menos 1";
     }
     
-    if (!departureForm.price || parseFloat(departureForm.price) <= 0) {
-      errors.price = "El precio debe ser mayor a 0";
+    // Validar que al menos un tipo de ocupación tenga precio
+    const hasDouble = departureForm.priceDouble && parseFloat(departureForm.priceDouble) > 0;
+    const hasTriple = departureForm.priceTriple && parseFloat(departureForm.priceTriple) > 0;
+    const hasSingle = departureForm.priceSingle && parseFloat(departureForm.priceSingle) > 0;
+    
+    if (!hasDouble && !hasTriple && !hasSingle) {
+      errors.pricing = "Debe especificar al menos un tipo de ocupación con precio mayor a 0";
+    }
+    
+    // Validar precios individuales si están presentes
+    if (departureForm.priceDouble && parseFloat(departureForm.priceDouble) <= 0) {
+      errors.priceDouble = "El precio debe ser mayor a 0";
+    }
+    if (departureForm.priceTriple && parseFloat(departureForm.priceTriple) <= 0) {
+      errors.priceTriple = "El precio debe ser mayor a 0";
+    }
+    if (departureForm.priceSingle && parseFloat(departureForm.priceSingle) <= 0) {
+      errors.priceSingle = "El precio debe ser mayor a 0";
     }
     
     // Validar configuración de depósito
@@ -231,7 +258,7 @@ export default function DeparturesManagement() {
         const occB = getOccupationPercentage(b.reservedSeats, b.totalSeats);
         comparison = occA - occB;
       } else if (sortBy === "price") {
-        comparison = parseFloat(a.price) - parseFloat(b.price);
+        comparison = getMinPrice(a.pricing) - getMinPrice(b.pricing);
       }
       
       return sortOrder === "asc" ? comparison : -comparison;
@@ -316,7 +343,9 @@ export default function DeparturesManagement() {
       departureDate: "",
       returnDate: "",
       totalSeats: "",
-      price: "",
+      priceDouble: "",
+      priceTriple: "",
+      priceSingle: "",
       depositType: "percentage",
       depositPercentage: "20",
       depositFixedAmount: "",
@@ -340,7 +369,9 @@ export default function DeparturesManagement() {
       departureDate: format(new Date(departure.departureDate), "yyyy-MM-dd"),
       returnDate: departure.returnDate ? format(new Date(departure.returnDate), "yyyy-MM-dd") : "",
       totalSeats: departure.totalSeats.toString(),
-      price: departure.price.toString(),
+      priceDouble: departure.pricing.double?.toString() || "",
+      priceTriple: departure.pricing.triple?.toString() || "",
+      priceSingle: departure.pricing.single?.toString() || "",
       depositType: departure.depositType || "percentage",
       depositPercentage: departure.depositPercentage?.toString() || "20",
       depositFixedAmount: departure.depositFixedAmount?.toString() || "",
@@ -368,11 +399,17 @@ export default function DeparturesManagement() {
       return;
     }
 
+    // Construir objeto pricing con los tipos de ocupación disponibles
+    const pricing: { double?: number; triple?: number; single?: number } = {};
+    if (departureForm.priceDouble) pricing.double = parseFloat(departureForm.priceDouble);
+    if (departureForm.priceTriple) pricing.triple = parseFloat(departureForm.priceTriple);
+    if (departureForm.priceSingle) pricing.single = parseFloat(departureForm.priceSingle);
+
     const data: any = {
       tourId: departureForm.tourId,
       departureDate: departureForm.departureDate,
       totalSeats: parseInt(departureForm.totalSeats),
-      price: departureForm.price,
+      pricing,
       depositType: departureForm.depositType,
       depositPercentage: departureForm.depositType === "percentage" ? parseInt(departureForm.depositPercentage) : null,
       depositFixedAmount: departureForm.depositType === "fixed" ? departureForm.depositFixedAmount : null,
@@ -608,8 +645,9 @@ export default function DeparturesManagement() {
                 <TableHead>Fecha Salida</TableHead>
                 <TableHead>Fecha Regreso</TableHead>
                 <TableHead>Cupos</TableHead>
-                <TableHead>Ocupación</TableHead>
-                <TableHead>Precio</TableHead>
+                <TableHead>% Ocupación</TableHead>
+                <TableHead>Precios</TableHead>
+                <TableHead>Tipos de Hab.</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -661,7 +699,41 @@ export default function DeparturesManagement() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>${parseFloat(departure.price).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1 text-sm">
+                          {departure.pricing.double && (
+                            <div className="flex justify-between gap-2">
+                              <span className="text-muted-foreground">Doble:</span>
+                              <span className="font-semibold">${departure.pricing.double.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {departure.pricing.triple && (
+                            <div className="flex justify-between gap-2">
+                              <span className="text-muted-foreground">Triple:</span>
+                              <span className="font-semibold">${departure.pricing.triple.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {departure.pricing.single && (
+                            <div className="flex justify-between gap-2">
+                              <span className="text-muted-foreground">Sencilla:</span>
+                              <span className="font-semibold">${departure.pricing.single.toLocaleString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {departure.pricing.double && (
+                            <Badge variant="secondary" className="text-xs">Doble</Badge>
+                          )}
+                          {departure.pricing.triple && (
+                            <Badge variant="secondary" className="text-xs">Triple</Badge>
+                          )}
+                          {departure.pricing.single && (
+                            <Badge variant="secondary" className="text-xs">Sencilla</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(departure.status)}>
                           {getStatusLabel(departure.status)}
@@ -819,48 +891,104 @@ export default function DeparturesManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Total de Cupos *</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={departureForm.totalSeats}
-                  onChange={(e) =>
-                    setDepartureForm({ ...departureForm, totalSeats: e.target.value })
+            <div>
+              <Label>Total de Cupos *</Label>
+              <Input
+                type="number"
+                min="1"
+                value={departureForm.totalSeats}
+                onChange={(e) =>
+                  setDepartureForm({ ...departureForm, totalSeats: e.target.value })
+                }
+                onKeyDown={(e) => {
+                  if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                    e.preventDefault();
                   }
-                  onKeyDown={(e) => {
-                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
-                      e.preventDefault();
-                    }
-                  }}
-                  data-testid="input-total-seats"
-                />
-                {formErrors.totalSeats && (
-                  <p className="text-sm text-destructive mt-1">{formErrors.totalSeats}</p>
-                )}
+                }}
+                data-testid="input-total-seats"
+              />
+              {formErrors.totalSeats && (
+                <p className="text-sm text-destructive mt-1">{formErrors.totalSeats}</p>
+              )}
+            </div>
+
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Precios por Tipo de Ocupación *</Label>
+                <p className="text-xs text-muted-foreground">Especifica al menos un tipo</p>
               </div>
-              <div>
-                <Label>Precio *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={departureForm.price}
-                  onChange={(e) =>
-                    setDepartureForm({ ...departureForm, price: e.target.value })
-                  }
-                  onKeyDown={(e) => {
-                    if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
-                      e.preventDefault();
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Habitación Doble</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={departureForm.priceDouble}
+                    onChange={(e) =>
+                      setDepartureForm({ ...departureForm, priceDouble: e.target.value })
                     }
-                  }}
-                  data-testid="input-price"
-                />
-                {formErrors.price && (
-                  <p className="text-sm text-destructive mt-1">{formErrors.price}</p>
-                )}
+                    onKeyDown={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-price-double"
+                  />
+                  {formErrors.priceDouble && (
+                    <p className="text-sm text-destructive mt-1">{formErrors.priceDouble}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Habitación Triple</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={departureForm.priceTriple}
+                    onChange={(e) =>
+                      setDepartureForm({ ...departureForm, priceTriple: e.target.value })
+                    }
+                    onKeyDown={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-price-triple"
+                  />
+                  {formErrors.priceTriple && (
+                    <p className="text-sm text-destructive mt-1">{formErrors.priceTriple}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Habitación Sencilla</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={departureForm.priceSingle}
+                    onChange={(e) =>
+                      setDepartureForm({ ...departureForm, priceSingle: e.target.value })
+                    }
+                    onKeyDown={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-price-single"
+                  />
+                  {formErrors.priceSingle && (
+                    <p className="text-sm text-destructive mt-1">{formErrors.priceSingle}</p>
+                  )}
+                </div>
               </div>
+              {formErrors.pricing && (
+                <p className="text-sm text-destructive mt-1">{formErrors.pricing}</p>
+              )}
             </div>
 
             <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
@@ -1122,16 +1250,39 @@ export default function DeparturesManagement() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-xs text-gray-600">Precio Base</Label>
-                  <p className="text-2xl font-bold text-primary">
-                    ${parseFloat(viewingDeparture.price).toLocaleString()}
-                  </p>
+                  <Label className="text-sm font-medium mb-3 block">Precios por Tipo de Ocupación</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {viewingDeparture.pricing.double && (
+                      <div className="border rounded-lg p-3 bg-muted/50">
+                        <p className="text-xs text-muted-foreground mb-1">Habitación Doble</p>
+                        <p className="text-xl font-bold text-primary">
+                          ${viewingDeparture.pricing.double.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {viewingDeparture.pricing.triple && (
+                      <div className="border rounded-lg p-3 bg-muted/50">
+                        <p className="text-xs text-muted-foreground mb-1">Habitación Triple</p>
+                        <p className="text-xl font-bold text-primary">
+                          ${viewingDeparture.pricing.triple.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {viewingDeparture.pricing.single && (
+                      <div className="border rounded-lg p-3 bg-muted/50">
+                        <p className="text-xs text-muted-foreground mb-1">Habitación Sencilla</p>
+                        <p className="text-xl font-bold text-primary">
+                          ${viewingDeparture.pricing.single.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600">Plazo de Pago</Label>
-                  <p className="font-medium">{viewingDeparture.paymentDeadlineDays} días</p>
+                  <p className="font-medium">{viewingDeparture.paymentDeadlineDays} días antes de la salida</p>
                 </div>
               </div>
 
