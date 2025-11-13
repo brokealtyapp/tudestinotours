@@ -1034,86 +1034,42 @@ export default function ToursManagement() {
 
                 <div>
                   <Label>Lo que Incluye</Label>
-                  {tourForm.includes.map((item, idx) => (
-                    <div key={idx} className="flex gap-2 mb-2">
-                      <Input
-                        value={item}
-                        onChange={(e) => {
-                          const newIncludes = [...tourForm.includes];
-                          newIncludes[idx] = e.target.value;
-                          setTourForm({ ...tourForm, includes: newIncludes });
-                        }}
-                        placeholder="Ej: Desayunos incluidos"
-                        data-testid={`input-includes-${idx}`}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setTourForm({ 
-                            ...tourForm, 
-                            includes: tourForm.includes.filter((_, i) => i !== idx) 
-                          });
-                        }}
-                        data-testid={`button-remove-includes-${idx}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTourForm({ ...tourForm, includes: [...tourForm.includes, ""] })}
-                    data-testid="button-add-includes"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Item
-                  </Button>
+                  <Textarea
+                    value={tourForm.includes.map(item => `- ${item}`).join('\n')}
+                    onChange={(e) => {
+                      const lines = e.target.value
+                        .split('\n')
+                        .map(line => line.trim().replace(/^-\s*/, ''))
+                        .filter(line => line !== '');
+                      setTourForm({ ...tourForm, includes: lines });
+                    }}
+                    rows={6}
+                    placeholder="- Alojamiento en hoteles de 4 estrellas&#10;- Desayuno y cena en restaurantes locales&#10;- Transporte en autobús de lujo&#10;- Guía turística en español"
+                    data-testid="input-includes"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Agrega cada servicio incluido en una línea nueva (comienza con guión -)
+                  </p>
                 </div>
 
                 <div>
                   <Label>Lo que NO Incluye</Label>
-                  {tourForm.excludes.map((item, idx) => (
-                    <div key={idx} className="flex gap-2 mb-2">
-                      <Input
-                        value={item}
-                        onChange={(e) => {
-                          const newExcludes = [...tourForm.excludes];
-                          newExcludes[idx] = e.target.value;
-                          setTourForm({ ...tourForm, excludes: newExcludes });
-                        }}
-                        placeholder="Ej: Comidas no especificadas"
-                        data-testid={`input-excludes-${idx}`}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setTourForm({ 
-                            ...tourForm, 
-                            excludes: tourForm.excludes.filter((_, i) => i !== idx) 
-                          });
-                        }}
-                        data-testid={`button-remove-excludes-${idx}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTourForm({ ...tourForm, excludes: [...tourForm.excludes, ""] })}
-                    data-testid="button-add-excludes"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Item
-                  </Button>
+                  <Textarea
+                    value={tourForm.excludes.map(item => `- ${item}`).join('\n')}
+                    onChange={(e) => {
+                      const lines = e.target.value
+                        .split('\n')
+                        .map(line => line.trim().replace(/^-\s*/, ''))
+                        .filter(line => line !== '');
+                      setTourForm({ ...tourForm, excludes: lines });
+                    }}
+                    rows={6}
+                    placeholder="- Vuelos internacionales&#10;- Comidas no especificadas&#10;- Bebidas alcohólicas&#10;- Propinas"
+                    data-testid="input-excludes"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Agrega cada servicio NO incluido en una línea nueva (comienza con guión -)
+                  </p>
                 </div>
 
                 <div>
