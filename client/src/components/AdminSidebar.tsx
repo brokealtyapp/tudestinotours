@@ -10,6 +10,7 @@ import {
   Mail,
   Plane,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import { Link } from "wouter";
 import logoUrl from "@assets/logo tu destino tours horizontal_1761754020215.png";
 
 interface AdminSidebarProps {
@@ -126,6 +128,18 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  data-testid="sidebar-public-site"
+                  className="rounded-lg px-3 py-2.5 transition-all duration-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                >
+                  <Link href="/">
+                    <ExternalLink className="h-5 w-5" />
+                    <span className="text-sm">Ver Sitio Público</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
