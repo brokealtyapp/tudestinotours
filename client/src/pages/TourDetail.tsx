@@ -61,6 +61,17 @@ export default function TourDetail() {
     enabled: !!tourId,
   });
 
+  const { data: settings = [] } = useQuery<any[]>({
+    queryKey: ["/api/settings", "general"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/settings?category=general");
+      return await response.json();
+    },
+  });
+
+  const agencyEmail = settings.find((s: any) => s.key === 'AGENCY_EMAIL')?.value || 'info@tudestinotours.com';
+  const agencyPhone = settings.find((s: any) => s.key === 'AGENCY_PHONE')?.value || '+1 (555) 123-4567';
+
   if (tourLoading) {
     return (
       <div className="min-h-screen">
@@ -528,10 +539,15 @@ export default function TourDetail() {
               <Card className="bg-muted/50">
                 <CardContent className="pt-6">
                   <p className="text-sm text-center mb-2">¿Necesitas ayuda?</p>
-                  <p className="text-center font-semibold">Contáctanos</p>
-                  <p className="text-sm text-center text-muted-foreground">
-                    info@tudestinotours.com
-                  </p>
+                  <p className="text-center font-semibold mb-3">Contáctanos</p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-center text-muted-foreground">
+                      {agencyEmail}
+                    </p>
+                    <p className="text-sm text-center text-muted-foreground font-medium">
+                      {agencyPhone}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
