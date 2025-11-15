@@ -36,8 +36,8 @@ export default function Footer() {
   return (
     <footer className="bg-muted/50 border-t">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Tu Destino Tours" className="h-12" />
             </div>
@@ -51,30 +51,6 @@ export default function Footer() {
                 <p className="text-sm text-muted-foreground">260 Madison ave FL8<br />New York NY 10016<br />United States</p>
               </div>
             </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4">Servicios</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Tours Económicos</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Asesoría Experta</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Independiente</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Tours de Lujo</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Consejos de Seguridad</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Tips y Trucos</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4">Aventuras</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Extremo</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">En el Aire</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Naturaleza y Vida Silvestre</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Deportes de Invierno</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Parques al Aire Libre</Link></li>
-              <li><Link href="#" className="hover-elevate px-2 py-1 rounded-md inline-block">Deportes de Motor</Link></li>
-            </ul>
           </div>
 
           <div>
