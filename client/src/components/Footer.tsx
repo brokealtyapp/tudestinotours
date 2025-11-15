@@ -28,6 +28,18 @@ export default function Footer() {
     }
   }, [config]);
 
+  const socialLinks = useMemo(() => {
+    if (!config || !Array.isArray(config)) {
+      return { facebook: '', instagram: '', twitter: '', linkedin: '' };
+    }
+    return {
+      facebook: config.find((s: any) => s.key === 'AGENCY_FACEBOOK_URL')?.value || '',
+      instagram: config.find((s: any) => s.key === 'AGENCY_INSTAGRAM_URL')?.value || '',
+      twitter: config.find((s: any) => s.key === 'AGENCY_TWITTER_URL')?.value || '',
+      linkedin: config.find((s: any) => s.key === 'AGENCY_LINKEDIN_URL')?.value || '',
+    };
+  }, [config]);
+
   const handleSubscribe = () => {
     console.log("Subscribe with email:", email);
     setEmail("");
@@ -100,26 +112,65 @@ export default function Footer() {
             </div>
 
             <div className="flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-foreground" data-testid="link-facebook">
-                <FaFacebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground" data-testid="link-instagram">
-                <FaInstagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground" data-testid="link-twitter">
-                <FaTwitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground" data-testid="link-linkedin">
-                <FaLinkedin className="h-5 w-5" />
-              </a>
+              {socialLinks.facebook && (
+                <a 
+                  href={socialLinks.facebook} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground" 
+                  data-testid="link-facebook"
+                >
+                  <FaFacebook className="h-5 w-5" />
+                </a>
+              )}
+              {socialLinks.instagram && (
+                <a 
+                  href={socialLinks.instagram} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground" 
+                  data-testid="link-instagram"
+                >
+                  <FaInstagram className="h-5 w-5" />
+                </a>
+              )}
+              {socialLinks.twitter && (
+                <a 
+                  href={socialLinks.twitter} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground" 
+                  data-testid="link-twitter"
+                >
+                  <FaTwitter className="h-5 w-5" />
+                </a>
+              )}
+              {socialLinks.linkedin && (
+                <a 
+                  href={socialLinks.linkedin} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground" 
+                  data-testid="link-linkedin"
+                >
+                  <FaLinkedin className="h-5 w-5" />
+                </a>
+              )}
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2024 Todos los Derechos Reservados. Desarrollado por SEO Consulting</p>
-            <Link href="/privacy" className="hover:text-foreground">
-              Política de Privacidad
-            </Link>
+          <div className="text-center text-sm text-muted-foreground">
+            <p>
+              © 2024 Todos los Derechos Reservados. Desarrollado por{' '}
+              <a 
+                href="https://seoconsulting.com.do" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-foreground underline"
+              >
+                SEO Consulting
+              </a>
+            </p>
           </div>
         </div>
       </div>

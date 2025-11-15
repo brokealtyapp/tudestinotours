@@ -17,6 +17,10 @@ interface AgencyConfig {
   email: string;
   phone: string;
   emergencyPhone?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
 }
 
 export default function AgencySettings() {
@@ -25,14 +29,7 @@ export default function AgencySettings() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   const { data: settings = [], isLoading } = useQuery<any[]>({
-    queryKey: ["/api/settings", "general"],
-    queryFn: () => {
-      return fetch(`/api/settings?category=general`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }).then(r => r.json());
-    },
+    queryKey: ["/api/config"],
   });
 
   // Extract agency configuration from settings
@@ -44,26 +41,22 @@ export default function AgencySettings() {
     email: settings.find((s: any) => s.key === 'AGENCY_EMAIL')?.value || 'info@tudestinotours.com',
     phone: settings.find((s: any) => s.key === 'AGENCY_PHONE')?.value || '+1 (555) 123-4567',
     emergencyPhone: settings.find((s: any) => s.key === 'AGENCY_EMERGENCY_PHONE')?.value || undefined,
+    facebookUrl: settings.find((s: any) => s.key === 'AGENCY_FACEBOOK_URL')?.value || undefined,
+    instagramUrl: settings.find((s: any) => s.key === 'AGENCY_INSTAGRAM_URL')?.value || undefined,
+    twitterUrl: settings.find((s: any) => s.key === 'AGENCY_TWITTER_URL')?.value || undefined,
+    linkedinUrl: settings.find((s: any) => s.key === 'AGENCY_LINKEDIN_URL')?.value || undefined,
   };
 
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const existingSetting = settings.find((s: any) => s.key === key);
-      
-      if (existingSetting) {
-        return apiRequest("PUT", `/api/settings/${key}`, { value });
-      } else {
-        return apiRequest("POST", "/api/settings", {
-          key,
-          value,
-          category: "general",
-          description: `Configuración de agencia: ${key}`,
-          dataType: "string",
-        });
-      }
+      return apiRequest("POST", "/api/config", {
+        key,
+        value,
+        description: `Configuración de agencia`,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/config"] });
       toast({
         title: "Configuración actualizada",
         description: "La configuración de la agencia se actualizó correctamente.",
@@ -104,7 +97,7 @@ export default function AgencySettings() {
             imageData: base64data,
           });
 
-          queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/config"] });
           
           toast({
             title: "Logo subido",
@@ -316,6 +309,82 @@ export default function AgencySettings() {
               }
             }}
           />
+        </div>
+
+        {/* Social Media Section */}
+        <div className="pt-6 border-t space-y-4">
+          <h3 className="text-lg font-semibold">Redes Sociales</h3>
+          <p className="text-sm text-muted-foreground">
+            Agrega los enlaces a tus redes sociales. Estos aparecerán en el footer del sitio web.
+          </p>
+
+          {/* Facebook */}
+          <div className="space-y-2">
+            <Label htmlFor="agency-facebook">Facebook URL (Opcional)</Label>
+            <Input
+              id="agency-facebook"
+              type="url"
+              defaultValue={agencyConfig.facebookUrl}
+              placeholder="https://facebook.com/tudestinotours"
+              data-testid="input-agency-facebook"
+              onBlur={(e) => {
+                if (e.target.value !== agencyConfig.facebookUrl) {
+                  handleFieldUpdate('AGENCY_FACEBOOK_URL', e.target.value);
+                }
+              }}
+            />
+          </div>
+
+          {/* Instagram */}
+          <div className="space-y-2">
+            <Label htmlFor="agency-instagram">Instagram URL (Opcional)</Label>
+            <Input
+              id="agency-instagram"
+              type="url"
+              defaultValue={agencyConfig.instagramUrl}
+              placeholder="https://instagram.com/tudestinotours"
+              data-testid="input-agency-instagram"
+              onBlur={(e) => {
+                if (e.target.value !== agencyConfig.instagramUrl) {
+                  handleFieldUpdate('AGENCY_INSTAGRAM_URL', e.target.value);
+                }
+              }}
+            />
+          </div>
+
+          {/* Twitter */}
+          <div className="space-y-2">
+            <Label htmlFor="agency-twitter">Twitter/X URL (Opcional)</Label>
+            <Input
+              id="agency-twitter"
+              type="url"
+              defaultValue={agencyConfig.twitterUrl}
+              placeholder="https://twitter.com/tudestinotours"
+              data-testid="input-agency-twitter"
+              onBlur={(e) => {
+                if (e.target.value !== agencyConfig.twitterUrl) {
+                  handleFieldUpdate('AGENCY_TWITTER_URL', e.target.value);
+                }
+              }}
+            />
+          </div>
+
+          {/* LinkedIn */}
+          <div className="space-y-2">
+            <Label htmlFor="agency-linkedin">LinkedIn URL (Opcional)</Label>
+            <Input
+              id="agency-linkedin"
+              type="url"
+              defaultValue={agencyConfig.linkedinUrl}
+              placeholder="https://linkedin.com/company/tudestinotours"
+              data-testid="input-agency-linkedin"
+              onBlur={(e) => {
+                if (e.target.value !== agencyConfig.linkedinUrl) {
+                  handleFieldUpdate('AGENCY_LINKEDIN_URL', e.target.value);
+                }
+              }}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
