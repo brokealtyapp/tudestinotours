@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import StatsSection from "@/components/StatsSection";
+// import StatsSection from "@/components/StatsSection";
 import PopularTours from "@/components/PopularTours";
 import WhyChooseUs from "@/components/WhyChooseUs";
 import ExploreDestinations from "@/components/ExploreDestinations";
@@ -21,7 +21,7 @@ export default function Home() {
       <Header />
       <main>
         <Hero />
-        <StatsSection />
+        {/* <StatsSection /> */}
         <section id="populares">
           <PopularTours />
         </section>
