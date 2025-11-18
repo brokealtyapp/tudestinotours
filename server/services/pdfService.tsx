@@ -543,9 +543,9 @@ const TourBrochureDocument = ({ tour, departures = [], agencyConfig, tourUrl, qr
   const agencyEmail = agencyConfig?.email || 'info@tudestinotours.com';
   const agencyPhone = agencyConfig?.phone || '+1 (555) 123-4567';
   
-  // Get up to 3 images for gallery (excluding first which is hero)
+  // Get ALL images for gallery (excluding first which is hero)
   const galleryImages = tour.images && tour.images.length > 1 
-    ? tour.images.slice(1, 4) 
+    ? tour.images.slice(1) 
     : [];
   
   return (
