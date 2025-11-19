@@ -2,6 +2,19 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Handle 401 - Invalid or expired token (authentication failure)
+    if (res.status === 401) {
+      // Clear local storage and redirect to login
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      
+      // Only redirect if not already on auth pages
+      if (!window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/registro")) {
+        window.location.href = "/login?sessionExpired=true";
+      }
+    }
+    // 403 = Forbidden (authorization failure) - let it bubble up to show proper error message
+    
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }

@@ -7,6 +7,10 @@ import { hasPermission, type Permission } from "./permissions";
 const JWT_SECRET = process.env.SESSION_SECRET || "your-secret-key-change-in-production";
 const JWT_EXPIRATION = "7d";
 
+// Log JWT_SECRET info on startup (first 10 chars only for security)
+console.log("[AUTH] JWT_SECRET configured, starting with:", JWT_SECRET.substring(0, 10) + "...");
+console.log("[AUTH] JWT_EXPIRATION set to:", JWT_EXPIRATION);
+
 export interface JWTPayload {
   userId: string;
   email: string;
@@ -21,13 +25,15 @@ export function generateToken(user: User): string {
     role: user.role,
     permissions: user.permissions || [],
   };
+  console.log("[AUTH] Generating token for user:", user.email, "with SECRET starting:", JWT_SECRET.substring(0, 10) + "...");
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
-  } catch (error) {
+  } catch (error: any) {
+    console.log("[AUTH] Token verification failed:", error.message);
     return null;
   }
 }
@@ -56,12 +62,15 @@ export async function authenticateToken(
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
+    console.log("[AUTH] Token missing in request to:", req.path);
     return res.status(401).json({ error: "Access token required" });
   }
 
   const payload = verifyToken(token);
   if (!payload) {
-    return res.status(403).json({ error: "Invalid or expired token" });
+    console.log("[AUTH] Invalid or expired token for request to:", req.path);
+    console.log("[AUTH] Using JWT_SECRET starting with:", JWT_SECRET.substring(0, 10) + "...");
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 
   // Import storage here to avoid circular dependency
@@ -70,9 +79,11 @@ export async function authenticateToken(
   // Verify user is still active
   const user = await storage.getUser(payload.userId);
   if (!user || !user.active) {
-    return res.status(403).json({ error: "Cuenta inactiva o no encontrada" });
+    console.log("[AUTH] User inactive or not found:", payload.userId, "for request to:", req.path);
+    return res.status(401).json({ error: "Cuenta inactiva o no encontrada" });
   }
 
+  console.log("[AUTH] ✅ Authentication successful for user:", user.email, "role:", user.role);
   req.user = payload;
   next();
 }

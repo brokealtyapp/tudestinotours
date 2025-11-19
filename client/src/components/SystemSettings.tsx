@@ -54,18 +54,7 @@ export default function SystemSettings() {
   });
 
   const { data: settings = [], isLoading } = useQuery<SystemSetting[]>({
-    queryKey: ["/api/settings", selectedCategory],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (selectedCategory && selectedCategory !== "all") {
-        params.append("category", selectedCategory);
-      }
-      return fetch(`/api/settings?${params}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }).then(r => r.json());
-    },
+    queryKey: ["/api/settings", selectedCategory && selectedCategory !== "all" ? { category: selectedCategory } : {}],
   });
 
   const createMutation = useMutation({

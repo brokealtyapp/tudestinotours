@@ -1,0 +1,100 @@
+2025-11-18 21:47:02.31
+719b63a9
+User
+[PUBLIC_IMAGE] ✅ Imagen encontrada, enviando archivo...
+2025-11-18 21:47:02.41
+719b63a9
+User
+1:47:02 AM [express] GET /api/tours/images/tour-c79d53e8-3cb9-4010-94e8-f40618ff7948.webp 200 in 215…
+2025-11-18 21:47:02.42
+719b63a9
+User
+1:47:02 AM [express] GET /api/tours/images/tour-c7910d9b-78b0-4f01-8064-fa43357f4763.jpg 200 in 256ms
+2025-11-18 21:47:02.48
+719b63a9
+User
+1:47:02 AM [express] GET /api/tours/images/tour-51615f2f-2052-49c1-9210-8fb64844cc11.webp 200 in 308…
+2025-11-18 21:47:02.53
+719b63a9
+User
+1:47:02 AM [express] GET /api/tours/images/tour-89181a0d-7270-4b2e-bdcb-e602ac435b79.webp 200 in 341…
+2025-11-18 21:47:02.54
+719b63a9
+User
+1:47:02 AM [express] GET /api/tours/images/tour-92ff966e-2de8-449e-8470-075d3a076d8c.jpg 200 in 388ms
+2025-11-18 21:47:06.98
+719b63a9
+User
+1:47:06 AM [express] GET /api/dashboard/kpis 403 in 4ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:06.98
+719b63a9
+User
+1:47:06 AM [express] GET /api/reservations 403 in 1ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:06.99
+719b63a9
+User
+1:47:06 AM [express] GET /api/passengers 403 in 1ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:07.01
+719b63a9
+User
+1:47:07 AM [express] GET /api/departures 200 in 25ms :: []
+2025-11-18 21:47:10.95
+719b63a9
+User
+[PUBLIC_IMAGE] Solicitud de imagen: tour-7bd4f50c-d81f-40ca-a4d6-f2dd0a5b44df.webp
+2025-11-18 21:47:10.99
+719b63a9
+User
+[PUBLIC_IMAGE] ✅ Imagen encontrada, enviando archivo...
+2025-11-18 21:47:11.17
+719b63a9
+User
+1:47:11 AM [express] GET /api/tours/images/tour-7bd4f50c-d81f-40ca-a4d6-f2dd0a5b44df.webp 200 in 218…
+2025-11-18 21:47:11.61
+719b63a9
+User
+1:47:11 AM [express] GET /api/dashboard/kpis 403 in 0ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:15.97
+719b63a9
+User
+1:47:15 AM [express] GET /api/payments/reconciliation 403 in 1ms :: {"error":"Invalid or expired tok…
+2025-11-18 21:47:17.49
+719b63a9
+User
+1:47:17 AM [express] GET /api/reservations 403 in 0ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:17.50
+719b63a9
+User
+1:47:17 AM [express] GET /api/dashboard/kpis 403 in 1ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:17.51
+719b63a9
+User
+1:47:17 AM [express] GET /api/passengers 403 in 1ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:17.58
+719b63a9
+User
+1:47:17 AM [express] GET /api/departures 304 in 101ms :: []
+2025-11-18 21:47:17.61
+719b63a9
+User
+1:47:17 AM [express] GET /api/config 304 in 111ms :: [{"key":"CONTINENTS_AND_CITIES","value":"{\"Eur…
+2025-11-18 21:47:17.72
+719b63a9
+User
+1:47:17 AM [express] GET /api/tours 304 in 238ms :: [{"id":"cac3781b-843f-4064-9acd-d4ad6384423c","t…
+2025-11-18 21:47:20.40
+719b63a9
+User
+1:47:20 AM [express] GET /api/dashboard/kpis 403 in 1ms :: {"error":"Invalid or expired token"}
+2025-11-18 21:47:28.98
+719b63a9
+User
+1:47:28 AM [express] GET /api/dashboard/kpis 403 in 1ms :: {"error":"Invalid or expired token"}
+
+
+Collapse
+
+Wrap
+
+Colors
+

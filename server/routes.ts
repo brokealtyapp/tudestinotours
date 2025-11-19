@@ -187,6 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      console.log("[LOGIN] Login attempt for email:", email);
 
       if (!email || !password) {
         return res.status(400).json({ error: "El correo electrónico y la contraseña son requeridos" });
@@ -195,22 +196,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find user
       const user = await storage.getUserByEmail(email);
       if (!user) {
+        console.log("[LOGIN] User not found:", email);
         return res.status(401).json({ error: "Credenciales inválidas" });
       }
 
       // Verify user is active
       if (!user.active) {
+        console.log("[LOGIN] User inactive:", email);
         return res.status(403).json({ error: "Esta cuenta ha sido desactivada. Contacte al administrador." });
       }
 
       // Verify password
       const isValid = await comparePasswords(password, user.password);
       if (!isValid) {
+        console.log("[LOGIN] Invalid password for:", email);
         return res.status(401).json({ error: "Credenciales inválidas" });
       }
 
       // Generate token
       const token = generateToken(user);
+      console.log("[LOGIN] ✅ Login successful for:", email, "role:", user.role);
+      console.log("[LOGIN] Token generated (first 20 chars):", token.substring(0, 20) + "...");
 
       res.json({
         token,
@@ -222,6 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error: any) {
+      console.error("[LOGIN] Error during login:", error);
       res.status(500).json({ error: error.message });
     }
   });
