@@ -1039,8 +1039,7 @@ export default function ToursManagement() {
                     onChange={(e) => {
                       const lines = e.target.value
                         .split('\n')
-                        .map(line => line.trim().replace(/^-\s*/, ''))
-                        .filter(line => line !== '');
+                        .map(line => line.trim().replace(/^-\s*/, ''));
                       setTourForm({ ...tourForm, includes: lines });
                     }}
                     rows={6}
@@ -1059,8 +1058,7 @@ export default function ToursManagement() {
                     onChange={(e) => {
                       const lines = e.target.value
                         .split('\n')
-                        .map(line => line.trim().replace(/^-\s*/, ''))
-                        .filter(line => line !== '');
+                        .map(line => line.trim().replace(/^-\s*/, ''));
                       setTourForm({ ...tourForm, excludes: lines });
                     }}
                     rows={6}
