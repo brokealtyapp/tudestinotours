@@ -7,6 +7,7 @@ import {
   comparePasswords,
   authenticateToken,
   requireAdmin,
+  verifyToken,
   type AuthRequest,
 } from "./auth";
 import {
@@ -2097,9 +2098,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System Settings routes
-  app.get("/api/settings", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  // GET /api/settings - Public for category=general, protected for others
+  app.get("/api/settings", async (req: Request, res) => {
     try {
       const category = req.query.category as string | undefined;
+      
+      // If category is not "general", require authentication
+      if (category !== "general") {
+        // Apply authentication manually
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return res.status(401).json({ error: "Access token required" });
+        }
+        
+        const token = authHeader.substring(7);
+        const payload = verifyToken(token);
+        if (!payload) {
+          return res.status(401).json({ error: "Invalid or expired token" });
+        }
+        
+        // Verify user is admin
+        const user = await storage.getUser(payload.userId);
+        if (!user || user.role !== "admin") {
+          return res.status(403).json({ error: "Se requieren permisos de administrador" });
+        }
+      }
+      
       const settings = await storage.getSettings(category);
       res.json(settings);
     } catch (error: any) {
